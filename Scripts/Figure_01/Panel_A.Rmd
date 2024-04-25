@@ -92,7 +92,7 @@ natjournals_palette <- pal_npg("nrc")(10)
 ## - Log Session Info
 
 ```{r message=FALSE, warning=FALSE, class.source=}
-writeLines(capture.output(sessionInfo()), paste(script_folder, '/R_Panel_A_SessionInfo', '.txt', sep = ''))
+writeLines(capture.output(sessionInfo()), paste(script_folder, '/Panel_A_SessionInfo', '.txt', sep = ''))
 
 sessionInfo()
 ```
