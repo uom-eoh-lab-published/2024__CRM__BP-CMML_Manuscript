@@ -37,7 +37,8 @@ script_folder <- dirname(rstudioapi::getSourceEditorContext()$path)
 
 # Define the data folder and output folder
 data_folder <- './Data'
-output_folder <- './Figures/Figure_01'
+#results_folder <- './Results'
+figures_folder <- './Figures'
 ```
 
 ## - Setting seed
@@ -61,7 +62,8 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocMana
 packages_required <- c("ComplexHeatmap", "stringr", 
                         "unikn", "RColorBrewer", "yarrr", 
                         "scales", "ggsci", "R.utils", "GenomicFeatures", 
-                       "tximport", "DESeq2")
+                       "tximport", "DESeq2", "tidyverse", "plotly", "dplyr", 
+                       "ashr", "apeglm", "EnhancedVolcano")
 
 # Identify any required packages that are not installed
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
@@ -77,15 +79,29 @@ Here, we load the necessary packages for our analysis.
 ```{r message=FALSE, warning=FALSE}
 # Load stringr for string manipulation
 library(stringr, quietly = TRUE)
+library(reticulate)
 
 # Load ComplexHeatmap for creating complex heatmaps
 library(ComplexHeatmap, quietly = TRUE)
+library(EnhancedVolcano)
 
 library(GenomicFeatures)
+library(tidyverse)
 
 library(R.utils)
 library(tximport)
 library(DESeq2)
+library(dplyr)
+library(IHW)
+library(ashr)
+library(apeglm)
+library(plotly)
+```
+
+```{r}
+# To create a conda environment first install either miniconda3 or anaconda3 on your OS
+# conda create --name BPCMML python-kaleido plotly -c conda-forge
+reticulate::use_condaenv("BPCMML")
 ```
 
 ## - Loading palettes
@@ -135,11 +151,11 @@ sessionInfo()
 
 # 2) Loading input files
 
-## 2. Loading gene annotation files
+## - Loading gene annotation files
 
 We use the following code to download a gene annotation file, convert it into a SQLite database for genomic analysis, or load the existing database if it's already present.
 
-## - Load check or creation of sqlite file
+### - Load check or creation of sqlite file
 
 ```{r}
 # Define the path to the SQLite database
@@ -191,7 +207,7 @@ if (file.exists(txdb.filename)) {
 }
 ```
 
-## - Load check or creation of csv file
+### - Load check or creation of csv file
 
 We use the following code to load gene metadata from a CSV file, or if it's not present, to extract it from a GTF file and create the CSV.
 
@@ -272,7 +288,7 @@ if (file.exists(gencode_gene_info_df.filename)) {
 }
 ```
 
-# 3. Loading sample metadata files
+## - Loading sample metadata files
 
 ```{r}
 Samples_metadata <- read.csv(paste(data_folder, '/RNASeq/Metadata/RNASeq_Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
@@ -280,12 +296,14 @@ Samples_metadata$Condition <- factor(Samples_metadata$Condition)
 Samples_metadata$Condition <- relevel(Samples_metadata$Condition, ref = "Control")
 ```
 
-# 4. [OPTIONAL]: Importing and grouping raw counts
+# 3) [OPTIONAL]: Importing and grouping raw counts
+
+Only relevant if we start from the raw counts
 
 ## - Loading counts path
 
 ```{r}
-STAR_Salmon_output_path <- paste(data_folder, '/RNASeq/Raw_counts/Individual', sep = '')
+STAR_Salmon_output_path <- paste(data_folder, '/RNASeq/Counts/Raw_counts/Individual', sep = '')
 
 files <- file.path(STAR_Salmon_output_path, list.files(STAR_Salmon_output_path), "quant.sf")
 names(files) <- list.files(STAR_Salmon_output_path)
@@ -304,25 +322,30 @@ TXI.Genes$abundance <- TXI.Genes$abundance[,rownames(Samples_metadata)]
 TXI.Genes$counts <- TXI.Genes$counts[,rownames(Samples_metadata)]
 TXI.Genes$length <- TXI.Genes$length[,rownames(Samples_metadata)]
 
-saveRDS(TXI.Genes, file = paste(data_folder, '/RNASeq/Raw_counts/Grouped/Tximport_object.rds', sep = ''))
+saveRDS(TXI.Genes, file = paste(data_folder, '/RNASeq/Counts/Raw_counts/Tximport_object.rds', sep = ''))
 ```
 
 ## - Exporting gene-level counts and TPMs
 
 ```{r}
-dir.create(paste(data_folder, '/RNASeq/Raw_counts/Grouped', sep = ''), showWarnings = F)
+dir.create(paste(data_folder, '/RNASeq/Counts/Raw_counts/Grouped', sep = ''), showWarnings = F)
 
-write.csv(x = TXI.Genes$counts, file = paste(data_folder, '/RNASeq/Raw_counts/Grouped/Tximport_raw_countmat.csv', sep = ''), row.names = TRUE, quote = FALSE)
+dir.create(paste(data_folder, '/RNASeq/Counts/Processed_counts', sep = ''), showWarnings = F)
+dir.create(paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped', sep = ''), showWarnings = F)
 
-write.csv(x = TXI.Genes$abundance, file =  paste(data_folder, '/RNASeq/Raw_counts/Grouped/Tximport_TPM_mat.csv', sep = ''), row.names = TRUE, quote = FALSE)
+write.csv(x = TXI.Genes$counts, file = paste(data_folder, '/RNASeq/Counts/Raw_counts/Grouped/Tximport_raw_countmat.csv', sep = ''), row.names = TRUE, quote = FALSE)
+
+write.csv(x = TXI.Genes$abundance, file =  paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/Tximport_TPM_mat.csv', sep = ''), row.names = TRUE, quote = FALSE)
 ```
 
-# 5. DEG: DESeq2 Analysis
+# 4) DESeq2 Analysis
 
 ## - Loading read and TPM matrices
 
 ```{r}
-TXI.Genes <- readRDS(paste(data_folder, '/RNASeq/Raw_counts/Grouped/Tximport_object.rds', sep = ''))
+dir.create(paste(data_folder, '/RNASeq/DESeq2', sep = ''), showWarnings = F)
+
+TXI.Genes <- readRDS(paste(data_folder, '/RNASeq/Counts/Raw_counts/Tximport_object.rds', sep = ''))
 ```
 
 ## - Filtering non-unique uninformative Ensembl.id
@@ -371,9 +394,7 @@ Now we generate a list of unique genes for the real DESeq2 run
 unique_genes <- c(rowData(dds)[grep(TRUE,isUnique(rowData(dds)$gene_name)),]$gene_id,
                   df_unique$gene_id)
 
-dir.create(path = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Lists', showWarnings = F)
-
-#write.csv(x = data.frame(unique_genes), file = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Lists/List_unique_genes.csv', quote = F, row.names = F)
+write.csv(x = data.frame(unique_genes), file = paste(data_folder, '/RNASeq/Counts/List_unique_genes.csv', sep = ''), quote = F, row.names = F)
 
 table(isUnique(unique_genes))
 ```
@@ -385,15 +406,11 @@ print(table(isUnique(unique_genes))-table(isUnique(rowData(dds)$gene_name))[[2]]
 print((table(isUnique(unique_genes))-table(isUnique(rowData(dds)$gene_name))[[2]])/table(isUnique(unique_genes)))
 ```
 
-## 3. Running DESeq2 with unique genes
+## - Running DESeq2 with unique genes
 
-### - Testing parametric dispersion vs local
+## - Testing parametric dispersion vs local
 
 ```{r}
-library(DESeq2)
-library(dplyr)
-library(tidyverse)
-
 dds_parametric = DESeqDataSetFromTximport(txi = TXI.Genes, 
                                colData = Samples_metadata,
                                rowData = Genes_annotation_metadata[rownames(TXI.Genes$counts),], 
@@ -453,65 +470,18 @@ head(assay(vst), 3)
 
 vst_mat <- as.data.frame(vst@assays@data@listData[[1]]) %>% add_column(GeneSymbol = as.data.frame(rowData(vst))[,'gene_name'], .before = colnames(dds)[1]) %>% add_column(GeneBiotype = as.data.frame(rowData(vst))[,'gene_type'], .before = colnames(dds)[1]) 
 
-dir.create(path = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Normalised_Counts', showWarnings = F)
-
-#write.csv(vst_mat, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Normalised_Counts/DGE_DESeq2_vst_normalised_countmat.csv',
-#          quote = F, row.names = T, col.names = T)
-
+write.csv(vst_mat, file = paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/DGE_DESeq2_vst_normalised_countmat.csv', sep = ''), quote = F, row.names = T)
 
 # Generating rlog normalised counts
 
-#rlog <- rlogTransformation(dds, blind=FALSE)
-#head(assay(rlog), 3)
+rlog <- rlogTransformation(dds, blind=FALSE)
+head(assay(rlog), 3)
 
-#rlog_mat <- as.data.frame(rlog@assays@data@listData[[1]]) %>% add_column(GeneSymbol = as.data.frame(rowData(rlog))[,'gene_name'], .before = colnames(dds)[1]) %>% add_column(GeneBiotype = as.data.frame(rowData(rlog))[,'gene_type'], .before = colnames(dds)[1]) 
+rlog_mat <- as.data.frame(rlog@assays@data@listData[[1]]) %>% add_column(GeneSymbol = as.data.frame(rowData(rlog))[,'gene_name'], .before = colnames(dds)[1]) %>% add_column(GeneBiotype = as.data.frame(rowData(rlog))[,'gene_type'], .before = colnames(dds)[1]) 
 
-#write.csv(rlog_mat, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Normalised_Counts/DGE_DESeq2_rlog_normalised_countmat.csv',
-#          quote = F, row.names = T, col.names = T)
+write.csv(rlog_mat, file = paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/DGE_DESeq2_rlog_normalised_countmat.csv', sep = ''), quote = F, row.names = T)
 ```
 
-## - Performing GLM-PCA analysis
-
-```{r}
-library("glmpca")
-gpca <- glmpca(counts(dds), L=3)
-colnames(gpca$factors) <- c('dim1' = 'PC1', 'dim2' = 'PC2', 'dim3' = 'PC3')
-
-gpca.dat <- gpca$factors
-gpca.dat$condition <- dds$Condition
-gpca.dat$ICC.classification <- dds$ICC.classification
-gpca.dat$Sample <- colnames(dds)
-
-fig <- plot_ly(gpca.dat, 
-               x = ~PC1, y = ~PC2, z = ~-PC3, color = ~ICC.classification, 
-               colors = c('BPDCN' = '#268418',
-                          'AML with MDS-related cytogenetic abnormalities' = '#CF0014',
-                          'AML with MDS-related gene mutations' = '#F27077',
-                          'AML with NPM1' = '#441775',
-                          'AML with CEBPA' = '#FED868',
-                          'AML not otherwise specified' = '#8E3318',
-                          'Control' = '#A4BECE') ) %>% add_markers(size = 14, marker = list (size = 14))
-
-fig <- fig %>% layout(
-    title = '',
-    showlegend = FALSE,
-    legend=list(title='', font = Font_characteristics),
-    scene = list(bgcolor = "#ffffff",
-                 camera = list(
-                     eye = list(
-                         x = -1.50,
-                         y = 1.66,
-                         z = 0.90
-                     ),
-                     center = list(x = 0,
-                                   y = 0,
-                                   z = 0)
-                 )))
-
-fig
-
-save_image(fig, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/DGE_GLM-PCA.ICC.Classification_with_legend.png', width = 3 * 300, height = 3 * 300, scale = 2)
-```
 
 ## - Performing PCA analysis
 
@@ -528,31 +498,28 @@ pca_samples$Condition <- colData(dds)[rownames(pca_samples),'Condition']
 pca_genes <- as.data.frame(pca$rotation)
 pca_genes <- add_column(pca_genes, .before = 'PC1', GeneSymbol = rowData(dds)[rownames(pca_genes),'gene_name'])
 
-dir.create(path = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/PCs', showWarnings = F)
+dir.create(path = paste(data_folder, '/RNASeq/DESeq2/PCs', sep = ''), showWarnings = F)
 
-#write.csv(pca_samples, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/PCs/DGE_Samples_PCs_from_rlog_normalised_count_mat.csv', quote = F, row.names = T, col.names = T)
+write.csv(pca_samples, file = paste(data_folder, '/RNASeq/DESeq2/PCs/DGE_Samples_PCs_from_rlog_normalised_count_mat.csv', sep = ''), quote = F, row.names = T)
 
-#write.csv(pca_genes, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/PCs/DGE_Genes_PCs_from_rlog_normalised_count_mat.csv', quote = F, row.names = T, col.names = T)
-
+write.csv(pca_genes, file = paste(data_folder, '/RNASeq/DESeq2/PCs/DGE_Genes_PCs_from_rlog_normalised_count_mat.csv', sep = ''), quote = F, row.names = T)
 
 var_explained_df <- data.frame(PC= paste0("PC",1:49),
                                var_explained=(pca$sdev)^2/sum((pca$sdev)^2))
 
-write.csv(var_explained_df, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/PCs/DGE_PC_variance_explained.csv', quote = F, row.names = T, col.names = T)
+write.csv(var_explained_df, file = paste(data_folder, '/RNASeq/DESeq2/PCs/DGE_PC_variance_explained.csv', sep = ''), quote = F, row.names = T)
 
 tot_var_explained <- (var_explained_df$var_explained[1] + 
   var_explained_df$var_explained[2] +
   var_explained_df$var_explained[3]) * 100
 ```
 
-
-
 ## - Plotting 3d PCs via plotly
 
 ```{r}
 Font_characteristics <- list(
   family = "Helvetica",
-  size = 12,
+  size = 14,
   color = "black")
 ```
 
@@ -566,26 +533,36 @@ fig <- plot_ly(pca_samples,
                colors = c('BP-CMML' = '#DD3429',
                           'Control' = '#A4BECE') ) %>% add_markers(size = 12, marker = list (size = 12))
 
+
 fig <- fig %>% layout(
     title = '',
-    showlegend = FALSE,
-    legend=list(title='', font = Font_characteristics),
-    scene = list(bgcolor = "#ffffff",
-                 camera = list(
-                     eye = list(
-                         x = -1.75,
-                         y = 1.85,
-                         z = 1.04
-                     ),
-                     center = list(x = 0,
-                                   y = 0,
-                                   z = 0)
-                 )))
+    showlegend = TRUE,
+    legend = list(
+        title = '', 
+        font = Font_characteristics, 
+        x = 0.46, # Move the legend more to the left
+        y = 0.0, # Move the legend slightly up
+        xanchor = 'center',
+        yanchor = 'bottom'
+    ),
+    scene = list(
+        bgcolor = "#ffffff",
+        camera = list(
+            eye = list(
+                x = -1.75,
+                y = 1.85,
+                z = 1.04
+            ),
+            center = list(x = -0.425,
+                          y = 0.35, # Move the figure up
+                          z = 0)
+        )
+    )
+)
 
-fig
+# This requires loading python environment with kaleido installed
 
-
-save_image(fig, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/DGE_Condition_with_legend.png', width = 3 * 300, height = 3 * 300, scale = 2)
+save_image(fig, paste(figures_folder, '/Not_Included/DGE_Condition_with_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
 Without legend
@@ -596,33 +573,42 @@ fig <- plot_ly(pca_samples,
                colors = c('BP-CMML' = '#DD3429',
                           'Control' = '#A4BECE') ) %>% add_markers(size = 10, marker = list (size = 10))
 
+
 fig <- fig %>% layout(
     title = '',
     showlegend = FALSE,
-    legend=list(title='', font = Font_characteristics),
-    scene = list(bgcolor = "#ffffff",
-                 camera = list(
-                     eye = list(
-                         x = -1.75,
-                         y = 1.85,
-                         z = 1.04
-                     ),
-                     center = list(x = 0,
-                                   y = 0,
-                                   z = 0)
-                 )))
+    legend = list(
+        title = '', 
+        font = Font_characteristics, 
+        x = 0.45, # Move the legend more to the left
+        y = -0.03, # Move the legend slightly up
+        xanchor = 'center',
+        yanchor = 'bottom'
+    ),
+    scene = list(
+        bgcolor = "#ffffff",
+        camera = list(
+            eye = list(
+                x = -1.75,
+                y = 1.85,
+                z = 1.04
+            ),
+            center = list(x = -0.425,
+                          y = 0.35, # Move the figure up
+                          z = 0)
+        )
+    )
+)
 
-fig
-
-
-save_image(fig, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/DGE_Condition_without_legend.png', width = 3 * 300, height = 3 * 300, scale = 2)
+save_image(fig, paste(figures_folder, '/Not_Included/DGE_Condition_without_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
 ### - By ICC classification
 
 With legend
 
-```{r}
+```{r echo=FALSE, fig.align='center', fig.cap='Figure 2C. PCA plot showing samples’ coordinates for top three principal components ranked by variance explained and identified by PCA analysis of VST normalised count data. Samples are coloured by disease state/ICC classification as indicated', fig.height=8.66142, fig.pos='H', fig.width=13.7795}
+
 pca_samples_ICC <- as.data.frame(pca$x)
 pca_samples_ICC$ICC.classification <- colData(dds)[rownames(pca_samples),'ICC.classification']
 
@@ -640,23 +626,32 @@ fig <- plot_ly(pca_samples_ICC,
 fig <- fig %>% layout(
     title = '',
     showlegend = TRUE,
-    legend=list(title='', font = Font_characteristics),
-    scene = list(bgcolor = "#ffffff",
-                 camera = list(
-                     eye = list(
-                         x = -1.75,
-                         y = 1.85,
-                         z = 1.04
-                     ),
-                     center = list(x = 0,
-                                   y = 0,
-                                   z = 0)
-                 )))
+    legend = list(
+        title = '', 
+        font = Font_characteristics, 
+        x = 0.49, # Move the legend more to the left
+        y = -0.03, # Move the legend slightly up
+        xanchor = 'center',
+        yanchor = 'bottom'
+    ),
+    scene = list(
+        bgcolor = "#ffffff",
+        camera = list(
+            eye = list(
+                x = -1.75,
+                y = 1.85,
+                z = 1.04
+            ),
+            center = list(x = -0.425,
+                          y = 0.35, # Move the figure up
+                          z = 0)
+        )
+    )
+)
 
 fig
 
-save_image(fig, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/DGE_ICC_subtype_with_legend.png', width = 3 * 300, height = 3 * 300, scale = 2)
-
+save_image(fig, paste(figures_folder, '/Figure_02/Panel_C.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
 Without legend
@@ -676,99 +671,143 @@ fig <- plot_ly(pca_samples_ICC,
                           'Control' = '#A4BECE'),
                marker = list(size = 12)) 
 
+
 fig <- fig %>% layout(
     title = '',
     showlegend = FALSE,
-    legend=list(title='', font = Font_characteristics),
-    scene = list(bgcolor = "#ffffff",
-                 camera = list(
-                     eye = list(
-                         x = -1.75,
-                         y = 1.85,
-                         z = 1.04
-                     ),
-                     center = list(x = 0,
-                                   y = 0,
-                                   z = 0)
-                 )))
+    legend = list(
+        title = '', 
+        font = Font_characteristics, 
+        x = 0.49, # Move the legend more to the left
+        y = -0.03, # Move the legend slightly up
+        xanchor = 'center',
+        yanchor = 'bottom'
+    ),
+    scene = list(
+        bgcolor = "#ffffff",
+        camera = list(
+            eye = list(
+                x = -1.75,
+                y = 1.85,
+                z = 1.04
+            ),
+            center = list(x = -0.425,
+                          y = 0.35, # Move the figure up
+                          z = 0)
+        )
+    )
+)
+
+save_image(fig, paste(figures_folder, '/Not_Included/DGE_ICC_without_legend.png', sep = ''), width = 3 * 300, height = 3 * 300, scale = 2)
+```
+
+### - By WHO classification
+
+With legend
+
+```{r echo=FALSE, fig.align='center', fig.cap='Figure S2. PCA plot showing samples’ coordinates for top three principal components ranked by variance explained and identified by PCA analysis of VST normalised count data. Samples are coloured by disease state/WHO classification as indicated', fig.height=8.66142, fig.pos='H', fig.width=13.7795}
+
+pca_samples_WHO <- as.data.frame(pca$x)
+pca_samples_WHO$WHO.classification <- colData(dds)[rownames(pca_samples),'WHO.classification']
+
+fig <- plot_ly(pca_samples_WHO, 
+               x = ~PC2, y = ~PC1, z = ~PC3, color = ~WHO.classification,
+               colors = c('BPDCN' = '#268418',
+                          'AML myelodysplasia-related' = '#FB84A2',
+                          'AML with NPM1' = '#1754B8',
+                          'AML with CEBPA' = '#FFCB7C',
+                          'AML with other defined genetic alterations' = '#8E3318',
+                          'Control' = '#A4BECE'),
+               marker = list(size = 12)) 
+
+
+fig <- fig %>% layout(
+    title = '',
+    showlegend = TRUE,
+    legend = list(
+        title = '', 
+        font = Font_characteristics, 
+        x = 0.46, # Move the legend more to the left
+        y = 0.0, # Move the legend slightly up
+        xanchor = 'center',
+        yanchor = 'bottom'
+    ),
+    scene = list(
+        bgcolor = "#ffffff",
+        camera = list(
+            eye = list(
+                x = -1.75,
+                y = 1.85,
+                z = 1.04
+            ),
+            center = list(x = -0.425,
+                          y = 0.35, # Move the figure up
+                          z = 0)
+        )
+    )
+)
 
 fig
 
-save_image(fig, '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/DGE_ICC_subtype_without_legend.png', width = 3 * 300, height = 3 * 300, scale = 2)
-
+save_image(fig, paste(figures_folder, '/Supplemental/Figure_S2.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
-## - Analysing sample similarity by correlation
+With legend
 
 ```{r}
-correlation_mat <- cor(as.matrix(as.data.frame(rlog@assays@data@listData[[1]])), method = 'spearman')
+pca_samples_WHO <- as.data.frame(pca$x)
+pca_samples_WHO$WHO.classification <- colData(dds)[rownames(pca_samples),'WHO.classification']
 
-identity <- data.frame(row.names = rownames(correlation_mat))
-identity[rownames(as.data.frame(colData(rlog))),'Condition'] <- as.data.frame(colData(rlog))$Condition
-
-col_top_annotation <- list(Condition = c('Control' = '#A4BECE',
-                                         'BP-CMML' = '#DD3429'))
-
-top_annotation <- HeatmapAnnotation(df=identity,
-                        col = col_top_annotation, 
-                        show_annotation_name = FALSE, 
-                        annotation_name_side = "left",
-                        show_legend = FALSE,
-                        gp = gpar(lwd =1, col = 'white'),
-                        annotation_legend_param = list(Condition = list(direction = "vertical")))
+fig <- plot_ly(pca_samples_WHO, 
+               x = ~PC2, y = ~PC1, z = ~PC3, color = ~WHO.classification,
+               colors = c('BPDCN' = '#268418',
+                          'AML myelodysplasia-related' = '#FB84A2',
+                          'AML with NPM1' = '#1754B8',
+                          'AML with CEBPA' = '#FFCB7C',
+                          'AML with other defined genetic alterations' = '#8E3318',
+                          'Control' = '#A4BECE'),
+               marker = list(size = 12)) 
 
 
-left_annotation <- rowAnnotation(df=identity,
-                        col = col_top_annotation, 
-                        show_annotation_name = FALSE,
-                        show_legend = FALSE,
-                        gp = gpar(lwd =1, col = 'white'),
-                        annotation_legend_param = list(Condition = list(direction = "vertical")))
+fig <- fig %>% layout(
+    title = '',
+    showlegend = FALSE,
+    legend = list(
+        title = '', 
+        font = Font_characteristics, 
+        x = 0.46, # Move the legend more to the left
+        y = 0.0, # Move the legend slightly up
+        xanchor = 'center',
+        yanchor = 'bottom'
+    ),
+    scene = list(
+        bgcolor = "#ffffff",
+        camera = list(
+            eye = list(
+                x = -1.75,
+                y = 1.85,
+                z = 1.04
+            ),
+            center = list(x = -0.425,
+                          y = 0.35, # Move the figure up
+                          z = 0)
+        )
+    )
+)
 
-breaks_val <- seq(from = 0.95, to = 1, length.out = 13)
-col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(brew_mix))
-
-ht_opt$COLUMN_ANNO_PADDING = unit(0.2, "cm")
-ht_opt$ROW_ANNO_PADDING = unit(0.2, "cm")
-
-Cor_plot <- Heatmap(correlation_mat, name = 'Spearman\ncor.',
-                            col = col_heatmap_guide,
-                            show_row_names = TRUE, 
-                            show_column_names = TRUE, 
-                            border = TRUE,
-                            show_row_dend = TRUE, 
-                            use_raster = FALSE, 
-                    rect_gp = gpar(col = "white", lwd = 1.5),
-                            raster_by_magick = FALSE, 
-                            top_annotation = top_annotation,
-                            left_annotation = left_annotation,
-                            column_title_gp = gpar(fontsize = 0, angle=45),
-                            column_names_gp = gpar(fontsize = 12, hjust=0),
-                            row_title_gp = gpar(fontsize = 10),
-                            row_names_gp = gpar(fontsize = 12, hjust=0),
-                            heatmap_legend_param = list(direction = "vertical"))
-
-dir.create(path = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures', showWarnings = F)
-
-png(filename = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/Samples_CorPlot.png', units = 'cm', width = 24, height = 24, res = 300)
-Cor_plot
-dev.off()
+save_image(fig, paste(figures_folder, '/Not_Included/DGE_WHO_with_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
-## 4. DEGs
+
+## - DEGs
 
 ```{r}
-TF_list <- read.csv('/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Metadata_Used/Gene_Metadata_Lambert2018_TFs.txt', sep = '\t', header = F)
+TF_list <- read.csv(paste(data_folder, '/RNASeq/Metadata/Gene_Metadata_Lambert2018_TFs.txt', sep = ''), sep = '\t', header = F)
 
-HGNC_CD_markers_list <- read.csv('/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Metadata_Used/Gene_Metadata_HGNC_CD_Markers.csv')
+HGNC_CD_markers_list <- read.csv(paste(data_folder, '/RNASeq/Metadata/Gene_Metadata_HGNC_CD_Markers.csv', sep = ''))
 ```
 
-```{r}
-library(dplyr)
-library(IHW)
-```
-
-### A) BP-CMML vs Control
+### - BP-CMML vs Control
 
 #### - Evaluating number of significant genes
 
@@ -799,8 +838,7 @@ resAsh_df_plot[rownames(resAsh_adj %>% filter(padj <0.05)),'Significance'] <- 'S
 cols <- c('Significant' = '#E58368', 
           'Non-significant' = '#1d1929')
 
-
-png(filename = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/DGE_BP-CMML_vs_Control_resAsh.png', units = 'cm', width = 8.58, height = 12.1, res = 300)
+png(filename = paste(figures_folder, '/Not_Included/DGE_BP-CMML_vs_Control_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
 
 ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, 
                       fill = Significance, color = Significance)) + theme_linedraw(base_line_size = 0.2) +
@@ -826,33 +864,14 @@ ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange,
 dev.off()
 ```
 
-```{r}
-library(ggplot2)
-library(ggrepel)
-# rlog
-pcaData = plotPCA(rlog, intgroup=c("Condition"), 
-returnData=TRUE)
-percentVar = round(100 * attr(pcaData, "percentVar"))
-
-png(filename = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/DGE_BP-CMML_vs_Control_PCA.png', width = 1500, height = 1250, units = 'px', res = 300)
-ggplot(pcaData, aes(PC1, PC2, colour = Condition)) + 
-geom_point(size = 2) + theme_bw() +
-geom_text_repel(aes(label = name), nudge_x = -1, nudge_y = 0.2, size = 3) +
-ggtitle("Principal Component Analysis (PCA)", subtitle = "rlog transformation") +
-xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-ylab(paste0("PC2: ",percentVar[2],"% variance"))
-dev.off()
-```
-
-```{r}
-dir.create(path = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/RDS_Objects', showWarnings = F)
-
-saveRDS(object = dds, file = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/RDS_Objects/DDS.rds')
-```
-
 #### - Performing comparison
 
 ```{r}
+dir.create(path = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons', sep = ''), 
+           showWarnings = F)
+dir.create(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML', sep = ''), 
+           showWarnings = F)
+
 resAsh_df <- as.data.frame(resAsh) %>% add_column(GeneSymbol =rowData(dds)[rownames(resAsh),'gene_name'], .before = 'baseMean') %>% add_column(GeneBiotype =rowData(dds)[rownames(resAsh),'gene_type'], .before = 'baseMean')
 
 resAsh_df$Is_TF <- 'No'
@@ -861,29 +880,106 @@ resAsh_df[grep(TRUE, resAsh_df$GeneSymbol %in% TF_list$V1),'Is_TF'] <- 'Yes'
 resAsh_df$Is_CD_Marker <- 'No'
 resAsh_df[grep(TRUE, resAsh_df$GeneSymbol %in% HGNC_CD_markers_list$Approved.symbol),'Is_CD_Marker'] <- 'Yes'
 
-dir.create(path = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/DEGs comparisons', showWarnings = F)
-
 res_significant <- resAsh_df %>% arrange(padj)
-write.csv(res_significant, file = "/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/DEGs comparisons/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv", 
-          col.names = colnames(res_significant), row.names = T, quote = FALSE)
+write.csv(res_significant, 
+          file = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''), 
+          row.names = T, quote = FALSE)
 
 res_significant <- resAsh_df %>% dplyr::filter(padj < 0.05) %>% dplyr::arrange(padj)
-write.csv(res_significant, file = "/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/DEGs comparisons/DGE_BP-CMML_vs_Control_padj_significant_DEGs_LFC_Ashr.csv", 
-          col.names = colnames(res_significant), row.names = T, quote = FALSE)
+write.csv(res_significant, 
+          file = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
+          row.names = T, quote = FALSE)
 
 res_significant_UP <- res_significant %>% dplyr::filter(log2FoldChange >= 0) %>% dplyr::arrange(padj)
-write.csv(res_significant_UP, file = "/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/DEGs comparisons/DGE_BP-CMML_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv", 
-          col.names = colnames(res_significant), row.names = T, quote = FALSE)
+write.csv(res_significant_UP, 
+          file = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
+          row.names = T, quote = FALSE)
 
 res_significant_DOWN <- res_significant %>% dplyr::filter(log2FoldChange < 0) %>% dplyr::arrange(padj)
-write.csv(res_significant_DOWN, file = "/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/DEGs comparisons/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv", 
-          col.names = c('Ensembl_geneID',colnames(res_significant_DOWN)), row.names = T, quote = FALSE)
+write.csv(res_significant_DOWN, 
+          file = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
+          row.names = T, quote = FALSE)
 ```
 
-# 6. Heatmap uniquely up genes
+# 5) Vulcano plots
+
+## - BP-CMML v Control
 
 ```{r}
-UP_in_BP_CMML <- read.csv('/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/DEGs comparisons/DGE_BP-CMML_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', row.names = 'X')
+DESeq2_results <- read.csv(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''))
+```
+
+```{r echo=FALSE, fig.align='center', fig.cap='Volcano plot of differentially expressed genes comparing BP- CMML to healthy age-matched control HSPCs.', fig.height=8.66142, fig.pos='H', fig.width=13.7795}
+
+genemat_ord <- DESeq2_results
+genemat_ord$Log10pval <- log10(genemat_ord$padj)
+genemat_ord$log10FoldChange <- log10(2^genemat_ord$log2FoldChange)
+
+# load library
+library(EnhancedVolcano)
+library(ggrepel)
+# plot adding up all layers we have seen so far
+
+  keyvals <- ifelse(
+    genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 10e-2, '#415384',
+      ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 10e-2, '#C92A1D',
+        '#727272'))
+  keyvals[is.na(keyvals)] <- '#e5e5e5'
+  names(keyvals)[keyvals == '#C92A1D'] <- 'Upregulated'
+  names(keyvals)[keyvals == '#727272'] <- 'NS'
+  names(keyvals)[keyvals == '#415384'] <- 'Downregulated'
+
+BP_Genes <- c('CXCL8', 'KLF2', 'JUNB', 'HOXB9', 'KLF6', 'S100A8', 'S100A9', 'NFKBIA', 'CXCL1', 'SPI1', 'HK3', 'BCL6', 'JUN')  
+Control_Genes <- c('CD79A','CD79B', 'VPREB3', 'MYC', 'TOP2B', 'CDK4') 
+
+plot <- EnhancedVolcano(genemat_ord,
+    lab = genemat_ord$GeneSymbol,
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    cutoffLineCol = "grey10",
+    cutoffLineWidth = 0,
+    selectLab = c(BP_Genes, Control_Genes),
+    xlab = bquote(~Log[2]~ 'fold change'),
+    pCutoff = 10e-2,
+    FCcutoff = 0,
+    vlineWidth = 0,
+    pointSize = 2.0, 
+    xlim = c(-6,6),
+    ylim = c(-0.5,12.5),
+    hline = 10e-2,
+    labSize = 2.0,
+    labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(BP_Genes, Control_Genes),)],
+    labFace = 'bold',
+    caption = NULL,
+    boxedLabels = TRUE,
+    colAlpha = 4/5,
+    legendPosition = 'bottom',
+    legendLabSize = 3.5,
+    legendIconSize = 1.0,
+    drawConnectors = TRUE,
+    widthConnectors = 0.5,
+    colConnectors = 'black',
+    colCustom = keyvals) + ggtitle(label = '', subtitle = '') +
+  theme_bw(base_line_size = 0.2) + 
+  theme(axis.title.y = element_text(family='Helvetica', size = 12, face = 'bold'),
+        axis.title.x = element_text(family='Helvetica', size = 12, face = 'bold'), 
+        plot.title = element_text(family='Helvetica', size = 12, face = 'bold'), 
+        legend.position = 'bottom') + 
+  guides(color = guide_legend(title = ''))
+
+plot
+
+png(filename = paste(figures_folder, '/Figure_02/Panel_D.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
+
+print(plot)
+
+dev.off()
+```
+
+# 6) Heatmap uniquely up genes
+
+```{r}
+UP_in_BP_CMML <- read.csv(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
 
 UP_in_BP_CMML <- UP_in_BP_CMML %>% filter(GeneBiotype == 'protein_coding')
 
@@ -891,7 +987,7 @@ BP_CMML_genes <- (UP_in_BP_CMML %>% arrange(padj))$GeneSymbol[1:30]
 
 # - - - - - - - - - - -
 
-UP_in_healthy <- read.csv('/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/DEGs comparisons/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', row.names = 'X')
+UP_in_healthy <- read.csv(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
 
 UP_in_healthy <- UP_in_healthy %>% filter(GeneBiotype == 'protein_coding')
 
@@ -902,7 +998,7 @@ genes_to_keep <- c(BP_CMML_genes, Healthy_genes)
 
 
 ```{r}
-vst_results <- read.csv('/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Normalised_Counts/DGE_DESeq2_vst_normalised_countmat.csv', row.names = 'X')
+vst_results <- read.csv(paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/DGE_DESeq2_vst_normalised_countmat.csv', sep = ''), row.names = 'X')
 
 colnames(vst_results) <- str_replace_all(colnames(vst_results), pattern = 'X', replacement = '')
 
@@ -982,160 +1078,25 @@ Heatmap_genes <- Heatmap(scaled_genemat_ord_GeneSymbol, name = 'Scaled\nExpressi
 
 Heatmap_genes
 
-png(filename = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/DGE_Top_30_UP_DEGs_per_cluster.png',height = 10, width = 13, units = 'cm',res = 900)
-draw(Heatmap_genes, heatmap_legend_side = "bottom", 
+png(filename = paste(figures_folder, '/Figure_02/Panel_E.png', sep = ''), height = 10, width = 13, units = 'cm',res = 300)
+
+ComplexHeatmap::draw(Heatmap_genes, 
+     heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
+
 dev.off()
-
-
-
-
-png(filename = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/DGE_Top_30_UP_DEGs_per_cluster_wLegend.png',height = 10, width = 13, units = 'cm',res = 900)
-
-Heatmap_genes <- Heatmap(scaled_genemat_ord_GeneSymbol, name = 'Scaled\nExpression',
-                            col = col_heatmap_guide,
-                            show_row_names = FALSE, 
-                            show_column_names = TRUE,
-                            cluster_columns = TRUE,
-                            cluster_rows = TRUE, 
-                            column_split = gene_identity$Group,
-                            row_split = Phenotype_identity$Condition,
-                            border = TRUE,
-                            cluster_row_slices = F, 
-                            cluster_column_slices = F, 
-                            row_gap = unit(0.05, 'cm'),
-                            column_gap = unit(0.05, 'cm'),
-                            show_column_dend = FALSE, 
-                            row_dend_side = 'right',
-                            column_names_side = 'bottom',
-                            use_raster = FALSE, 
-                            rect_gp = gpar(col = "black", lwd = 0.05),
-                            raster_by_magick = TRUE, 
-                            left_annotation = ha,
-                            row_title_gp = gpar(fontsize = 0, angle=45),
-                            row_names_gp = gpar(fontsize = 7, hjust=0),
-                            column_title_gp = gpar(fontsize = 12),
-                            column_names_gp = gpar(fontsize = 4, hjust=0),
-                            show_heatmap_legend = T,
-                            heatmap_legend_param = list(
-                                      legend_direction = "horizontal", 
-                                      legend_width = unit(5, "cm")))
-
-draw(Heatmap_genes, heatmap_legend_side = "bottom", 
-     annotation_legend_side = "bottom")
-dev.off()
-
 ```
 
-# 7. Vulcano plots
-
-## BP-CMML v Control
+# 7) Calculating condition transcriptional heterogeneity
 
 ```{r}
-DESeq2_results <- read.csv('/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/DEGs comparisons/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv')
-```
+dir.create(path = paste(data_folder, '/RNASeq/DESeq2/Other', sep = ''), 
+           showWarnings = F)
+dir.create(path = paste(data_folder, '/RNASeq/DESeq2/Other/Gene_Dispersion', sep = ''), 
+           showWarnings = F)
+dir.create(path = paste(data_folder, '/RNASeq/DESeq2/Other/Gene_Dispersion/Control_vs_BP-CMML', sep = ''), 
+           showWarnings = F)
 
-
-```{r}
-genemat_ord <- DESeq2_results
-genemat_ord$Log10pval <- log10(genemat_ord$padj)
-genemat_ord$log10FoldChange <- log10(2^genemat_ord$log2FoldChange)
-
-# load library
-library(EnhancedVolcano)
-library(ggrepel)
-# plot adding up all layers we have seen so far
-
-  keyvals <- ifelse(
-    genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 10e-2, '#415384',
-      ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 10e-2, '#C92A1D',
-        '#727272'))
-  keyvals[is.na(keyvals)] <- '#e5e5e5'
-  names(keyvals)[keyvals == '#C92A1D'] <- 'Upregulated'
-  names(keyvals)[keyvals == '#727272'] <- 'NS'
-  names(keyvals)[keyvals == '#415384'] <- 'Downregulated'
-
-BP_Genes <- c('CXCL8', 'KLF2', 'JUNB', 'HOXB9', 'KLF6', 'S100A8', 'S100A9', 'NFKBIA', 'CXCL1', 'SPI1', 'HK3', 'BCL6', 'JUN')  
-Control_Genes <- c('CD79A','CD79B', 'VPREB3', 'MYC', 'TOP2B', 'CDK4') 
-
-png(filename = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Figures/BP-CMML_vs_Control_highlighted_padj.png',units = 'in', width = 4.3, height = 5.5, res = 300)
-
-EnhancedVolcano(genemat_ord,
-    lab = genemat_ord$GeneSymbol,
-    x = 'log2FoldChange',
-    y = 'pvalue',
-    cutoffLineCol = "grey10",
-    cutoffLineWidth = 0,
-    selectLab = c(BP_Genes, Control_Genes),
-    xlab = bquote(~Log[2]~ 'fold change'),
-    pCutoff = 10e-2,
-    FCcutoff = 0,
-    vlineWidth = 0,
-    pointSize = 2.0, 
-    xlim = c(-6,6),
-    ylim = c(-0.5,12.5),
-    hline = 10e-2,
-    labSize = 2.0,
-    labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(BP_Genes, Control_Genes),)],
-    labFace = 'bold',
-    caption = NULL,
-    boxedLabels = TRUE,
-    colAlpha = 4/5,
-    legendPosition = 'bottom',
-    legendLabSize = 3.5,
-    legendIconSize = 1.0,
-    drawConnectors = TRUE,
-    widthConnectors = 0.5,
-    colConnectors = 'black',
-    colCustom = keyvals) + ggtitle(label = '', subtitle = '') +
-  theme_bw(base_line_size = 0.2) + 
-  theme(axis.title.y = element_text(family='Helvetica', size = 12, face = 'bold'),
-        axis.title.x = element_text(family='Helvetica', size = 12, face = 'bold'), 
-        plot.title = element_text(family='Helvetica', size = 12, face = 'bold'), 
-        legend.position = 'bottom') + 
-  guides(color = guide_legend(title = ''))
-dev.off()
-
-
-EnhancedVolcano(genemat_ord,
-    lab = genemat_ord$GeneSymbol,
-    x = 'log2FoldChange',
-    y = 'pvalue',
-    cutoffLineCol = "grey10",
-    cutoffLineWidth = 0,
-    selectLab = c(BP_Genes, Control_Genes),
-    xlab = bquote(~Log[2]~ 'fold change'),
-    pCutoff = 10e-2,
-    FCcutoff = 0,
-    vlineWidth = 0,
-    pointSize = 2.0, 
-    xlim = c(10,20),
-    ylim = c(-0.5,12.5),
-    hline = 10e-2,
-    labSize = 2.0,
-    labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(BP_Genes, Control_Genes),)],
-    labFace = 'bold',
-    caption = NULL,
-    boxedLabels = TRUE,
-    colAlpha = 4/5,
-    legendPosition = 'bottom',
-    legendLabSize = 3.5,
-    legendIconSize = 1.0,
-    drawConnectors = TRUE,
-    widthConnectors = 0.5,
-    colConnectors = 'black',
-    colCustom = keyvals) + ggtitle(label = '', subtitle = '') +
-  theme_bw(base_line_size = 0.2) + 
-  theme(axis.title.y = element_text(family='Helvetica', size = 12, face = 'bold'),
-        axis.title.x = element_text(family='Helvetica', size = 12, face = 'bold'), 
-        plot.title = element_text(family='Helvetica', size = 12, face = 'bold'), 
-        legend.position = 'bottom') + 
-  guides(color = guide_legend(title = ''))
-```
-
-# 8. Calculating condition transcriptional heterogeneity
-
-```{r}
 Control_samples <- (Samples_metadata %>% mutate(Sample.ID = rownames(Samples_metadata)) %>% filter(Condition == 'Control'))$Sample.ID
 
 BPCMML_samples <- (Samples_metadata %>% mutate(Sample.ID = rownames(Samples_metadata)) %>% filter(Condition == 'BP-CMML'))$Sample.ID
@@ -1174,13 +1135,7 @@ df <- data.frame(row.names = rownames(rowData(dds)))
 df$Disp_Control <- rowData(dds_control)[,'dispersion']
 df$Disp_BPCMML <- rowData(dds_BPCMML)[,'dispersion']
 
-write.csv(df, file = '/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/01__DESeq2_Post_STAR_Salmon_Processing/Results/Lists/GeneDispersion_per_condition.csv', row.names = T)
+write.csv(df, 
+          file = paste(data_folder, '/RNASeq/DESeq2/Other/Gene_Dispersion/Control_vs_BP-CMML/Gene_Dispersion_per_condition.csv', sep = ''),
+          row.names = T)
 ```
-
-```{r}
-dds_x = DESeqDataSetFromTximport(txi = TXI.Genes, 
-                               colData = Samples_metadata,
-                               rowData= Genes_annotation_metadata[rownames(TXI.Genes$counts),], 
-                               design = ~ Condition + ICC.classification + Condition:ICC.classification)
-```
-
