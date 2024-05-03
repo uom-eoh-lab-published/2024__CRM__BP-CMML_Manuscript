@@ -157,23 +157,6 @@ sessionInfo()
 
 We use the following code to download a gene annotation file, convert it into a SQLite database for genomic analysis, or load the existing database if it's already present.
 
-```{bash}
-
-
-https://api.data.mendeley.com/active-data-entities/datasets/confidentials/{dataset_id}/{version}/files/{file_id}/contents
-```
-
-
-```{r}
-url <- "https://downloads.data.mendeley.com/downloads/66eea6ac-7ae8-4e0a-a7ba-0cf551d8dc92?token=456765df-cfd2-4984-b442-b998af62c95e&filename=Data.zip"
-
-destfile <- "/Users/kgurashi/GitHub/2024__CRM__BP-CMML_Manuscript/Data/RNASeq/Resources/Gene_Metadata/Data.zip"
-  
-# Download the GTF file
-download.file(url, destfile)
-```
-
-
 ### - Load check or creation of sqlite file
 
 ```{r}
@@ -324,7 +307,7 @@ Only relevant if we start from the raw counts
 
 ## - Loading counts path
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 STAR_Salmon_output_path <- paste(data_folder, '/RNASeq/Counts/Raw_counts/Individual', sep = '')
 
 files <- file.path(STAR_Salmon_output_path, list.files(STAR_Salmon_output_path), "quant.sf")
@@ -333,7 +316,7 @@ names(files) <- list.files(STAR_Salmon_output_path)
 
 ## - Gene-level summarization via tximport
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 k <- keys(txdb, keytype = "TXNAME")
 tx2gene <- AnnotationDbi::select(txdb, k, "GENEID", "TXNAME")
 
@@ -349,7 +332,7 @@ saveRDS(TXI.Genes, file = paste(data_folder, '/RNASeq/Counts/Raw_counts/Tximport
 
 ## - Exporting gene-level counts and TPMs
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 dir.create(paste(data_folder, '/RNASeq/Counts/Raw_counts/Grouped', sep = ''), showWarnings = F)
 
 dir.create(paste(data_folder, '/RNASeq/Counts/Processed_counts', sep = ''), showWarnings = F)
@@ -629,7 +612,7 @@ save_image(fig, paste(figures_folder, '/Not_Included/DGE_Condition_without_legen
 
 With legend
 
-```{r echo=FALSE, fig.align='center', fig.cap='Figure 2C. PCA plot showing samples’ coordinates for top three principal components ranked by variance explained and identified by PCA analysis of VST normalised count data. Samples are coloured by disease state/ICC classification as indicated', fig.height=8.66142, fig.pos='H', fig.width=13.7795}
+```{r echo=FALSE, fig.align='center', fig.cap='Figure 2C. PCA plot showing samples’ coordinates for top three principal components ranked by variance explained and identified by PCA analysis of VST normalised count data. Samples are coloured by disease state/ICC classification as indicated', fig.height=8, fig.pos='H', fig.width=8}
 
 pca_samples_ICC <- as.data.frame(pca$x)
 pca_samples_ICC$ICC.classification <- colData(dds)[rownames(pca_samples),'ICC.classification']
@@ -727,7 +710,7 @@ save_image(fig, paste(figures_folder, '/Not_Included/DGE_ICC_without_legend.png'
 
 With legend
 
-```{r echo=FALSE, fig.align='center', fig.cap='Figure S2. PCA plot showing samples’ coordinates for top three principal components ranked by variance explained and identified by PCA analysis of VST normalised count data. Samples are coloured by disease state/WHO classification as indicated', fig.height=8.66142, fig.pos='H', fig.width=13.7795}
+```{r echo=FALSE, fig.align='center', fig.cap='Figure S2. PCA plot showing samples’ coordinates for top three principal components ranked by variance explained and identified by PCA analysis of VST normalised count data. Samples are coloured by disease state/WHO classification as indicated', fig.height=8, fig.pos='H', fig.width=8}
 
 pca_samples_WHO <- as.data.frame(pca$x)
 pca_samples_WHO$WHO.classification <- colData(dds)[rownames(pca_samples),'WHO.classification']
@@ -820,7 +803,6 @@ fig <- fig %>% layout(
 save_image(fig, paste(figures_folder, '/Not_Included/DGE_WHO_with_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
-
 ## - DEGs
 
 ```{r}
@@ -833,7 +815,8 @@ HGNC_CD_markers_list <- read.csv(paste(data_folder, '/RNASeq/Resources/Gene_Meta
 
 #### - Evaluating number of significant genes
 
-```{r}
+```{r echo=FALSE, fig.align='center', fig.height=4, fig.pos='H', fig.width=5}
+
 res <- results(dds, contrast=c("Condition", "BP-CMML", "Control"), filterFun = ihw)
 
 resNorm <- lfcShrink(dds, coef="Condition_BP.CMML_vs_Control", res = res, type = 'normal')
@@ -883,7 +866,7 @@ ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange,
                               title.hjust = 0.5, nrow = 1, override.aes = list(size=3)),
          color = guide_none())
 
-dev.off()
+invisible(dev.off())
 ```
 
 #### - Performing comparison
@@ -923,15 +906,13 @@ write.csv(res_significant_DOWN,
           row.names = T, quote = FALSE)
 ```
 
-# 5) Vulcano plots
-
-## - BP-CMML v Control
+# 5) Vulcano plot
 
 ```{r}
 DESeq2_results <- read.csv(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''))
 ```
 
-```{r echo=FALSE, fig.align='center', fig.cap='Volcano plot of differentially expressed genes comparing BP- CMML to healthy age-matched control HSPCs.', fig.height=8.66142, fig.pos='H', fig.width=13.7795}
+```{r echo=FALSE, fig.align='center', fig.cap='Figure 2D. Volcano plot of differentially expressed genes comparing BP- CMML to healthy age-matched control HSPCs.', fig.height=4.656, fig.pos='H', fig.width=3.640}
 
 genemat_ord <- DESeq2_results
 genemat_ord$Log10pval <- log10(genemat_ord$padj)
@@ -995,7 +976,7 @@ png(filename = paste(figures_folder, '/Figure_02/Panel_D.png', sep = ''), units 
 
 print(plot)
 
-dev.off()
+invisible(dev.off())
 ```
 
 # 6) Heatmap uniquely up genes
@@ -1018,7 +999,8 @@ Healthy_genes <- ((UP_in_healthy %>% arrange(padj))$GeneSymbol[1:30])
 genes_to_keep <- c(BP_CMML_genes, Healthy_genes)
 ```
 
-```{r}
+```{r echo=FALSE, fig.align='center', fig.cap='Figure 2E. Heatmap showing the top 30 up- and down-regulated DEGs per condition, ranked by p.adj value.', fig.height=5, fig.pos='H', fig.width=6.5}
+
 vst_results <- read.csv(paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/DGE_DESeq2_vst_normalised_countmat.csv', sep = ''), row.names = 'X')
 
 vst_results <- vst_mat
@@ -1099,7 +1081,9 @@ Heatmap_genes <- Heatmap(scaled_genemat_ord_GeneSymbol, name = 'Scaled\nExpressi
                                       legend_direction = "horizontal", 
                                       legend_width = unit(5, "cm")))
 
-Heatmap_genes
+ComplexHeatmap::draw(Heatmap_genes, 
+     heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
 
 png(filename = paste(figures_folder, '/Figure_02/Panel_E.png', sep = ''), height = 10, width = 13, units = 'cm',res = 300)
 
@@ -1107,7 +1091,7 @@ ComplexHeatmap::draw(Heatmap_genes,
      heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
 
-dev.off()
+invisible(dev.off())
 ```
 
 # 7) Calculating condition transcriptional heterogeneity

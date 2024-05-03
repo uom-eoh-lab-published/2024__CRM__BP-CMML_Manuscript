@@ -362,7 +362,7 @@ decorate_annotation("botbar", {
 })
 
 # Close the current plotting device
-dev.off()
+invisible(dev.off())
 ```
 
 ## - Plotting final result
