@@ -62,7 +62,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocMana
 # Define a list of required packages used in this script
 packages_required <- c("GENIE3", "doRNG", "stringr", "WGCNA", 
                        "DESeq2", "flashClust", "ComplexHeatmap", "magick", 
-                       "ggplot2", "ggridges", "dplyr", "erer")
+                       "ggplot2", "ggridges", "dplyr", "erer", "enrichR")
 
 # Identify any required packages that are not installed
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
@@ -89,6 +89,7 @@ library(ggplot2)
 library(ggridges)
 library(dplyr)
 library(erer)
+library(enrichR)
 ```
 
 ## - Loading palettes
@@ -167,7 +168,7 @@ Human_TFs <- Human_TFs$V1
 Human_TFs <- Human_TFs[grep(TRUE, Human_TFs %in% rownames(Expression_matrix))]
 ```
 
-# 3) Genie3
+# 4) Genie3
 
 ```{r}
 dir.create(paste(data_folder, '/RNASeq/Genie3', sep = ''), showWarnings = F)
@@ -195,13 +196,23 @@ saveRDS(object = weightMat,
 ```
 
 ```{r}
-linkList <- getLinkList(weightMat)
+linkList <- paste(data_folder, '/RNASeq/Genie3/Genie3_Linklist.rds', sep = '')
 
+if (file.exists(linkList)) {
+
+linkList <- readRDS(paste(data_folder, '/RNASeq/Genie3/Genie3_Linklist.rds', sep = ''))
+
+} else {
+
+linkList <- getLinkList(weightMat)
+  
 saveRDS(linkList, 
         paste(data_folder, '/RNASeq/Genie3/Genie3_Linklist.rds', sep = ''))
+  
+}
 ```
 
-# 4) WGCNA
+# 5) WGCNA
 
 ## - SetUP
 
@@ -606,8 +617,8 @@ NewModuleColors = NewMEs$colors
 
 # Changing the colors to look better
 NewModuleColors[grep(TRUE,NewModuleColors == 'yellow')] <- 'mediumpurple2'
-NewModuleColors[grep(TRUE,NewModuleColors == 'green')] <- 'firebrick2'
-NewModuleColors[grep(TRUE,NewModuleColors == 'red')] <- 'darkgoldenrod1'
+NewModuleColors[grep(TRUE,NewModuleColors == 'green')] <- 'darkgoldenrod1'
+NewModuleColors[grep(TRUE,NewModuleColors == 'red')] <- 'firebrick2'
 NewModuleColors[grep(TRUE,NewModuleColors == 'brown')] <- 'palegreen2'
 NewModuleColors[grep(TRUE,NewModuleColors == 'black')] <- 'mediumturquoise'
 NewModuleColors[grep(TRUE,NewModuleColors == 'blue')] <- 'royalblue2'
@@ -692,8 +703,8 @@ NewModuleColors = NewMEs$colors
 
 # Changing the colors to look better
 NewModuleColors[grep(TRUE,NewModuleColors == 'yellow')] <- 'mediumpurple2'
-NewModuleColors[grep(TRUE,NewModuleColors == 'green')] <- 'firebrick2'
-NewModuleColors[grep(TRUE,NewModuleColors == 'red')] <- 'darkgoldenrod1'
+NewModuleColors[grep(TRUE,NewModuleColors == 'green')] <- 'darkgoldenrod1'
+NewModuleColors[grep(TRUE,NewModuleColors == 'red')] <- 'firebrick2'
 NewModuleColors[grep(TRUE,NewModuleColors == 'brown')] <- 'palegreen2'
 NewModuleColors[grep(TRUE,NewModuleColors == 'black')] <- 'mediumturquoise'
 NewModuleColors[grep(TRUE,NewModuleColors == 'blue')] <- 'royalblue2'
@@ -769,8 +780,8 @@ plotDendroAndColors(
 
 ```{r}
 MEs <- NewMEs$newMEs
-colnames(MEs) <- c('ME1','ME2','ME3','ME6','ME5','ME4')
-MEs <- MEs[,c('ME1','ME2','ME3','ME6','ME5','ME4')]
+colnames(MEs) <- c('ME1','ME2','ME3','ME6','ME4','ME5')
+MEs <- MEs[,c('ME1','ME2','ME3','ME6','ME4','ME5')]
 ```
 
 ## - Downstream analyses
@@ -921,8 +932,8 @@ draw(Heatmap_trait_cor, heatmap_legend_side = "bottom",
 ### Gene Expression Heatmaps and Module Eigengene Barplots
 
 ME_color_annotation <-  list('ME6' = 'mediumpurple2',
-                                        'ME4' = 'firebrick2',
-                                        'ME5' = 'darkgoldenrod1',
+                                        'ME5' = 'firebrick2',
+                                        'ME4' = 'darkgoldenrod1',
                                         'ME3' = 'palegreen2',
                                         'ME2' = 'mediumturquoise',
                                         'ME1' = 'royalblue2')
@@ -977,7 +988,7 @@ for (i in 1:ncol(MEs)){
 
 ### - Plotting Samples MEs expression
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 breaks_val <- seq(from = -0.4, to = 0.4, length.out = 13)
 col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(brew_mix))
 
@@ -985,7 +996,7 @@ ME_expmat <- t(MEs)[,rownames(Samples_metadata)]
 
 ME_expmat <- ME_expmat[c('ME6','ME5','ME4','ME3','ME2','ME1'),]
 
-Heatmap_ME_exp <- Heatmap(ME_expmat, 
+Heatmap_ME_exp <- ComplexHeatmap::Heatmap(ME_expmat, 
                              name = 'Pearson\nCor.',
                             col = col_heatmap_guide,
                             show_row_names = FALSE, 
@@ -1112,7 +1123,7 @@ nSamples <- ncol(Expression_matrix_Filtered)
 modNames = names(MEs)
 
 # GeneModule membership
-geneModuleMembership <- as.data.frame(cor(WGCNA_Input_ExpMat_filtered, MEs, use = "p"))
+geneModuleMembership <- as.data.frame(cor(x = WGCNA_Input_ExpMat_filtered, y = MEs, use = "p"))
 MMPvalue = as.data.frame(WGCNA::corPvalueStudent(as.matrix(geneModuleMembership), nSamples))
 
 names(geneModuleMembership) = paste("", modNames, sep="")
@@ -1124,9 +1135,9 @@ write.csv(Module_Membership_df, paste(data_folder, '/RNASeq/WGCNA/ME_Gene_Member
           quote = F, row.names = T)
 ```
 
-# 4. Association of WGCNA with pathways and TFs
+# 6) Association of WGCNA with pathways and TFs
 
-## A) Loading WGCNA MEs
+## - Loading WGCNA MEs
 
 ```{r}
 MEs <- read.csv(paste(data_folder, '/RNASeq/WGCNA/ME_Gene_Membership.csv', sep = ''), row.names = 'X')
@@ -1143,7 +1154,7 @@ Module_genes_list[['ME5']] <- MEs_assigned_genes[grep(TRUE,MEs_assigned_genes$Mo
 Module_genes_list[['ME6']] <- MEs_assigned_genes[grep(TRUE,MEs_assigned_genes$Module == 'ME6'),'X']
 ```
 
-## B) Sorting modules for highly correlated representative genes
+## - Sorting modules for highly correlated representative genes
 
 ```{r}
 ME1_genes <- MEs
@@ -1207,7 +1218,7 @@ Module_genes_list_added[['ME5']] <- unique(c(Module_genes_list[['ME5']], Top_30p
 Module_genes_list_added[['ME6']] <- unique(c(Module_genes_list[['ME6']], Top_30percent_Module_genes_list[['ME6']]))
 ```
 
-## C) TF annotation
+## - TF annotation
 
 ### - Loading Genie3 weight matrix
 
@@ -1224,58 +1235,68 @@ linkList <- readRDS(paste(data_folder, '/RNASeq/Genie3/Genie3_Linklist.rds', sep
 ### - Evaluating TF weights for each module identified via WGCNA
 
 ```{r}
-tf_weights <- data.frame(row.names = sort(levels(factor(linkList$regulatoryGene))))
+tf_weights <- paste(data_folder, '/RNASeq/WGCNA/WGCNA_Modules_Genie3_TF_regulator_per_module.csv', sep = '')
 
-# Create a progress bar
-pb <- txtProgressBar(min = 0, max = length(rownames(tf_weights)), style = 3)
+if (file.exists(tf_weights)) {
   
-for (index in 1:length(rownames(tf_weights))) {
+  tf_weights <- read.csv(tf_weights, header = T, row.names = 'X')
   
-  TF <- rownames(tf_weights)[index]
+} else {
   
-  # Update the progress bar
-  setTxtProgressBar(pb, index)
+  tf_weights <- data.frame(row.names = sort(levels(factor(linkList$regulatoryGene))))
   
-  tf_weights[TF,'ME1_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME1']]))$weight)
-  
-  tf_weights[TF,'ME2_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME2']]))$weight)
+  # Create a progress bar
+  pb <- txtProgressBar(min = 0, max = length(rownames(tf_weights)), style = 3)
     
-  tf_weights[TF,'ME3_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME3']]))$weight)
+  for (index in 1:length(rownames(tf_weights))) {
+    
+    TF <- rownames(tf_weights)[index]
+    
+    # Update the progress bar
+    setTxtProgressBar(pb, index)
+    
+    tf_weights[TF,'ME1_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME1']]))$weight)
+    
+    tf_weights[TF,'ME2_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME2']]))$weight)
+      
+    tf_weights[TF,'ME3_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME3']]))$weight)
+    
+    tf_weights[TF,'ME4_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME4']]))$weight)
+    
+    tf_weights[TF,'ME5_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME5']]))$weight)
+    
+    tf_weights[TF,'ME6_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME6']]))$weight)
   
-  tf_weights[TF,'ME4_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME4']]))$weight)
+  }
   
-  tf_weights[TF,'ME5_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME5']]))$weight)
+  # Close the progress bar
+  close(pb)
   
-  tf_weights[TF,'ME6_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME6']]))$weight)
-
+  tf_weights <- tf_weights %>% arrange(-ME1_weight)
+  tf_weights$ME1_rank <- 1:length(rownames(tf_weights))
+  
+  tf_weights <- tf_weights %>% arrange(-ME2_weight)
+  tf_weights$ME2_rank <- 1:length(rownames(tf_weights))
+  
+  tf_weights <- tf_weights %>% arrange(-ME3_weight)
+  tf_weights$ME3_rank <- 1:length(rownames(tf_weights))
+  
+  tf_weights <- tf_weights %>% arrange(-ME4_weight)
+  tf_weights$ME4_rank <- 1:length(rownames(tf_weights))
+  
+  tf_weights <- tf_weights %>% arrange(-ME5_weight)
+  tf_weights$ME5_rank <- 1:length(rownames(tf_weights))
+  
+  tf_weights <- tf_weights %>% arrange(-ME6_weight)
+  tf_weights$ME6_rank <- 1:length(rownames(tf_weights))
+  
+  
+  write.csv(x = tf_weights, file = paste(data_folder, '/RNASeq/WGCNA/WGCNA_Modules_Genie3_TF_regulator_per_module.csv', sep = ''), quote = F, row.names = T)
+  
 }
-
-# Close the progress bar
-close(pb)
-
-tf_weights <- tf_weights %>% arrange(-ME1_weight)
-tf_weights$ME1_rank <- 1:length(rownames(tf_weights))
-
-tf_weights <- tf_weights %>% arrange(-ME2_weight)
-tf_weights$ME2_rank <- 1:length(rownames(tf_weights))
-
-tf_weights <- tf_weights %>% arrange(-ME3_weight)
-tf_weights$ME3_rank <- 1:length(rownames(tf_weights))
-
-tf_weights <- tf_weights %>% arrange(-ME4_weight)
-tf_weights$ME4_rank <- 1:length(rownames(tf_weights))
-
-tf_weights <- tf_weights %>% arrange(-ME5_weight)
-tf_weights$ME5_rank <- 1:length(rownames(tf_weights))
-
-tf_weights <- tf_weights %>% arrange(-ME6_weight)
-tf_weights$ME6_rank <- 1:length(rownames(tf_weights))
-
-
-write.csv(x = tf_weights, file = paste(data_folder, '/RNASeq/WGCNA/WGCNA_Modules_Genie3_TF_regulator_per_module.csv', sep = ''), quote = F, row.names = T)
 ```
 
-## D) Pathway annotation
+## - Pathway annotation
 
 ```{r}
 setEnrichrSite("Enrichr") # Human genes
@@ -1289,12 +1310,10 @@ dbs_selected <- c('MSigDB_Hallmark_2020',
                   'Reactome_2022',
                   'GO_Biological_Process_2021',
                   'WikiPathway_2021_Human',
-                  
                   "CellMarker_Augmented_2021",
                   'Descartes_Cell_Types_and_Tissue_2021',
                   'Azimuth_Cell_Types_2021',
                   'Elsevier_Pathway_Collection',
-                  
                   'ChEA_2022',
                   'NCI-Nature_2016',
                   'BioCarta_2015',
@@ -1304,19 +1323,21 @@ dbs_selected <- c('MSigDB_Hallmark_2020',
 Enriched <- list()
 
 if (websiteLive) {
-    Enriched[['M1']] <- enrichr(Module_genes_list$M1, dbs_selected)
-    Enriched[['M2']] <- enrichr(Module_genes_list$M2, dbs_selected)
-    Enriched[['M3']] <- enrichr(Module_genes_list$M3, dbs_selected)
-    Enriched[['M4']] <- enrichr(Module_genes_list$M4, dbs_selected)
-    Enriched[['M5']] <- enrichr(Module_genes_list$M5, dbs_selected)
-    Enriched[['M6']] <- enrichr(Module_genes_list$M6, dbs_selected)
+    Enriched[['ME1']] <- enrichr(Module_genes_list$ME1, dbs_selected)
+    Enriched[['ME2']] <- enrichr(Module_genes_list$ME2, dbs_selected)
+    Enriched[['ME3']] <- enrichr(Module_genes_list$ME3, dbs_selected)
+    Enriched[['ME4']] <- enrichr(Module_genes_list$ME4, dbs_selected)
+    Enriched[['ME5']] <- enrichr(Module_genes_list$ME5, dbs_selected)
+    Enriched[['ME6']] <- enrichr(Module_genes_list$ME6, dbs_selected)
 }
 
 modules <- unique(MEs_assigned_genes$Module)
 
 for (module in modules) {
 
-write.list(Enriched[[module]], file = sprintf('/Users/kristiangurashi/Dropbox (The University of Manchester)/Projects data/Project__Christie_BP_CMML_Stratification_and_Drug_Prediction/04__Christie_BP_CMML_BulkRNAseq/03__GRN_Analyses/WGCNA/Results/%s_enrichR_pathways.csv', module))
+write.list(Enriched[[module]], file = paste(data_folder, 
+                                            sprintf('/RNASeq/WGCNA/%s_enrichR_pathways.csv', module), 
+                                            sep = ''))
 
 }
 ```
