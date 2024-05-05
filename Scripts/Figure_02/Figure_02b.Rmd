@@ -94,22 +94,22 @@ sessionInfo()
 # 2) Loading input files
 
 ```{r}
-Expression_matrix <- read.csv(paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/Tximport_TPM_mat.csv', 
+Expression_matrix <- read.csv(paste(data_folder, '/Resources/RNASeq/Counts/Processed_counts/Grouped/Tximport_TPM_mat.csv', 
                                     sep = ''), 
                               row.names = 'X')
 
 colnames(Expression_matrix) <- str_replace_all(colnames(Expression_matrix), pattern = 'X', replacement = '')
 
-Genes_annotation_metadata <- read.csv(paste(data_folder, "/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv", sep = ''))
+Genes_annotation_metadata <- read.csv(paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv", sep = ''))
 rownames(Genes_annotation_metadata) <- Genes_annotation_metadata$gene_id
 
-Samples_metadata <- read.csv(paste(data_folder, '/RNASeq/Metadata/RNASeq_Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
+Samples_metadata <- read.csv(paste(data_folder, '/Resources/RNASeq/Metadata/InHouse/Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
 ```
 
 # 3) Filtering expression matrix
 
 ```{r}
-Unique_genes <- read.table(file = paste(data_folder, '/RNASeq/Counts/List_unique_genes.csv', 
+Unique_genes <- read.table(file = paste(data_folder, '/InHouse/RNASeq/Counts/Processed_counts/List_unique_genes.csv', 
                                     sep = ''), header = T, sep = ',')$unique_genes
 
 Expression_matrix <- Expression_matrix[Unique_genes, ]
@@ -124,7 +124,7 @@ Expression_matrix <- Expression_matrix[,rownames(Samples_metadata)]
 # 4) Creating folders for Pathway Analyses
 
 ```{r}
-dir.create(file.path(paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML', 
+dir.create(file.path(paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML', 
                                     sep = '')), showWarnings = FALSE)
 ```
 
@@ -133,7 +133,7 @@ dir.create(file.path(paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-
 ## - Gene ranking
 
 ```{r}
-Blast_phase_vs_Control_DEGS <- read.csv(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
+Blast_phase_vs_Control_DEGS <- read.csv(paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
 
 Blast_phase_vs_Control_DEGS$Rank <- sign(Blast_phase_vs_Control_DEGS$log2FoldChange)*(-1*log10(Blast_phase_vs_Control_DEGS$pvalue))
 
@@ -147,7 +147,7 @@ Ranks <- Ranks[grep(FALSE,is.na(Ranks))]
 ## - Hallmark analysis
 
 ```{r}
-Hallmark_pathways_gmt_file <- paste(data_folder, '/RNASeq/Resources/Gene_Pathways/2022__GSEA_MSIGDB__h.all.v2022.1.Hs.symbols.gmt.txt', sep = '')
+Hallmark_pathways_gmt_file <- paste(data_folder, '/InHouse/RNASeq/Resources/Gene_Pathways/2022__GSEA_MSIGDB__h.all.v2022.1.Hs.symbols.gmt.txt', sep = '')
 Hallmark_pathways <- gmtPathways(Hallmark_pathways_gmt_file)
 str(head(Hallmark_pathways))
 
@@ -160,20 +160,20 @@ fgseaRes_Hallmark <- fgsea(pathways = Hallmark_pathways,
 fgseaRes_Hallmark <- fgseaRes_Hallmark %>% arrange(padj)
 fgseaRes_Hallmark$leadingEdge <- NULL
 
-write.csv(x = fgseaRes_Hallmark, file = paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_H_BP-CMML_vs_Control_all.csv', 
+write.csv(x = fgseaRes_Hallmark, file = paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_H_BP-CMML_vs_Control_all.csv', 
                                     sep = ''))
 
-write.csv(x = fgseaRes_Hallmark %>% filter(NES > 0), file = paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_H_BP-CMML_vs_Control__Up_in_BP-CMML.csv', 
+write.csv(x = fgseaRes_Hallmark %>% filter(NES > 0), file = paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_H_BP-CMML_vs_Control__Up_in_BP-CMML.csv', 
                                     sep = ''))
 
-write.csv(x = fgseaRes_Hallmark %>% filter(NES < 0), file = paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_H_BP-CMML_vs_Control__Up_in_Control.csv', 
+write.csv(x = fgseaRes_Hallmark %>% filter(NES < 0), file = paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_H_BP-CMML_vs_Control__Up_in_Control.csv', 
                                     sep = ''))
 ```
 
 ## - Canonical pathway analysis
 
 ```{r}
-CanonicalPathways_gmt_file <- paste(data_folder, '/RNASeq/Resources/Gene_Pathways/2022__GSEA_MSIGDB__c2.cp.v2022.1.Hs.symbols.gmt.txt', sep = '')
+CanonicalPathways_gmt_file <- paste(data_folder, '/InHouse/RNASeq/Resources/Gene_Pathways/2022__GSEA_MSIGDB__c2.cp.v2022.1.Hs.symbols.gmt.txt', sep = '')
 CanonicalPathways <- gmtPathways(CanonicalPathways_gmt_file)
 str(head(CanonicalPathways))
 
@@ -186,13 +186,13 @@ fgseaRes_CP <- fgsea(pathways = CanonicalPathways,
 fgseaRes_CP <- fgseaRes_CP %>% arrange(padj)
 fgseaRes_CP$leadingEdge <- NULL
 
-write.csv(x = fgseaRes_CP, file = paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_CP_BP-CMML_vs_Control_all.csv', 
+write.csv(x = fgseaRes_CP, file = paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_CP_BP-CMML_vs_Control_all.csv', 
                                     sep = ''))
 
-write.csv(x = fgseaRes_CP %>% filter(NES > 0), file = paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_CP_BP-CMML_vs_Control__Up_in_BP-CMML.csv', 
+write.csv(x = fgseaRes_CP %>% filter(NES > 0), file = paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_CP_BP-CMML_vs_Control__Up_in_BP-CMML.csv', 
                                     sep = ''))
 
-write.csv(x = fgseaRes_CP %>% filter(NES < 0), file = paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_CP_BP-CMML_vs_Control__Up_in_Control.csv', 
+write.csv(x = fgseaRes_CP %>% filter(NES < 0), file = paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_CP_BP-CMML_vs_Control__Up_in_Control.csv', 
                                     sep = ''))
 ```
 
@@ -200,7 +200,7 @@ write.csv(x = fgseaRes_CP %>% filter(NES < 0), file = paste(data_folder, '/RNASe
 
 ```{r}
 GO_BP_gmt_file <- paste(data_folder, 
-                        '/RNASeq/Resources/Gene_Pathways/2022__GSEA_MSIGDB__c5.go.bp.v2022.1.Hs.symbols.gmt.txt', sep = '')
+                        '/InHouse/RNASeq/Resources/Gene_Pathways/2022__GSEA_MSIGDB__c5.go.bp.v2022.1.Hs.symbols.gmt.txt', sep = '')
 GOBP_pathways <- gmtPathways(GO_BP_gmt_file)
 str(head(GOBP_pathways))
 
@@ -213,13 +213,13 @@ fgseaRes_GO_BP <- fgsea(pathways = GOBP_pathways,
 fgseaRes_GO_BP <- fgseaRes_GO_BP %>% arrange(padj)
 fgseaRes_GO_BP$leadingEdge <- NULL
 
-write.csv(x = fgseaRes_GO_BP, file = paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_GO_BP_BP-CMML_vs_Control_all.csv', 
+write.csv(x = fgseaRes_GO_BP, file = paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_GO_BP_BP-CMML_vs_Control_all.csv', 
                                     sep = ''))
 
-write.csv(x = fgseaRes_GO_BP %>% filter(NES > 0), file = paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_GO_BP_BP-CMML_vs_Control__Up_in_BP-CMML.csv', 
+write.csv(x = fgseaRes_GO_BP %>% filter(NES > 0), file = paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_GO_BP_BP-CMML_vs_Control__Up_in_BP-CMML.csv', 
                                     sep = ''))
 
-write.csv(x = fgseaRes_GO_BP %>% filter(NES < 0), file = paste(data_folder, '/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_GO_BP_BP-CMML_vs_Control__Up_in_Control.csv', 
+write.csv(x = fgseaRes_GO_BP %>% filter(NES < 0), file = paste(data_folder, '/InHouse/RNASeq/Pathway_Analysis/Control_vs_BP-CMML/fGSEA_GO_BP_BP-CMML_vs_Control__Up_in_Control.csv', 
                                     sep = ''))
 ```
 
@@ -294,7 +294,7 @@ dev.off()
 
 ```{r}
 Quiescence_HSC_gmt_file <- paste(data_folder, 
-                        '/RNASeq/Resources/Gene_Pathways/2007__Graham_et_al__NormalQuiescent_vs_NormalDividing.gmt', 
+                        '/InHouse/RNASeq/Resources/Gene_Pathways/2007__Graham_et_al__NormalQuiescent_vs_NormalDividing.gmt', 
                         sep = '')
 
 Quiescence_HSC_pathways <- gmtPathways(Quiescence_HSC_gmt_file)
@@ -320,7 +320,7 @@ dev.off()
 ###
 
 Roy2021_signatures <- read.csv(paste(data_folder, 
-                        '/RNASeq/Resources/Gene_Pathways/2021__Roy_et_al__cellcycle.csv', 
+                        '/InHouse/RNASeq/Resources/Gene_Pathways/2021__Roy_et_al__cellcycle.csv', 
                         sep = ''))
 
 Roy2021_signatures <- as.list(Roy2021_signatures)
@@ -369,7 +369,7 @@ dev.off()
 ###
 
 Senescence_gmt_file <- paste(data_folder, 
-                        '/RNASeq/Resources/Gene_Pathways/2008__Fridman_and_Tainsky__UP_in_Senescencent.gmt', 
+                        '/InHouse/RNASeq/Resources/Gene_Pathways/2008__Fridman_and_Tainsky__UP_in_Senescencent.gmt', 
                         sep = '')
 
 Senescence_pathways <- gmtPathways(Senescence_gmt_file)
