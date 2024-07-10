@@ -1,0 +1,483 @@
+---
+title: "Figure 02 - Panels CDEF + FigS2"
+output: 
+  rmdformats::robobook:
+    lightbox: true
+    fig_caption: true
+---
+
+<style type="text/css">
+  body{
+  font-size: 10pt;
+}
+</style>
+
+# 1) Setup
+
+## - Defining work directory
+
+In this section, we define the working directory for the R Markdown document.
+
+```{r setup, include=TRUE}
+# Get the path of the current script
+# Then get the parent directory of the parent directory of the parent directory
+local_wd_folder <- dirname(dirname(dirname(rstudioapi::getSourceEditorContext()$path)))
+
+# Set the root directory for knitr to the local working directory
+knitr::opts_knit$set(root.dir = local_wd_folder)
+```
+
+## - Defining input data and output directories
+
+Here, we define the directories for input data and output files.
+
+```{r}
+# Get the directory of the current script
+script_folder <- dirname(rstudioapi::getSourceEditorContext()$path)
+
+# Define the data folder and output folder
+data_folder <- './Data'
+
+dir.create(paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Sample_Selection'), showWarnings = FALSE)
+dir.create(paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures'), showWarnings = FALSE)
+
+#results_folder <- './Results'
+figures_folder <- './Figures'
+
+dir.create(paste0(figures_folder, '/Not_Included/ExVivo_Inhibitor_Response_Distributions'), showWarnings = FALSE)
+```
+
+## - Setting seed
+
+Setting a seed ensures that any random processes are reproducible.
+
+```{r}
+# Set a seed for reproducibility
+set.seed(123)
+```
+
+## - Packages installation (optional)
+
+In this section, we ensure that all necessary packages are installed.
+
+```{r}
+# Ensure BiocManager is available for installation of Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+BiocManager::install(version = "3.18")
+
+# Define a list of required packages used in this script
+packages_required <- c("unikn", "RColorBrewer", "yarrr", "scales", "ggsci", 
+                       "DESeq2", "dplyr", "ashr", "IHW", "ggplot2", "ggpubr",
+                       "BiocParallel", "tidyverse")
+
+# Identify any required packages that are not installed
+packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
+
+# Install any uninstalled packages
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+```
+
+## - Loading packages
+
+Here, we load the necessary packages for our analysis.
+
+```{r message=FALSE, warning=FALSE}
+library(DESeq2, quietly = T)
+library(dplyr, quietly = T)
+library(IHW, quietly = T)
+library(ashr, quietly = T)
+library(ggplot2, quietly = T)
+library(ggpubr, quietly = T)
+library(tidyverse, quietly = T)
+library(BiocParallel, quietly = T)
+
+bpparam <- SnowParam(parallel::detectCores() - 2, RNGseed = 123)
+```
+
+## - Loading palettes
+
+In this section, we load additional color palettes and define some custom ones.
+
+```{r message=FALSE, warning=FALSE}
+# Load additional colour palette packages
+library(unikn, quietly = TRUE)
+library(RColorBrewer, quietly = TRUE)
+library(yarrr, quietly = TRUE)
+library(scales, quietly = TRUE)
+library(ggsci, quietly = TRUE)
+
+# Define a set of custom color palettes from the unikn package
+mix_1 <- usecol(pal = c(Karpfenblau, "white", Peach), n = 15)
+mix_2 <- usecol(pal = c(rev(pal_seeblau), "white", pal_pinky))
+mix_3 <- usecol(pal = c(rev(pal_bordeaux), "white", pal_petrol), n = 15)
+
+# Display the custom palettes
+seecol(list(mix_1, mix_2, mix_3), col_brd = "white", lwd_brd = 4, title = "Comparing palettes mixed from unikn colors", pal_names = c("mix_1", "mix_2", "mix_3"))
+
+# Define a second set of custom palettes from the RColorBrewer and yarrr packages
+brew_mix <- usecol(c(rev(brewer.pal(n = 4, name = "Reds")), "white", brewer.pal(n = 4, name = "Blues")), n = 13)
+brew_ext <- usecol(brewer.pal(n = 11, name = "Spectral"), n = 12)
+yarrr_mix <- usecol(c(piratepal("nemo"), piratepal("bugs")))
+yarrr_mod <- usecol(c(piratepal("ipod")), n = 9)
+
+# Display the second set of custom palettes
+seecol(pal = list(brew_mix, brew_ext, yarrr_mix, yarrr_mod), col_brd = "white", lwd_brd = 2, title = "Using usecol() and seecol() to mix and modify palettes", pal_names = c("brew_mix", "brew_ext", "yarrr_mix", "yarrr_mod"))
+
+# Define additional custom palettes from the scales package
+natjournals_palette <- pal_npg("nrc")(10)
+```
+
+## - Log Session Info
+
+Finally, we log the session information for reproducibility.
+
+```{r message=TRUE, warning=TRUE}
+# Write the session information to a text file
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Mining_of_Drug_Resistance_Response_Signatures_SessionInfo.txt'))
+
+# Print the session information
+sessionInfo()
+```
+
+# 2) Selection of samples with RNASeq and drug response data
+
+## - Loading input files
+
+### - Loading raw count matrix
+
+```{r}
+RawCounts <- read.csv(
+  file = paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Counts/Raw_counts/Grouped/raw_countmat.txt', sep = ''),
+  sep = '\t', 
+  row.names = 'stable_id'
+)
+```
+
+### - Loading drug response data
+
+```{r}
+DrugResponse_Data <- read.csv(
+  file = paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/DrugResponse/ExVivo_DrugResponse.txt', sep = ''),
+  sep = '\t'
+)
+```
+
+### - Loading sample metadata files
+
+```{r}
+Samples_metadata <- read.csv(
+  file = paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Metadata/Experimental_metadata.txt', sep = ''),
+  sep = '\t'
+)
+```
+
+## - Subsetting samples with both ExVivo Drug Response and RNA information
+
+```{r}
+# Get samples with RNA data
+Samples_with_RNAData <- unique(DrugResponse_Data$dbgap_rnaseq_sample)
+
+# Filter raw counts for samples with RNA and drug respone data
+RawCountsFiltered <- RawCounts[,colnames(RawCounts) %in% Samples_with_RNAData]
+
+# Filter sample metadata for samples with RNA data
+Samples_metadata <- Samples_metadata %>% 
+  filter(dbgap_rnaseq_sample %in% colnames(RawCountsFiltered))
+
+# Set row names of sample metadata to be the sample names
+rownames(Samples_metadata) <- Samples_metadata$dbgap_rnaseq_sample
+
+# Reorder rows of sample metadata to match column order of filtered raw counts
+Samples_metadata <- Samples_metadata[colnames(RawCountsFiltered),]
+
+# Discard drug response data for samples not contained in the RNAseq dataset
+DrugResponse_Data <- DrugResponse_Data %>% 
+  filter(dbgap_rnaseq_sample %in% rownames(Samples_metadata))
+```
+
+### - Dropping samples/drugs with unclear response or poorly screened
+
+```{r}
+# Get list of drugs
+Drug_list <- unique(DrugResponse_Data$inhibitor)
+
+# Initialize dataframe to store number of samples tested for each drug
+Drugs_number_samples <- data.frame(row.names = Drug_list)
+
+# Count number of samples tested for each drug
+for (drug in Drug_list) {
+  
+  Drugs_number_samples[drug,'Numbers'] <- nrow(DrugResponse_Data[DrugResponse_Data$inhibitor == drug,])
+  
+}
+
+# Filter out drugs tested on 10 or fewer samples
+Drug_list_filtered <- rownames(Drugs_number_samples %>% filter(Numbers >= 10))
+
+# Set AUC thresholds for drug response classification
+AUC_lower_cutoff <- 0.30 * max(DrugResponse_Data$auc)
+AUC_higher_cutoff <- 0.70 * max(DrugResponse_Data$auc)
+
+# Initialize dataframe to store drug response classification
+DrugResponse_classification <- data.frame(row.names = unique(DrugResponse_Data$dbgap_rnaseq_sample))
+
+# Classify drug response for each drug
+for (drug in Drug_list_filtered) {
+  
+  # Select data for current drug
+  DrugResponse_Data_SelectiveInhi <- DrugResponse_Data %>% filter(inhibitor == drug)
+
+  # Rank AUC values  
+  DrugResponse_Data_SelectiveInhi[,'AUC_rank'] <- percent_rank((DrugResponse_Data %>% filter(inhibitor == drug))$auc)
+
+  # Classify top 30% as 'Resistant' and bottom 30% as 'Responsive'
+  DrugResponse_Data_SelectiveInhi_Top30 <- DrugResponse_Data_SelectiveInhi %>% filter(auc > AUC_higher_cutoff)
+  DrugResponse_Data_SelectiveInhi_Bot30 <- DrugResponse_Data_SelectiveInhi %>% filter(auc < AUC_lower_cutoff)
+
+  DrugResponse_classification[DrugResponse_Data_SelectiveInhi_Top30$dbgap_rnaseq_sample, drug] <- 'Resistant' # The IC50 is higher for drugs with high AUC
+  DrugResponse_classification[DrugResponse_Data_SelectiveInhi_Bot30$dbgap_rnaseq_sample, drug] <- 'Responsive' # The IC50 is lower for drugs with low AUC
+
+}
+
+# Remove drugs with fewer than 5 'Responsive' or 'Resistant' samples
+DrugResponse_classification <- DrugResponse_classification[,colSums(DrugResponse_classification == 'Responsive', na.rm = T) >= 5 & colSums(DrugResponse_classification == 'Resistant', na.rm = T) >= 5]
+```
+
+### - Saving sample-drug response classification
+
+```{r}
+# Create a dataframe of drugs that passed the threshold
+list_drugs_passing_threshold <- data.frame(Drug = colnames(DrugResponse_classification), row.names = NULL)
+
+# Write the list of drugs that passed the threshold to a CSV file
+write.csv(x = list_drugs_passing_threshold, 
+          file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Sample_Selection/Drugs_passing_threshold.csv'), 
+          quote = FALSE, 
+          row.names = FALSE)
+
+# Write the drug response classification to a CSV file
+write.csv(x = DrugResponse_classification, 
+          file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Sample_Selection/SampleDrug_response_classification.csv'), 
+          quote = FALSE, 
+          row.names = TRUE)
+```
+
+### - Drug response distribution
+
+Here we plot ExVivo drug response distribution before and after filtering out samples with unclear response
+
+```{r}
+# Loop over each drug in the classification
+for (drug in colnames(DrugResponse_classification)) {
+  # Filter data for the current drug
+  DrugResponse_Data_SelectiveInhi <- DrugResponse_Data[DrugResponse_Data$inhibitor == drug,]
+  
+  # Copy filtered data to another variable
+  ExVivo_Drug_Response <- DrugResponse_Data_SelectiveInhi
+  
+  # Further filter data to include only samples that are not NA in the classification
+  ExVivo_Drug_Response_filtered <- DrugResponse_Data_SelectiveInhi[DrugResponse_Data_SelectiveInhi$dbgap_rnaseq_sample %in% rownames(DrugResponse_classification)[!is.na(DrugResponse_classification[,drug])],]
+  
+  # Set up PNG output
+  png(filename = paste0(figures_folder, '/Not_Included/ExVivo_Inhibitor_Response_Distributions/', drug, '.png'), 
+      res = 300, units = 'in', width = 6, height = 3.5)
+  
+  # Create histogram and density plot for all samples
+  plot1 <- ggplot(ExVivo_Drug_Response, aes(x=auc)) + 
+    geom_histogram(aes(y=..density..), colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666") + ggtitle(label = 'ALL samples')
+  
+  # Create histogram and density plot for filtered samples
+  plot2 <- ggplot(ExVivo_Drug_Response_filtered, aes(x=auc)) + 
+    geom_histogram(aes(y=..density..), colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#66B2FF") + ggtitle(label = 'Filtered samples')
+  
+  # Merge the two plots
+  plot_merged <- ggarrange(plot1, plot2, ncol = 2, nrow = 1)
+  
+  # Print the merged plot
+  print(plot_merged)
+  
+  # Close the PNG device
+  dev.off()
+}
+```
+
+Here we break down ExVivo drug response for each drug in the number of samples that either responded or not to the drug
+
+### - N. Resistant vs Responsive
+
+```{r}
+# Initialize dataframe to store final drug selection
+Finaldrugs_selection <- data.frame(row.names = colnames(DrugResponse_classification))
+
+# Calculate number of 'Resistant' and 'Responsive' samples and their ratio for each drug
+for (drug in colnames(DrugResponse_classification)) {
+  Finaldrugs_selection[drug, 'Resistant'] <- sum(DrugResponse_classification[,drug] == 'Resistant', na.rm = T)
+  Finaldrugs_selection[drug, 'Responsive'] <- sum(DrugResponse_classification[,drug] == 'Responsive', na.rm = T)
+  Finaldrugs_selection[drug, 'RatioResponsiveResistant'] <- Finaldrugs_selection[drug, 'Responsive'] / Finaldrugs_selection[drug, 'Resistant']
+}
+
+# Sort drugs by ratio of 'Responsive' to 'Resistant' samples
+Finaldrugs_selection <- Finaldrugs_selection[order(-Finaldrugs_selection$RatioResponsiveResistant),]
+
+# Rank drugs by their ratio of 'Responsive' to 'Resistant' samples
+Finaldrugs_selection$Ranking <- 1:nrow(Finaldrugs_selection)
+
+# Write final drug selection to CSV file
+write.csv(Finaldrugs_selection, file = paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Sample_Selection/ExVivo_Inhibitor_N_Responsive_vs_Resistant.csv', sep = ''))
+```
+
+# 3) DGE for identification of signatures of response/resistance
+
+Knowing which samples responded to which drug we can now compare their transcriptome prior treatment to identify signatures associated with response and/or resistance
+
+## - Generating Summarised Experiment file containing RNASeq count mat and metadata
+
+```{r}
+# Read the raw counts data from a tab-separated file
+RawCounts <- read.csv(
+  file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Counts/Raw_counts/Grouped/raw_countmat.txt'),
+  sep = '\t', 
+  row.names = 'stable_id'
+)
+
+# Extract the metadata for genes
+Genes_metadata <- RawCounts[,c(1:3)]
+Genes_metadata$Ensembl_ID <- rownames(Genes_metadata)
+
+# Remove unnecessary columns from the raw counts data
+RawCounts[,c('display_label', 'description', 'biotype')] <- NULL
+
+# Read the samples metadata from a tab-separated file
+Samples_metadata <- read.csv(
+  file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Metadata/Experimental_metadata.txt'),
+  sep = '\t'
+)
+
+# Filter the samples metadata for samples present in the raw counts data
+Samples_metadata <- Samples_metadata %>% dplyr::filter(dbgap_rnaseq_sample %in% colnames(RawCounts))
+
+# Set the row names of the samples metadata and reorder the rows to match the raw counts data
+rownames(Samples_metadata) <- Samples_metadata$dbgap_rnaseq_sample
+Samples_metadata <- Samples_metadata[colnames(RawCounts),]
+
+# Add a 'Condition' column to the samples metadata
+Samples_metadata$Condition <- 'De novo AML'
+Samples_metadata[rownames(Samples_metadata %>% dplyr::filter(rna_control %in% c('Healthy pooled CD34+', "Healthy Individual CD34+"))),'Condition'] <- 'Control'
+
+# Read the clinical metadata from a tab-separated file
+Clinical_metadata <- read.csv(
+  file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Metadata/Clinical_metadata.txt'),
+  sep = '\t'
+)
+
+# Read the drug response data from a tab-separated file
+DrugResponse_Data <- read.csv(
+  file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/DrugResponse/ExVivo_DrugResponse.txt'),
+  sep = '\t'
+)
+```
+
+### - SE Object with all samples
+
+```{r}
+# Create a SummarizedExperiment object
+se <- SummarizedExperiment(
+  assays = SimpleList(counts = as.matrix(RawCounts)), 
+  colData = Samples_metadata, 
+  rowData = Genes_metadata
+)
+```
+
+### - SE Object with RNA and ExVivo testing info
+
+```{r}
+# Filter the SummarizedExperiment object to keep only the columns present in the DrugResponse_Data dataframe
+se_drugtest <- se[,grep(TRUE,colnames(se) %in% unique(DrugResponse_Data$dbgap_rnaseq_sample))]
+
+# Save the filtered SummarizedExperiment object to a file
+saveRDS(se_drugtest, paste0(data_folder, "/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Counts/BeatAML2022_SE_drugtested_samples.rds"))
+```
+
+## - Running DESeq2 for all drugs which passed selection
+
+```{r}
+# Loop over each drug in the list
+for (drug in list_drugs_passing_threshold$Drug) {
+  
+  # Filter the data for the current drug
+  se_drugtest_filtered <- se_drugtest[, colnames(se_drugtest) %in% rownames(DrugResponse_classification[is.na(DrugResponse_classification[,drug]) == FALSE,])]
+  
+  # Add drug response to the filtered data
+  se_drugtest_filtered$DrugResponse <- DrugResponse_classification[is.na(DrugResponse_classification[,drug]) == FALSE,][colnames(se_drugtest_filtered),drug]
+  
+  # Perform differential expression analysis
+  dds <- DESeqDataSet(se_drugtest_filtered, design = ~ DrugResponse)
+  dds <- estimateSizeFactors(dds)
+  keep <- rowSums(counts(dds, normalized=TRUE) >= 5 ) >= 3
+  dds <- dds[keep,]
+  dds <- DESeq(dds)
+  
+  # Check the number of unique and duplicate gene labels
+  table(isUnique(rowData(dds)$display_label))
+  # Get the rows with duplicate gene labels
+  rowData(dds)[grep(FALSE,isUnique(rowData(dds)$display_label)),]
+  # Convert the rows with duplicate gene labels to a data frame
+  df <- as.data.frame(rowData(dds)[grep(FALSE,isUnique(rowData(dds)$display_label)),])
+  # Calculate the maximum absolute value of baseMean for each gene label
+  maxabs <- with(df, aggregate(baseMean, list(display_label=display_label), FUN=function(x) max(abs(x))))
+  # Merge the maximum absolute values with the original data frame
+  df <- merge(df, maxabs, by="display_label")
+  # Keep only the rows with the maximum absolute value of baseMean for each gene label
+  df_unique <- subset(df, abs(baseMean) == x)
+  # Remove duplicate rows
+  df_unique <- df_unique[!duplicated(df_unique$display_label), ]
+  # Combine the unique Ensembl IDs from the original and filtered data
+  unique_genes <- c(rowData(dds)[grep(TRUE,isUnique(rowData(dds)$display_label)),]$Ensembl_ID,
+                    df_unique$Ensembl_ID)
+  
+  dds_unique <- dds[unique_genes,]
+  
+  # Perform differential expression analysis with different fit types
+  dds_parametric <- DESeq(dds_unique, fitType = "parametric")
+  dds_local <- DESeq(dds_unique, fitType = "local")
+  
+  # Choose the best fit type
+  Best_scoring_fitType <- ifelse(median(abs(log(mcols(dds_parametric)$dispGeneEst)-log(mcols(dds_parametric)$dispFit))) < median(abs(log(mcols(dds_local)$dispGeneEst)-log(mcols(dds_local)$dispFit))), 'parametric', 'local')
+  
+  # Perform differential expression analysis with the best fit type
+  dds <- DESeq(dds_unique, fitType = Best_scoring_fitType)
+  
+  # Get the results
+  res <- results(dds, contrast=c("DrugResponse", "Resistant", "Responsive"), filterFun = ihw)
+
+  # Shrink the log2 fold changes
+  resAsh <- lfcShrink(dds, coef="DrugResponse_Responsive_vs_Resistant", res = res, type = 'ashr')
+  
+  # Rank the genes
+  resAsh_df <- as.data.frame(resAsh) %>% add_column(symbol = rowData(dds)[rownames(resAsh),'display_label'], .before = 'baseMean')
+  resAsh_df$rank <- -1*log10(resAsh_df$padj) * resAsh_df$log2FoldChange
+  
+  dir.create(paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug), showWarnings = F)
+  
+  # Write the results to CSV files
+  write.csv(resAsh_df, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_ALL_DEGs_LFC_Ashr.csv'), row.names = TRUE, quote = FALSE)
+  
+  # Filter the results for significant genes and write to CSV files
+  res_significant <- resAsh_df %>% arrange(-rank) 
+  write.csv(res_significant, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_ALL_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
+  
+  res_significant <- resAsh_df %>% dplyr::filter(padj < 0.05) %>% arrange(-rank) 
+  write.csv(res_significant, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_padj_significant_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
+  
+  # Filter the results for upregulated and downregulated genes and write to CSV file
+  res_significant_UP <- res_significant %>% dplyr::filter(log2FoldChange >= 0) %>% dplyr::arrange(padj) 
+  write.csv(res_significant_UP, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_upregulated_padj_significant_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
+  
+  res_significant_DOWN <- res_significant %>% dplyr::filter(log2FoldChange < 0) %>% dplyr::arrange(padj) 
+  write.csv(res_significant_DOWN, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_downregulated_padj_significant_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
+
+}
+```
+

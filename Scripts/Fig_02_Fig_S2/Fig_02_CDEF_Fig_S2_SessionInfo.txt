@@ -1,0 +1,67 @@
+R version 4.3.3 (2024-02-29)
+Platform: aarch64-apple-darwin20 (64-bit)
+Running under: macOS Sonoma 14.3.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.3-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.11.0
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+time zone: Europe/London
+tzcode source: internal
+
+attached base packages:
+[1] stats4    grid      stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] plotly_4.10.4               apeglm_1.24.0               ashr_2.2-63                 IHW_1.30.0                 
+ [5] DESeq2_1.42.1               SummarizedExperiment_1.32.0 MatrixGenerics_1.14.0       matrixStats_1.3.0          
+ [9] tximport_1.30.0             R.utils_2.12.3              R.oo_1.26.0                 R.methodsS3_1.8.2          
+[13] lubridate_1.9.3             forcats_1.0.0               dplyr_1.1.4                 purrr_1.0.2                
+[17] readr_2.1.5                 tidyr_1.3.1                 tibble_3.2.1                tidyverse_2.0.0            
+[21] GenomicFeatures_1.54.4      AnnotationDbi_1.64.1        Biobase_2.62.0              GenomicRanges_1.54.1       
+[25] GenomeInfoDb_1.38.8         IRanges_2.36.0              S4Vectors_0.40.2            BiocGenerics_0.48.1        
+[29] EnhancedVolcano_1.20.0      ggrepel_0.9.5               reticulate_1.36.1           fgsea_1.28.0               
+[33] escape_1.12.0               ggplot2_3.5.1               ggsci_3.0.3                 scales_1.3.0               
+[37] yarrr_0.1.5                 circlize_0.4.16             BayesFactor_0.9.12-4.7      Matrix_1.6-5               
+[41] coda_0.19-4.1               jpeg_0.1-10                 RColorBrewer_1.1-3          unikn_1.0.0                
+[45] ComplexHeatmap_2.18.0       stringr_1.5.1              
+
+loaded via a namespace (and not attached):
+  [1] BiocIO_1.12.0               bitops_1.0-7                filelock_1.0.3              lpsymphony_1.30.0          
+  [5] graph_1.80.0                XML_3.99-0.16.1             lifecycle_1.0.4             mixsqp_0.3-54              
+  [9] doParallel_1.0.17           MASS_7.3-60.0.1             lattice_0.22-6              backports_1.4.1            
+ [13] magrittr_2.0.3              rmarkdown_2.26              yaml_2.3.8                  cowplot_1.1.3              
+ [17] pbapply_1.7-2               DBI_1.2.2                   abind_1.4-5                 zlibbioc_1.48.2            
+ [21] msigdbr_7.5.1               RCurl_1.98-1.14             rappdirs_0.3.3              GenomeInfoDbData_1.2.11    
+ [25] irlba_2.3.5.1               GSVA_1.50.5                 MatrixModels_0.5-3          annotate_1.80.0            
+ [29] DelayedMatrixStats_1.24.0   codetools_0.2-20            DelayedArray_0.28.0         xml2_1.3.6                 
+ [33] tidyselect_1.2.1            shape_1.4.6.1               farver_2.1.1                UCell_2.6.2                
+ [37] ScaledMatrix_1.10.0         BiocFileCache_2.10.2        rmdformats_1.0.4            GenomicAlignments_1.38.2   
+ [41] jsonlite_1.8.8              GetoptLong_1.0.5            BiocNeighbors_1.20.2        ggridges_0.5.6             
+ [45] iterators_1.0.14            bbmle_1.0.25.1              foreach_1.5.2               tools_4.3.3                
+ [49] progress_1.2.3              Rcpp_1.0.12                 glue_1.7.0                  SparseArray_1.2.4          
+ [53] xfun_0.43                   HDF5Array_1.30.1            numDeriv_2016.8-1.1         withr_3.0.0                
+ [57] BiocManager_1.30.22         fastmap_1.1.1               rhdf5filters_1.14.1         fansi_1.0.6                
+ [61] truncnorm_1.0-9             digest_0.6.35               rsvd_1.0.5                  timechange_0.3.0           
+ [65] R6_2.5.1                    colorspace_2.1-0            biomaRt_2.58.2              RSQLite_2.3.6              
+ [69] utf8_1.2.4                  generics_0.1.3              data.table_1.15.4           rtracklayer_1.62.0         
+ [73] htmlwidgets_1.6.4           prettyunits_1.2.0           httr_1.4.7                  S4Arrays_1.2.1             
+ [77] pkgconfig_2.0.3             gtable_0.3.5                blob_1.2.4                  SingleCellExperiment_1.24.0
+ [81] XVector_0.42.0              htmltools_0.5.8.1           bookdown_0.39.1             GSEABase_1.64.0            
+ [85] clue_0.3-65                 png_0.1-8                   knitr_1.45                  rstudioapi_0.16.0          
+ [89] tzdb_0.4.0                  reshape2_1.4.4              rjson_0.2.21                curl_5.2.1                 
+ [93] bdsmatrix_1.3-7             cachem_1.0.8                rhdf5_2.46.1                GlobalOptions_0.1.2        
+ [97] parallel_4.3.3              restfulr_0.0.15             pillar_1.9.0                vctrs_0.6.5                
+[101] slam_0.1-50                 BiocSingular_1.18.0         dbplyr_2.5.0                beachmat_2.18.1            
+[105] xtable_1.8-4                cluster_2.1.6               evaluate_0.23               invgamma_1.1               
+[109] locfit_1.5-9.9              mvtnorm_1.2-4               cli_3.6.2                   compiler_4.3.3             
+[113] Rsamtools_2.18.0            rlang_1.1.3                 crayon_1.5.2                SQUAREM_2021.1             
+[117] fdrtool_1.2.17              labeling_0.4.3              emdbook_1.3.13              plyr_1.8.9                 
+[121] stringi_1.8.3               viridisLite_0.4.2           BiocParallel_1.36.0         babelgene_22.9             
+[125] munsell_0.5.1               Biostrings_2.70.3           lazyeval_0.2.2              hms_1.1.3                  
+[129] patchwork_1.2.0             sparseMatrixStats_1.14.0    bit64_4.0.5                 Rhdf5lib_1.24.2            
+[133] KEGGREST_1.42.0             broom_1.0.5                 memoise_2.0.1               fastmatch_1.1-4            
+[137] bit_4.0.5                  

@@ -1,0 +1,979 @@
+---
+title: "Figure 07 - Panels ACDEF + FigS7"
+output: 
+  rmdformats::robobook:
+    lightbox: true
+    fig_caption: true
+---
+
+<style type="text/css">
+  body{
+  font-size: 10pt;
+}
+</style>
+
+# 1) Setup
+
+## - Defining work directory
+
+In this section, we define the working directory for the R Markdown document.
+
+```{r setup, include=TRUE}
+# Get the path of the current script
+# Then get the parent directory of the parent directory of the parent directory
+local_wd_folder <- dirname(dirname(dirname(rstudioapi::getSourceEditorContext()$path)))
+
+# Set the root directory for knitr to the local working directory
+knitr::opts_knit$set(root.dir = local_wd_folder)
+```
+
+## - Defining input data and output directories
+
+Here, we define the directories for input data and output files.
+
+```{r}
+# Get the directory of the current script
+script_folder <- dirname(rstudioapi::getSourceEditorContext()$path)
+
+# Define the data folder and output folder
+data_folder <- './Data'
+#results_folder <- './Results'
+figures_folder <- './Figures'
+
+dir.create(paste(data_folder, '/RandomForest/Results/Clustering/K5', sep = ''), showWarnings = FALSE)
+```
+
+## - Setting seed
+
+Setting a seed ensures that any random processes are reproducible.
+
+```{r}
+# Set a seed for reproducibility
+set.seed(123)
+```
+
+## - Packages installation (optional)
+
+In this section, we ensure that all necessary packages are installed.
+
+```{r}
+# Ensure BiocManager is available for installation of Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+#BiocManager::install(version = "3.18")
+
+# Define a list of required packages used in this script
+packages_required <- c("ggplot2", "dplyr", "coin", "randomForest", "rstatix",
+                       "Boruta", "rattle", "caret", "ROCR", "pROC", "dendextend")
+
+# Identify any required packages that are not installed
+packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
+
+# Install any uninstalled packages
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+```
+
+## - Loading packages
+
+Here, we load the necessary packages for our analysis.
+
+```{r message=FALSE, warning=FALSE}
+library(ggplot2, quietly = TRUE)
+library(randomForest, quietly = TRUE)
+library(dplyr, quietly = TRUE)
+library(coin, quietly = TRUE)
+library(rstatix, quietly = TRUE)
+library(Boruta, quietly = TRUE)
+library(rattle, quietly = TRUE)
+library(caret, quietly = TRUE)
+library(ROCR, quietly = TRUE)
+library(pROC, quietly = TRUE)
+library(dendextend, quietly = TRUE)
+```
+
+## - Loading palettes
+
+In this section, we load additional color palettes and define some custom ones.
+
+```{r message=FALSE, warning=FALSE}
+# Load additional colour palette packages
+library(unikn, quietly = TRUE)
+library(RColorBrewer, quietly = TRUE)
+library(yarrr, quietly = TRUE)
+library(scales, quietly = TRUE)
+library(ggsci, quietly = TRUE)
+
+# Define a set of custom color palettes from the unikn package
+mix_1 <- usecol(pal = c(Karpfenblau, "white", Peach), n = 15)
+mix_2 <- usecol(pal = c(rev(pal_seeblau), "white", pal_pinky))
+mix_3 <- usecol(pal = c(rev(pal_bordeaux), "white", pal_petrol), n = 15)
+
+# Display the custom palettes
+seecol(list(mix_1, mix_2, mix_3), col_brd = "white", lwd_brd = 4, title = "Comparing palettes mixed from unikn colors", pal_names = c("mix_1", "mix_2", "mix_3"))
+
+# Define a second set of custom palettes from the RColorBrewer and yarrr packages
+brew_mix <- usecol(c(rev(brewer.pal(n = 4, name = "Reds")), "white", brewer.pal(n = 4, name = "Blues")), n = 13)
+brew_ext <- usecol(brewer.pal(n = 11, name = "Spectral"), n = 12)
+yarrr_mix <- usecol(c(piratepal("nemo"), piratepal("bugs")))
+yarrr_mod <- usecol(c(piratepal("ipod")), n = 9)
+
+# Display the second set of custom palettes
+seecol(pal = list(brew_mix, brew_ext, yarrr_mix, yarrr_mod), col_brd = "white", lwd_brd = 2, title = "Using usecol() and seecol() to mix and modify palettes", pal_names = c("brew_mix", "brew_ext", "yarrr_mix", "yarrr_mod"))
+
+# Define additional custom palettes from the scales package
+natjournals_palette <- pal_npg("nrc")(10)
+```
+
+## - Log Session Info
+
+Finally, we log the session information for reproducibility.
+
+```{r message=TRUE, warning=TRUE}
+# Write the session information to a text file
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_07_ACDEF_Fig_S7_SessionInfo.txt'))
+
+# Print the session information
+sessionInfo()
+```
+
+# 2) Loading input files
+
+## - Loading K2 RF clusters
+
+```{r}
+RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Clustering/K2/RF_K2_Clustered_Metadata.csv', 
+                                    sep = ''), row.names = 'Patient.ID')
+```
+
+# 3) Vizome BeatAML drug responses heatmap - K2 : Fig S7
+
+```{r}
+BeatAML_drug_response <- as.matrix(RF_cluster_metadata[,91:177])
+
+colnames(BeatAML_drug_response) <- c(
+                                "A-674563",
+                                "ABT-737",
+                                "Afatinib (BIBW-2992)",
+                                "AT7519",
+                                "Axitinib (AG-013736)",
+                                "AZD1152-HQPA (AZD2811)",
+                                "AZD1480",
+                                "Bay 11-7085",
+                                "BEZ235",
+                                "Birinapant",
+                                "Bortezomib (Velcade)",
+                                "Bosutinib (SKI-606)",
+                                "Cabozantinib",
+                                "CI-1040 (PD184352)",
+                                "Crenolanib",
+                                "Crizotinib (PF-2341066)",
+                                "CYT387",
+                                "Dasatinib",
+                                "Doramapimod (BIRB 796)",
+                                "Dovitinib (CHIR-258)",
+                                "Elesclomol",
+                                "Entospletinib (GS-9973)",
+                                "Entrectinib",
+                                "Flavopiridol",
+                                "Foretinib (XL880)",
+                                "GDC-0941",
+                                "Gilteritinib",
+                                "GSK-1838705A",
+                                "GW-2580",
+                                "H-89",
+                                "Ibrutinib (PCI-32765)",
+                                "Idelalisib",
+                                "Indisulam",
+                                "INK-128",
+                                "JAK Inhibitor I",
+                                "JNJ-28312141",
+                                "JNJ-38877605",
+                                "JQ1",
+                                "KI20227",
+                                "KU-55933",
+                                "KW-2449",
+                                "Lenalidomide",
+                                "Lenvatinib",
+                                "Linifanib (ABT-869)",
+                                "Masitinib (AB-1010)",
+                                "MGCD-265",
+                                "Midostaurin",
+                                "MK-2206",
+                                "MLN120B",
+                                "Neratinib (HKI-272)",
+                                "NF-kB Activation Inhibitor",
+                                "Nutlin 3a",
+                                "NVP-ADW742",
+                                "NVP-TAE684",
+                                "OTX-015",
+                                "Panobinostat",
+                                "PD173955",
+                                "Pelitinib (EKB-569)",
+                                "Perhexiline maleate",
+                                "PH-797804",
+                                "PHA-665752",
+                                "PI-103",
+                                "Ponatinib (AP24534)",
+                                "PP242",
+                                "PRT062607",
+                                "Quizartinib (AC220)",
+                                "RAF265 (CHIR-265)",
+                                "Ralimetinib (LY2228820)",
+                                "Ranolazine",
+                                "Rapamycin",
+                                "Regorafenib (BAY 73-4506)",
+                                "S31-201",
+                                "Selinexor",
+                                "Selumetinib (AZD6244)",
+                                "SNS-032 (BMS-387032)",
+                                "Sorafenib",
+                                "Sunitinib",
+                                "Tivozanib (AV-951)",
+                                "Tofacitinib (CP-690550)",
+                                "Tozasertib (VX-680)",
+                                "Trametinib (GSK1120212)",
+                                "Vandetanib (ZD6474)",
+                                "Vargetef",
+                                "Vatalanib (PTK787)",
+                                "Volasertib (BI-6727)",
+                                "VX-745",
+                                "Tanespimycin (17-AAG)")
+
+Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
+
+Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster, 
+                                         levels=c('C1',
+                                                  'C2'))
+
+colors_annotation <-  list(RF_Cluster = c('C1' = '#793F0B',
+                                          'C2' = '#0B544B'))
+
+row_anno <- rowAnnotation(df=Identity, col = colors_annotation, 
+                        gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(5, "mm"),
+                        show_annotation_name = F, show_legend = FALSE,
+                        annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
+
+breaks_val <- seq(from = 0, to = 1, length.out = 14)
+col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
+
+HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response, 
+        name = 'ssGSEA Score',
+        row_split = RF_cluster_metadata$RF_Cluster, 
+        left_annotation  = row_anno,
+        col = col_heatmap_guide, 
+        rect_gp = gpar(col = "black", lwd = 0.05),
+        cluster_row_slices = F,
+        column_title_gp = gpar(fontsize=14, fontface='bold'),
+        row_names_gp = gpar(fontsize=8), 
+        cluster_rows = T,
+        column_names_gp = gpar(fontsize=8), 
+        show_heatmap_legend = T,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_width = unit(5, "cm")),
+        row_names_side = 'right')
+
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+png(filename = paste(figures_folder, '/Supplemental/Fig_S7.png', sep = ''), units = "cm", width = 30, height = 20, res = 300)
+
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+invisible(dev.off())
+```
+
+# 4) RandomForest Subclustering
+
+## - Loading RandomForest model
+
+```{r}
+model <- readRDS(file = paste(data_folder, '/RandomForest/Results/Model/RF_Classification_Model.RDS', sep = ''))
+```
+
+## - Analysis of RF model
+
+### - Extracting proximity matrix for distance computation and MDS similarity evaluation
+
+```{r}
+distance.matrix <- dist(1-model$proximity)
+
+mds.stuff <- cmdscale(distance.matrix, eig = TRUE, x.ret = TRUE)
+mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100, 1)
+mds.values <- mds.stuff$points
+mds.data <- data.frame(Sample=rownames(mds.values),
+                       X= mds.values[,1],
+                       Y= mds.values[,2])
+
+ggplot(data = mds.data, aes(x = X, y = Y, label=Sample)) + 
+  geom_text(aes(color=Sample)) +
+  theme_bw() +
+  xlab(paste("MDS1 - ", mds.var.per[1], "%", sep="")) +
+  ylab(paste("MDS2 - ", mds.var.per[2], "%", sep="")) +
+  ggtitle(label = "MDS plot", subtitle = "(1 - Random Forest Proximities)") + theme(legend.position = 'bottom')
+
+```
+
+### - Clustering K = 5
+
+#### - Hierarchical clustering on distance matrix : Panel A
+
+```{r}
+dendro <- stats::hclust(distance.matrix, method = "ward.D2") %>% as.dendrogram %>% ladderize  %>% color_branches(k = 5, col = c('#C67942', '#E0B090', '#87551B', '#7CB7B0', '#539690')) %>% color_labels(k = 5, col = c('#C67942', '#E0B090', '#87551B', '#7CB7B0', '#539690'))
+
+plot(dendro, axes=F)
+par(lwd=3)
+
+#
+
+
+Hierchical_clusters_K5 <- sort(cutree(dendro, k = 5))
+
+Hierarchical_clustering_K5 <- data.frame(row.names = rownames(RF.metadata))
+Hierarchical_clustering_K5$Patient.ID <- rownames(Hierarchical_clustering_K5)
+
+for (ID in Hierarchical_clustering_K5$Patient.ID) {
+  
+Hierarchical_clustering_K5[ID,'Cluster'] <- Hierchical_clusters_K5[[ID]]
+
+}
+
+Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['671', 'Cluster'],'Cluster_annotated'] <- 'C1A: CD34- HSC/MPP primed'
+Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['543', 'Cluster'],'Cluster_annotated'] <- 'C1B: CD34+ HSC/MPP primed'
+Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['544', 'Cluster'],'Cluster_annotated'] <- 'C1C: Myeloid Prog. primed'
+Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['303', 'Cluster'],'Cluster_annotated'] <- 'C2A: Promonocyte primed'
+Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['55', 'Cluster'],'Cluster_annotated'] <- 'C2B: Monocyte primed'
+
+mds.data.Hierarchical_K5_clustered <- mds.data
+
+mds.data.Hierarchical_K5_clustered$Cluster <- Hierarchical_clustering_K5$Cluster_annotated
+
+cols <- c('C1B: CD34+ HSC/MPP primed' = '#C67942', 'C1C: Myeloid Prog. primed' = '#E0B090', 'C1A: CD34- HSC/MPP primed' = '#87551B', 
+          'C2A: Promonocyte primed' = '#7CB7B0', 'C2B: Monocyte primed' = '#539690')
+
+plot.Hierarchical_clusters_K5 <- ggplot(data = mds.data.Hierarchical_K5_clustered, aes(x = X, y = Y, label=Sample, color=Cluster)) + 
+  geom_point(aes(color=Cluster, fill=Cluster), shape = 21, alpha = 1, size = 2.5) +
+  theme_linedraw(base_line_size = 0.2) +
+  stat_ellipse(data = mds.data.Hierarchical_K5_clustered, geom = "polygon",
+               aes(fill = Cluster), alpha = 0.15, linetype = 2) +
+  xlab("MDS1") +
+  ylab("MDS2") +
+  ggtitle(label = "") +
+  scale_colour_manual(
+    values = cols,
+    aesthetics = c("colour", "fill")
+  ) + theme(legend.position = 'none',
+            axis.title.x = element_text(family='Helvetica', size=12, face = 'bold', vjust = 0),
+            axis.title.y = element_text(family='Helvetica', size=12, face = 'bold', vjust = +3))
+
+print(plot.Hierarchical_clusters_K5)
+
+png(filename = paste(figures_folder, '/Fig_07/Panel_A.png', sep = ''), units = "cm", width = 14, height = 14, res = 300)
+
+print(plot.Hierarchical_clusters_K5)
+
+invisible(dev.off())
+
+#
+
+plot.Hierarchical_clusters_K5_labelled <- plot.Hierarchical_clusters_K5 + geom_label_repel(aes(label = Sample, color=Cluster),
+                  box.padding   = 0.65, 
+                  point.padding = 0.1, size = 2,
+                  segment.color = 'grey70', max.overlaps = 15)
+
+print(plot.Hierarchical_clusters_K5_labelled) 
+
+#
+
+RF.metadata.hierarchical_clustering_K5 <- RF.metadata
+RF.metadata.hierarchical_clustering_K5[Hierarchical_clustering_K5$Patient.ID,'RF_Cluster'] <- Hierarchical_clustering_K5$Cluster_annotated
+
+RF.metadata.hierarchical_clustering_K5 <- RF.metadata.hierarchical_clustering_K5 %>% add_column(.before = 'Gender', 'Patient.ID' = rownames(RF.metadata.hierarchical_clustering_K5))
+
+RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C1A: CD34- HSC/MPP primed')),'RF_Cluster_short'] <- 'C1A'
+RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C1B: CD34+ HSC/MPP primed')),'RF_Cluster_short'] <- 'C1B'
+RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C1C: Myeloid Prog. primed')),'RF_Cluster_short'] <- 'C1C'
+RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C2A: Promonocyte primed')),'RF_Cluster_short'] <- 'C2A'
+RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C2B: Monocyte primed')),'RF_Cluster_short'] <- 'C2B'
+
+RF.metadata.hierarchical_clustering_K5$RF_Cluster_short <- factor(RF.metadata.hierarchical_clustering_K5$RF_Cluster_short)
+
+write_csv(x = RF.metadata.hierarchical_clustering_K5, 
+            file = paste(data_folder, '/RandomForest/Results/Clustering/K5/RF_K5_Clustered_Metadata.csv', sep = ''))
+
+RF.metadata.hierarchical_clustering_K5$Patient.ID <- NULL
+```
+
+#### - Wilcox t-test unpaired - median comparisons : Panel B
+
+Features were retrospectively compared in the identified groupings. Selected features were illustrated via GraphPad (see under ***GraphPad/Fig_07/Panels_B.pzfx***).
+
+```{r}
+RF.metadata.hierarchical_clustering_K5$RF_Cluster <- NULL # We remove this column for the following analysis
+
+RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
+
+for (cluster1 in unique(RF.metadata.hierarchical_clustering_K5_numerised$RF_Cluster_short)) {
+
+RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
+
+  for (cluster2 in unique(RF.metadata.hierarchical_clustering_K5_numerised$RF_Cluster_short)[unique(RF.metadata.hierarchical_clustering_K5_numerised$RF_Cluster_short)!= cluster1]) {
+
+RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
+
+  RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5_numerised %>% filter(RF_Cluster_short == cluster1 | RF_Cluster_short == cluster2)
+  
+  variable_to_compare <- c(colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))])
+  
+  for (variable in colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))-1]) {
+  
+  RF.metadata.hierarchical_clustering_K5_numerised[,variable] <- as.numeric(RF.metadata.hierarchical_clustering_K5_numerised[,variable])
+    
+  }
+  
+  Group_A <- RF.metadata.hierarchical_clustering_K5_numerised %>% dplyr::filter(RF_Cluster_short == cluster1)
+  Group_B <- RF.metadata.hierarchical_clustering_K5_numerised %>% dplyr::filter(RF_Cluster_short == cluster2)
+  
+  wilcox_t_test_results <- data.frame(row.names = colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))-1])
+  
+  for (variable in colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))-1]) {
+    if (((length(unique(RF.metadata.hierarchical_clustering_K5_numerised[,variable]))) == 1) == TRUE) {
+    wilcox_t_test_results[variable,'pval'] <- 1
+    wilcox_t_test_results[variable, paste('Median', cluster1, sep = ' ')] <- median(Group_A[,variable])
+    wilcox_t_test_results[variable, paste('Median', cluster2, sep = ' ')] <- median(Group_B[,variable])
+    wilcox_t_test_results[variable, paste('Min', cluster1, sep = ' ')] <- min(Group_A[,variable])
+    wilcox_t_test_results[variable, paste('Min', cluster2, sep = ' ')] <- min(Group_B[,variable])
+    wilcox_t_test_results[variable, paste('Max', cluster1, sep = ' ')] <- max(Group_A[,variable])
+    wilcox_t_test_results[variable, paste('Max', cluster2, sep = ' ')] <- max(Group_B[,variable])
+    wilcox_t_test_results[variable, paste('Std', cluster1, sep = ' ')] <- sd(Group_A[,variable])
+    wilcox_t_test_results[variable, paste('Std', cluster2, sep = ' ')] <- sd(Group_B[,variable])
+    } else {
+    p <- coin::wilcox_test(formula = get(variable) ~ as.factor(RF_Cluster_short), data=RF.metadata.hierarchical_clustering_K5_numerised, distribution = "exact")
+    wilcox_t_test_results[variable,'pval'] <- coin::pvalue(p)
+    wilcox_t_test_results[variable, paste('Median', cluster1, sep = ' ')] <- median(Group_A[,variable])
+    wilcox_t_test_results[variable, paste('Median', cluster2, sep = ' ')] <- median(Group_B[,variable])
+    wilcox_t_test_results[variable, paste('Min', cluster1, sep = ' ')] <- min(Group_A[,variable])
+    wilcox_t_test_results[variable, paste('Min', cluster2, sep = ' ')] <- min(Group_B[,variable])
+    wilcox_t_test_results[variable, paste('Max', cluster1, sep = ' ')] <- max(Group_A[,variable])
+    wilcox_t_test_results[variable, paste('Max', cluster2, sep = ' ')] <- max(Group_B[,variable])
+    wilcox_t_test_results[variable, paste('Std', cluster1, sep = ' ')] <- sd(Group_A[,variable])
+    wilcox_t_test_results[variable, paste('Std', cluster2, sep = ' ')] <- sd(Group_B[,variable])
+    }
+  }
+  
+  wilcox_t_test_results <- wilcox_t_test_results %>% arrange(pval)
+  
+  write.csv(wilcox_t_test_results, 
+            file = paste(data_folder, '/RandomForest/Results/Clustering/K5/RF_K5_Stats_Wilcox_t_test__',
+                         cluster1, '_vs_', cluster2, '.csv', sep = ''),
+            row.names = T, quote = F)
+  }
+}
+
+RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
+```
+
+# 5) Distribution VanGalen AML signatures enrichment scores : Panel C
+
+## - Loading K5 RF clusters
+
+```{r}
+RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Clustering/K5/RF_K5_Clustered_Metadata.csv', 
+                                    sep = ''), row.names = 'Patient.ID')
+```
+
+```{r}
+VanGalen_celltype_enrichment_scores <- as.matrix(RF_cluster_metadata[,79:86])
+
+colnames(VanGalen_celltype_enrichment_scores) <- c('HSC-like',
+                                     'HSC.Prog-like',
+                                     'Progenitor-like',
+                                     'GMP-like',
+                                     'Promono-like',
+                                     'Monocyte-like',
+                                     'cDC-like',
+                                     'Myeloid-like')
+
+VanGalen_celltype_enrichment_scores <- t(VanGalen_celltype_enrichment_scores)
+
+Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
+
+Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster_short, 
+                                         levels=c('C1A',
+                                                  'C1C',
+                                                  'C1B',
+                                                  'C2A',
+                                                  'C2B'))
+
+colors_annotation <-  list(RF_Cluster = c('C1A' = '#87551B',
+                                        'C1C' = '#E0B090', 
+                                        'C1B' = '#C67942', 
+                                        'C2A' = '#7CB7B0', 
+                                        'C2B' = '#539690'))
+
+col_anno <- HeatmapAnnotation(df=Identity, col = colors_annotation, 
+                        gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(2, "mm"),
+                        show_annotation_name = F, show_legend = FALSE,
+                        annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
+
+breaks_val <- seq(from = 0, to = 1, length.out = 14)
+col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
+
+HMap_vangalen <- Heatmap(VanGalen_celltype_enrichment_scores, 
+        name = 'ssGSEA Score',
+        column_split = RF_cluster_metadata$RF_Cluster_short, top_annotation = col_anno,
+        col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05),
+        column_title_gp = gpar(fontsize=11, fontface='bold'),
+        row_names_gp = gpar(fontsize=10), cluster_column_slices  = F, cluster_rows = F,
+        column_names_gp = gpar(fontsize=10), show_heatmap_legend = F,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_height = unit(5, "cm")),
+        row_names_side = 'right')
+
+draw(HMap_vangalen, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+
+png(filename = paste(figures_folder, '/Fig_07/Panel_C.png', sep = ''), units = "cm", width = 18.62, height = 7, res = 300)
+
+draw(HMap_vangalen, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+invisible(dev.off())
+```
+
+# 6) Vizome BeatAML drug responses heatmap - K5 : Panel D
+
+```{r}
+BeatAML_drug_response <- as.matrix(RF_cluster_metadata[,91:177])
+
+colnames(BeatAML_drug_response) <- c(
+                                "A-674563",
+                                "ABT-737",
+                                "Afatinib (BIBW-2992)",
+                                "AT7519",
+                                "Axitinib (AG-013736)",
+                                "AZD1152-HQPA (AZD2811)",
+                                "AZD1480",
+                                "Bay 11-7085",
+                                "BEZ235",
+                                "Birinapant",
+                                "Bortezomib (Velcade)",
+                                "Bosutinib (SKI-606)",
+                                "Cabozantinib",
+                                "CI-1040 (PD184352)",
+                                "Crenolanib",
+                                "Crizotinib (PF-2341066)",
+                                "CYT387",
+                                "Dasatinib",
+                                "Doramapimod (BIRB 796)",
+                                "Dovitinib (CHIR-258)",
+                                "Elesclomol",
+                                "Entospletinib (GS-9973)",
+                                "Entrectinib",
+                                "Flavopiridol",
+                                "Foretinib (XL880)",
+                                "GDC-0941",
+                                "Gilteritinib",
+                                "GSK-1838705A",
+                                "GW-2580",
+                                "H-89",
+                                "Ibrutinib (PCI-32765)",
+                                "Idelalisib",
+                                "Indisulam",
+                                "INK-128",
+                                "JAK Inhibitor I",
+                                "JNJ-28312141",
+                                "JNJ-38877605",
+                                "JQ1",
+                                "KI20227",
+                                "KU-55933",
+                                "KW-2449",
+                                "Lenalidomide",
+                                "Lenvatinib",
+                                "Linifanib (ABT-869)",
+                                "Masitinib (AB-1010)",
+                                "MGCD-265",
+                                "Midostaurin",
+                                "MK-2206",
+                                "MLN120B",
+                                "Neratinib (HKI-272)",
+                                "NF-kB Activation Inhibitor",
+                                "Nutlin 3a",
+                                "NVP-ADW742",
+                                "NVP-TAE684",
+                                "OTX-015",
+                                "Panobinostat",
+                                "PD173955",
+                                "Pelitinib (EKB-569)",
+                                "Perhexiline maleate",
+                                "PH-797804",
+                                "PHA-665752",
+                                "PI-103",
+                                "Ponatinib (AP24534)",
+                                "PP242",
+                                "PRT062607",
+                                "Quizartinib (AC220)",
+                                "RAF265 (CHIR-265)",
+                                "Ralimetinib (LY2228820)",
+                                "Ranolazine",
+                                "Rapamycin",
+                                "Regorafenib (BAY 73-4506)",
+                                "S31-201",
+                                "Selinexor",
+                                "Selumetinib (AZD6244)",
+                                "SNS-032 (BMS-387032)",
+                                "Sorafenib",
+                                "Sunitinib",
+                                "Tivozanib (AV-951)",
+                                "Tofacitinib (CP-690550)",
+                                "Tozasertib (VX-680)",
+                                "Trametinib (GSK1120212)",
+                                "Vandetanib (ZD6474)",
+                                "Vargetef",
+                                "Vatalanib (PTK787)",
+                                "Volasertib (BI-6727)",
+                                "VX-745",
+                                "Tanespimycin (17-AAG)")
+
+Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
+
+Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster_short, 
+                                         levels=c('C1B',
+                                                  'C1C',
+                                                  'C1A',
+                                                  'C2A',
+                                                  'C2B'))
+
+colors_annotation <-  list(RF_Cluster = c('C1A' = '#87551B',
+                                        'C1C' = '#E0B090', 
+                                        'C1B' = '#C67942', 
+                                        'C2A' = '#7CB7B0', 
+                                        'C2B' = '#539690'))
+
+row_anno <- rowAnnotation(df=Identity, col = colors_annotation, 
+                        gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(5, "mm"),
+                        show_annotation_name = F, show_legend = FALSE,
+                        annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
+
+breaks_val <- seq(from = 0, to = 1, length.out = 14)
+col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
+
+dendro <- stats::hclust(dist(t(BeatAML_drug_response)), method = 'ward.D') %>% as.dendrogram %>% ladderize
+
+plot(dendro, axes=F)
+par(lwd=3)
+
+Hierchical_clusters_drugs <- sort(cutree(dendro, k = 3))
+
+drug_df <- data.frame(row.names = names(Hierchical_clusters_drugs))
+
+for (drug in rownames(drug_df)) {
+
+drug_df[drug,'Hierarchical_cluster'] <- Hierchical_clusters_drugs[[drug]]
+
+}
+
+drug_df$Hierarchical_cluster <- factor(drug_df$Hierarchical_cluster, levels = c('1','2','3'))
+
+HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response[,rownames(drug_df)],
+        name = 'ssGSEA Score',
+        row_split = RF_cluster_metadata$RF_Cluster_short,
+        left_annotation  = row_anno,
+        column_split = drug_df$Hierarchical_cluster,
+        col = col_heatmap_guide,
+        rect_gp = gpar(col = "black", lwd = 0.05),
+        cluster_row_slices = F,
+        cluster_column_slices = F,
+        column_title_gp = gpar(fontsize=0, fontface='bold'),
+        row_names_gp = gpar(fontsize=9),
+        column_gap = unit(c(2.5,2.5), "mm"),
+        cluster_rows = T,
+        cluster_columns = T,
+        column_names_gp = gpar(fontsize=9),
+        show_heatmap_legend = F,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_width = unit(5, "cm")),
+        row_names_side = 'right')
+
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom",
+     annotation_legend_side = "bottom")
+
+
+png(filename = paste(figures_folder, '/Fig_07/Panel_D.png', sep = ''), units = "cm", width = 30, height = 22, res = 300)
+
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom",
+     annotation_legend_side = "bottom")
+
+invisible(dev.off())
+```
+
+# 7) Vizome BeatAML drug responses grouped by family heatmap - K5 : Panel E
+
+```{r}
+Drug_families <- read.csv(paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Metadata/Drug_families.txt', sep = ''),
+                          sep = '\t')
+
+Drug_families <- Drug_families %>% filter(inhibitor %in% colnames(BeatAML_drug_response))
+
+Unique_families <- levels(factor(Drug_families$family))[grep(TRUE,table(Drug_families$family) > 1)]
+
+Unique_families_df <- data.frame(row.names = Unique_families)
+
+Drug_families_short_names <- read.csv(paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Metadata/Drug_families_short_names.txt',
+                                            sep = ''),
+                          sep = '\t')
+
+for (unique_family in Unique_families) {
+Unique_families_df[unique_family,'Short_name'] <- (Drug_families_short_names %>% filter(family == unique_family))$synonym
+}
+
+family_sensitivity_score <- data.frame(row.names = rownames(BeatAML_drug_response))
+
+for (unique_family in Unique_families) {
+  
+family_sensitivity_score[,Unique_families_df[unique_family,'Short_name']] <- matrixStats::rowMedians(BeatAML_drug_response[,(Drug_families %>% filter(family == unique_family))$inhibitor])
+
+}
+
+
+Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
+
+Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster_short, 
+                                         levels=c('C1A',
+                                                  'C1C',
+                                                  'C1B',
+                                                  'C2A',
+                                                  'C2B'))
+
+colors_annotation <-  list(RF_Cluster = c('C1A' = '#87551B',
+                                        'C1C' = '#E0B090', 
+                                        'C1B' = '#C67942', 
+                                        'C2A' = '#7CB7B0', 
+                                        'C2B' = '#539690'))
+
+row_anno <- rowAnnotation(df=Identity, col = colors_annotation, 
+                        gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(5, "mm"),
+                        show_annotation_name = F, show_legend = FALSE,
+                        annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
+
+breaks_val <- seq(from = 0, to = 1, length.out = 14)
+col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
+
+
+dendro <- stats::hclust(dist(t(family_sensitivity_score)), method = 'ward.D') %>% as.dendrogram %>% ladderize
+
+plot(dendro, axes=F)
+par(lwd=3)
+
+Hierchical_clusters_drugs <- sort(cutree(dendro, k = 3))
+
+drug_family_df <- data.frame(row.names = names(Hierchical_clusters_drugs))
+
+for (drug_family in rownames(drug_family_df)) {
+  
+drug_family_df[drug_family,'Hierarchical_cluster'] <- Hierchical_clusters_drugs[[drug_family]]
+               
+}
+
+drug_family_df$Hierarchical_cluster <- factor(drug_family_df$Hierarchical_cluster, levels = c('3','1','2'))
+
+
+
+HMap_BeatAMLdrugs <- Heatmap(family_sensitivity_score[,rownames(drug_family_df)], 
+        name = 'ssGSEA Score',
+        row_split = RF_cluster_metadata$RF_Cluster_short, 
+        left_annotation  = row_anno,
+        column_split = drug_family_df$Hierarchical_cluster,
+        col = col_heatmap_guide, 
+        rect_gp = gpar(col = "black", lwd = 0.05),
+        cluster_row_slices = F,
+        cluster_column_slices = F,
+        column_title_gp = gpar(fontsize=0, fontface='bold'),
+        row_names_gp = gpar(fontsize=9), 
+        column_gap = unit(c(2.5,2.5), "mm"),
+        cluster_rows = T,
+        cluster_columns = T,
+        column_names_gp = gpar(fontsize=9), 
+        show_heatmap_legend = F,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_width = unit(5, "cm")),
+        row_names_side = 'right')
+
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+
+png(filename = paste(figures_folder, '/Fig_07/Panel_E.png', sep = ''), units = "cm", width = 24, height = 24, res = 300)
+
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+invisible(dev.off())
+```
+
+# 8) Clinical decision tree : Panel F
+
+## - Loading K2 RF clusters
+
+```{r}
+RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Clustering/K2/RF_K2_Clustered_Metadata.csv', 
+                                    sep = ''), row.names = 'Patient.ID')
+```
+
+## - Data partition
+
+```{r}
+Metadata_subset <- RF_cluster_metadata[,c(1:57, 178)]
+
+Metadata_subset$ICC.classification <- factor(as.numeric(factor(Metadata_subset$ICC.classification)))
+Metadata_subset$Gender <- factor(Metadata_subset$Gender)
+Metadata_subset$Subtype.at.CMML <- factor(Metadata_subset$Subtype.at.CMML)
+Metadata_subset$Cutaneous.BPDCN <- factor(Metadata_subset$Cutaneous.BPDCN)
+Metadata_subset$RF_Cluster <- factor(Metadata_subset$RF_Cluster)
+Metadata_subset$Cytogenetics..at.transformation. <- factor(as.numeric(factor(Metadata_subset$Cytogenetics..at.transformation.)))
+
+set.seed(123)
+
+parts = createDataPartition(Metadata_subset$RF_Cluster, p = .7, list = F)
+train_dataset = Metadata_subset[parts, ]
+test_dataset = Metadata_subset[-parts, ]
+```
+
+## - Feature selection
+
+```{r}
+set.seed(123)
+
+boruta_adt <- Boruta(RF_Cluster ~ ., 
+                     data = train_dataset, 
+                     doTrace = 2, 
+                     maxRuns = 3000, 
+                     pValue = 0.01, 
+                     mcAdj=TRUE)
+                     
+print(boruta_adt)
+boruta_adt <- TentativeRoughFix(boruta_adt)
+print(boruta_adt)
+plot(boruta_adt, las = 2, cex.axis = 0.7) # cex.axis is used to reduce the font size
+
+confirmed_markers <- names(boruta_adt$finalDecision)[grep(TRUE,boruta_adt$finalDecision == 'Confirmed')]
+
+colMeans(boruta_adt$ImpHistory[,confirmed_markers])
+
+train_dataset_filtered <- train_dataset[,c(confirmed_markers,'RF_Cluster')]
+test_dataset_filtered <- test_dataset[,c(confirmed_markers,'RF_Cluster')]
+
+set.seed(123)
+
+# RF modelling
+
+model_filtered = train(RF_Cluster ~ ., data = train_dataset_filtered,
+              method = "rf", 
+              metric = "ROC",
+              trControl = fitControl, 
+              tuneLength=10)
+model_filtered
+
+# Confirming boruta's features relevance via RF importances
+
+varImp(model_filtered)
+
+set.seed(123)
+
+fitted_filtered <- predict(model_filtered, test_dataset, type = "prob")
+fitted_filtered_factor <- factor(ifelse(fitted_filtered$C2 >= 0.60, "C2", "C1"))
+```
+
+The RF model is great but is impractical and difficult to implement given that immunophenotype MFIs can be highly variable depending on the antibodies choices and the choice of flow cytometer instrument. We will thus use the percentage of cells positive for each marker as a proxy for the MFI.
+
+## - Loading Immunophenotype as percentage cells positive
+
+```{r}
+Immunophenotype_percentage <- read.csv(paste(data_folder, '/Immunophenotype/CHR_BP_CMML_immunophenotype_percentage_positive.csv', 
+                                    sep = ''), row.names = 'Patient.ID')
+
+Immunophenotype_percentage <- Immunophenotype_percentage[rownames(RF_cluster_metadata),]
+```
+
+## - Decision tree
+
+```{r}
+Metadata_subset <- RF_cluster_metadata[,c(1:46,178)]
+
+Metadata_subset$ICC.classification <- factor(as.numeric(factor(Metadata_subset$ICC.classification)))
+Metadata_subset$Gender <- factor(Metadata_subset$Gender)
+Metadata_subset$Subtype.at.CMML <- factor(Metadata_subset$Subtype.at.CMML)
+Metadata_subset$Cutaneous.BPDCN <- factor(Metadata_subset$Cutaneous.BPDCN)
+Metadata_subset$RF_Cluster <- factor(Metadata_subset$RF_Cluster)
+Metadata_subset$Cytogenetics..at.transformation. <- factor(as.numeric(factor(Metadata_subset$Cytogenetics..at.transformation.)))
+
+Metadata_subset <- cbind(Metadata_subset, round(Immunophenotype_percentage))
+
+set.seed(123)
+
+parts = createDataPartition(Metadata_subset$RF_Cluster, p = .7, list = F)
+train_dataset = Metadata_subset[parts, ]
+test_dataset = Metadata_subset[-parts, ]
+
+set.seed(123)
+
+train_dataset_filtered <- train_dataset[,c('CD34','CD56','CD117','BM.Flow.percentage','RF_Cluster')]
+test_dataset_filtered <- test_dataset[,c('CD34','CD56','CD117','BM.Flow.percentage','RF_Cluster')]
+
+colnames(train_dataset_filtered) <- c('Percent.CD34.pos', 'Percent.CD56.pos', 'Percent.CD117.pos', 'Percent.Blast.BM.Flow','RF_Cluster')
+colnames(test_dataset_filtered) <- c('Percent.CD34.pos', 'Percent.CD56.pos', 'Percent.CD117.pos', 'Percent.Blast.BM.Flow','RF_Cluster')
+
+set.seed(123)
+
+treeModel <- rpart::rpart(RF_Cluster ~ ., data = train_dataset_filtered, 
+                          control = rpart::rpart.control(minsplit = 3, minbucket = 1, maxdepth = 4,xval = 10,
+                                                cp = 0))
+rpart::printcp(treeModel)
+
+fit9 <- rpart::prune(treeModel, cp = 0.02)
+
+fitted <- as.data.frame(predict(treeModel, test_dataset_filtered, type = "prob"))
+fitted$Identity <- NA
+
+for (patient in rownames(fitted)) {
+  if ((fitted[patient,'C1'] > fitted[patient,'C2']) == TRUE) {
+  fitted[patient,'Identity'] <- 'C1'
+  } else {
+  fitted[patient,'Identity'] <- 'C2' 
+  }
+}
+
+fitted$Identity <- factor(fitted$Identity, levels = c('C1','C2'))
+
+confusionMatrix(data = fitted$Identity, 
+                reference = test_dataset$RF_Cluster,
+                mode = "everything")
+
+# Plotting decision tree from resulting model
+
+rpart.plot::rpart.plot(treeModel, extra = 2)
+
+png(filename = paste(figures_folder, '/Fig_07/Panel_F.png', sep = ''), units = "cm", width = 18, height = 12, res = 300)
+
+rpart.plot::rpart.plot(treeModel, extra = 2)
+
+invisible(dev.off())
+```
+
+## - Evaluating model performance
+
+```{r}
+labels <- test_dataset$RF_Cluster
+
+predictions <- fitted$C1
+ROCR_pred <- prediction(predictions, labels, label.ordering = c('C2','C1'))
+ROCR_pred
+ROCR_perf <- performance(ROCR_pred, 'tpr', 'fpr')
+plot(ROCR_perf, avg = "threshold", colorize = TRUE)
+abline(0, 1, lty = 2)
+
+pROC_pred <- roc(response = labels, predictor = predictions)
+plot.roc(pROC_pred, main="pROC")
+
+```
+
