@@ -4,7 +4,7 @@
 
 Connect at :point_down: :
 
-<img src="http://t0.gstatic.com/images?q=tbn:ANd9GcRMCA3j2A8hfLl9p5UAU5nd9lvqLlNZvqoU4xOsZ192uH4IYS6X" width="16" height="16"> [LinkedIn](https://www.linkedin.com/in/kristiangurashi/)
+<img src="https://static.licdn.com/aero-v1/sc/h/4221chis9yaztef5phd0v3lal" width="20" height="20"> [LinkedIn](https://www.linkedin.com/in/kristiangurashi/)
 
 Biography :point_down: :
 
