@@ -5,6 +5,8 @@
 
 ![RStudio](https://img.shields.io/badge/RStudio-4285F4?style=for-the-badge&logo=rstudio&logoColor=white)
 
+[![HitCount](https://hits.dwyl.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript.svg?style=flat-square)](http://hits.dwyl.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript)
+
 # Project Information:
  
 **Lead:** KGURASHI  
