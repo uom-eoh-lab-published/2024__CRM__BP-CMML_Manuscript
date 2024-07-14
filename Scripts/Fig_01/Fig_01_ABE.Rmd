@@ -71,6 +71,7 @@ In this section, we ensure that all necessary packages are installed.
 ```{r}
 # Ensure BiocManager is available for installation of Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+BiocManager::install(version = "3.18", ask = FALSE)
 
 # Define a list of required packages used in this script
 packages_required <- c("ComplexHeatmap", "stringr", "ggplot2",
@@ -80,8 +81,8 @@ packages_required <- c("ComplexHeatmap", "stringr", "ggplot2",
 # Identify any required packages that are not installed
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
 
-# Install any uninstalled packages
-if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+# Install any uninstalled packages without asking for updates
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = FALSE)
 ```
 
 ## - Loading packages
@@ -91,7 +92,7 @@ Here, we load the necessary packages for our analysis.
 ```{r message=FALSE, warning=FALSE}
 library(stringr, quietly = TRUE)
 library(ComplexHeatmap, quietly = TRUE)
-library(ggplot2)
+library(ggplot2, quietly = TRUE)
 ```
 
 ## - Loading palettes
@@ -133,7 +134,7 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_01_SessionInfo.txt'))
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_01_ABE_SessionInfo.txt'))
 
 # Print the session information
 sessionInfo()
@@ -373,7 +374,7 @@ invisible(dev.off())
 
 Now that we saved our final oncoprint, let's visualize it here.
 
-```{r echo=FALSE, fig.align='center', fig.cap='Figure 1A', fig.height=8.66142, fig.pos='H', fig.width=13.7795}
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 1A', fig.pos='H', fig.height=8.66142, fig.width=13.7795}
 
 # Draw the oncoprint on the current plotting device
 draw(oncoPrint_with_legend, heatmap_legend_side = "right", annotation_legend_side = "right")
@@ -394,8 +395,6 @@ decorate_annotation("botbar", {
 
 ## - Comparison of overall mutations distributions across cohorts
 
-Comparison of whole mutations distributions across cohorts. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01/Panels_BE.pzfx***)..
-
 ### - Loading input files
 
 ```{r}
@@ -403,6 +402,8 @@ Summary_Table <- read.csv(paste(data_folder, '/Genotype/Whole/ALL_Genotypes_Summ
 ```
 
 ### - ChiSquared Test
+
+This code performs a Chi-Squared test between each pair of cohorts to compare their distributions of whole mutations. The p-values from these tests are stored in a list and then written to a .csv file. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01/Panels_BE.pzfx***).
 
 ```{r}
 # Define cohort names
@@ -432,8 +433,6 @@ write.csv(x = cbind(chi_squared_comparisons),
 
 ## - Comparison of individual mutation distributions across cohorts
 
-Comparison of individual mutations distributions across cohorts. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01/Panels_BE.pzfx***).
-
 ### - Loading input files
 
 ```{r}
@@ -456,57 +455,65 @@ BP_MPN_binary_mat$Cohort <- NULL
 
 ### - Generating a Summary tables for each mutation
 
+This code creates a summary table for each common mutation, showing the number of occurrences of the mutation in each cohort. The summary tables are stored in a list.
+
 ```{r}
+# Initialize a list to store the summary tables
 Summary_tables <- list()
+
+# Get the names of the common mutations
 Common_mutations <- colnames(TCGA_LAML_binary_mat)
 
+# Loop over each mutation
 for (mutation in Common_mutations) {
 
-df <- data.frame()
+  # Initialize a data frame to store the counts for the current mutation
+  df <- data.frame()
 
-df['Mutated','LAML_TCGA'] <- length(which(TCGA_LAML_binary_mat[,mutation]==1))
-df['WT','LAML_TCGA'] <- length(which(TCGA_LAML_binary_mat[,mutation]==0))
-#
-df['Mutated','BP_CMML'] <- length(which(BP_CMML_binary_mat[,mutation]==1))
-df['WT','BP_CMML'] <- length(which(BP_CMML_binary_mat[,mutation]==0))
-#
-df['Mutated','BP_MDS'] <- length(which(BP_MDS_binary_mat[,mutation]==1))
-df['WT','BP_MDS'] <- length(which(BP_MDS_binary_mat[,mutation]==0))
-#
-df['Mutated','BP_MPN'] <- length(which(BP_MPN_binary_mat[,mutation]==1))
-df['WT','BP_MPN'] <- length(which(BP_MPN_binary_mat[,mutation]==0))
+  # Count the number of occurrences of the current mutation in each cohort
+  # Store these counts in the data frame
+  df['Mutated','LAML_TCGA'] <- length(which(TCGA_LAML_binary_mat[,mutation]==1))
+  df['WT','LAML_TCGA'] <- length(which(TCGA_LAML_binary_mat[,mutation]==0))
+  df['Mutated','BP_CMML'] <- length(which(BP_CMML_binary_mat[,mutation]==1))
+  df['WT','BP_CMML'] <- length(which(BP_CMML_binary_mat[,mutation]==0))
+  df['Mutated','BP_MDS'] <- length(which(BP_MDS_binary_mat[,mutation]==1))
+  df['WT','BP_MDS'] <- length(which(BP_MDS_binary_mat[,mutation]==0))
+  df['Mutated','BP_MPN'] <- length(which(BP_MPN_binary_mat[,mutation]==1))
+  df['WT','BP_MPN'] <- length(which(BP_MPN_binary_mat[,mutation]==0))
 
-Summary_tables[[mutation]] <- df
-
+  # Add the data frame to the list of summary tables
+  Summary_tables[[mutation]] <- df
 }
 ```
 
 ### - ChiSquared Test
 
-```{r}
-# Define cohort names
-cohorts <- c('LAML_TCGA', 'BP_CMML', 
-             'BP_MDS', 'BP_MPN')
+This code performs a Chi-Squared test between each pair of cohorts for each mutation to compare their distributions. The p-values from these tests are stored in a list and then written to a .csv file. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01/Panels_BE.pzfx***).
 
-# Initialize results list
+```{r}
+# Define the names of the cohorts
+cohorts <- c('LAML_TCGA', 'BP_CMML', 'BP_MDS', 'BP_MPN')
+
+# Initialize a list to store the results of the Chi-Squared tests
 ChiSquaredMonteCarlo_comparisons <- list()
 
 # Loop over each mutation in the Summary_tables
 for (mutation in names(Summary_tables)) {
-  # Set seed for reproducibility
+  # Set the seed for reproducibility
   set.seed(123)
 
   # Loop over each cohort
   for (cohort in cohorts) {
-    # Loop over remaining cohorts
+    # Loop over the remaining cohorts
     for (remaining_cohort in cohorts[!cohorts %in% cohort]) {
-      # Perform Chi-Squared test and store p-value
+      # Perform a Chi-Squared test between the current cohort and the remaining cohort for the current mutation
+      # Store the p-value in the results list
       ChiSquaredMonteCarlo_comparisons[[paste(sprintf('%s',mutation), '_', cohort,'VS', remaining_cohort, sep = '_')]] <- suppressWarnings(chisq.test(Summary_tables[[mutation]][,c(cohort,remaining_cohort)], simulate.p.value=TRUE, B = 10000)[[3]])
     }
   }
 }
 
-# Write results to CSV file
+# Write the results to a .csv file
 write.csv(x = cbind(ChiSquaredMonteCarlo_comparisons), 
           file = paste(data_folder, '/Genotype/Binary/STATS_Comparison_of_individual_mutation_distributions.csv', sep = ''), 
           row.names = T)
@@ -514,10 +521,9 @@ write.csv(x = cbind(ChiSquaredMonteCarlo_comparisons),
 
 # 4) Additional figures
 
-
 ## - Comparison of overall mutations distributions to AML with myeloid differentiation subtypes
 
-Comparison of whole mutations distributions across cohorts. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01/Panels_BE.pzfx***)..
+Comparison of whole mutations distributions across cohorts. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01_Fig_S4/Panels_BE_Fig_S4.pzfx***)..
 
 ### - Loading input files
 
@@ -644,8 +650,9 @@ BP_MPN_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_M
 
 ### - Plotting contributions
 
-```{r echo=FALSE, fig.align='center', fig.cap='Additional figures. Contributions of Manchester (CHRISTIE) and Taipei (NTUH) cohorts to pulled BP-CMML/MDS/MPN groups', fig.height=4, fig.pos='H', fig.width=4}
+This code creates a pie chart for each dataset, showing the contributions of the 'CHRISTIE' and 'NTUH' cohorts to the aggregate cohorts. The pie charts are saved as PNG files.
 
+```{r echo=TRUE, fig.align='center', fig.cap='Additional figures. Contributions of Manchester (CHRISTIE) and Taipei (NTUH) cohorts to pulled BP-CMML/MDS/MPN groups', fig.pos='H', fig.height=3, fig.width=3}
 # Create a list of datasets
 datasets = list('BP_CMML' = BP_CMML_binary_mat,
                 'BP_MDS' = BP_MDS_binary_mat,
@@ -677,7 +684,7 @@ for (n in 1:length(datasets)) {
   # Create the pie chart
   plot <- ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
     geom_rect() +
-    geom_text(x=0.5, aes(y=labelPosition, label=label, color=category), size=6) +
+    geom_text(x=0.5, aes(y=labelPosition, label=label, color=category), size=4) +
     scale_fill_manual(values = c('CHRISTIE' = '#4DBBD5FF', 'NTUH' = '#00A087FF')) +
     scale_color_manual(values = c('CHRISTIE' = '#4DBBD5FF', 'NTUH' = '#00A087FF')) +
     coord_polar(theta="y") +
@@ -685,6 +692,7 @@ for (n in 1:length(datasets)) {
     theme_void() +
     theme(legend.position = "none")
   
+  # Print the title and the plot
   print(sprintf('CHRISTIE and NTUH contributions to pulled %s cohort', set_name))
   print(plot)
   
