@@ -17,7 +17,7 @@ This is the code repository for the CRM 2024 manuscript on BP-CMML stratificatio
 
 Please download data from Mendeley Data repository at:
 
-To ensure reproducibility, please verify that your R and packages version match with what used to generate figures in the manuscript ([See original sessions info])(https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01/Fig_01_ABE_SessionInfo.txt)
+To ensure reproducibility, please verify that your R and packages version match those used to generate figures in the manuscript - [Check our session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01/Fig_01_ABE_SessionInfo.txt)
 
 Installation of python is only required to produce Fig2C and FigS5.
 
