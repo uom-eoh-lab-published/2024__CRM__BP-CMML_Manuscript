@@ -9,7 +9,7 @@ Connect at :point_down: :
 Biography :point_down: :
 [![GitHub](https://i.sstatic.net/tskMh.png) GitHub](https://github.com/)
 &nbsp;
-[![Publications](https://img.shields.io/badge/Publications-ivory?style=flat&logo=google%20scholar) Publications](https://scholar.google.com/citations?user=X2D8HogAAAAJ&hl=en)
+[![Publications](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Google_Scholar_logo.svg/240px-Google_Scholar_logo.svg.png) Publications](https://scholar.google.com/citations?user=X2D8HogAAAAJ&hl=en)
 
 # Project Information:
  
