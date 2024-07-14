@@ -4,7 +4,7 @@
 
 Connect at :point_down: :
 
-<img src="https://static-00.iconduck.com/assets.00/linkedin-icon-96x96-qik48oc9.png" width="12" height="12"> [LinkedIn](https://www.linkedin.com/in/kristiangurashi/)
+<img src="https://static-00.iconduck.com/assets.00/linkedin-icon-96x96-qik48oc9.png" width="16" height="16"> [LinkedIn](https://www.linkedin.com/in/kristiangurashi/)
 
 Biography :point_down: :
 
