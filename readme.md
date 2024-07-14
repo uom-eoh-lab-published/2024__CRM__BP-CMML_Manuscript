@@ -4,9 +4,10 @@
 
 Connect at :point_down: :
 
-[![Linkedin](https://i.sstatic.net/gVE0j.png) LinkedIn](https://www.linkedin.com/in/kristiangurashi/)
+[![Linkedin](https://icons.iconarchive.com/icons/limav/flat-gradient-social/48/Linkedin-icon.png) LinkedIn](https://www.linkedin.com/in/kristiangurashi/)
 
 Biography :point_down: :
+
 [![GitHub](https://i.sstatic.net/tskMh.png) GitHub](https://github.com/)
 &nbsp;
 [![Publications](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Google_Scholar_logo.svg/240px-Google_Scholar_logo.svg.png) Publications](https://scholar.google.com/citations?user=X2D8HogAAAAJ&hl=en)
