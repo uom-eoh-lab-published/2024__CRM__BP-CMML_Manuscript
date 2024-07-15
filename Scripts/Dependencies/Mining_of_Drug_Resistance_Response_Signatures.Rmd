@@ -407,78 +407,84 @@ saveRDS(se_drugtest, paste0(data_folder, "/RNASeq/PubliclyAvailable/2022__Vizome
 # Loop over each drug in the list
 for (drug in list_drugs_passing_threshold$Drug) {
   
-  # Filter the data for the current drug
-  se_drugtest_filtered <- se_drugtest[, colnames(se_drugtest) %in% rownames(DrugResponse_classification[is.na(DrugResponse_classification[,drug]) == FALSE,])]
-  
-  # Add drug response to the filtered data
-  se_drugtest_filtered$DrugResponse <- DrugResponse_classification[is.na(DrugResponse_classification[,drug]) == FALSE,][colnames(se_drugtest_filtered),drug]
-  
-  # Perform differential expression analysis
-  dds <- DESeqDataSet(se_drugtest_filtered, design = ~ DrugResponse)
-  dds <- estimateSizeFactors(dds)
-  keep <- rowSums(counts(dds, normalized=TRUE) >= 5 ) >= 3
-  dds <- dds[keep,]
-  dds <- DESeq(dds)
-  
-  # Check the number of unique and duplicate gene labels
-  table(isUnique(rowData(dds)$display_label))
-  # Get the rows with duplicate gene labels
-  rowData(dds)[grep(FALSE,isUnique(rowData(dds)$display_label)),]
-  # Convert the rows with duplicate gene labels to a data frame
-  df <- as.data.frame(rowData(dds)[grep(FALSE,isUnique(rowData(dds)$display_label)),])
-  # Calculate the maximum absolute value of baseMean for each gene label
-  maxabs <- with(df, aggregate(baseMean, list(display_label=display_label), FUN=function(x) max(abs(x))))
-  # Merge the maximum absolute values with the original data frame
-  df <- merge(df, maxabs, by="display_label")
-  # Keep only the rows with the maximum absolute value of baseMean for each gene label
-  df_unique <- subset(df, abs(baseMean) == x)
-  # Remove duplicate rows
-  df_unique <- df_unique[!duplicated(df_unique$display_label), ]
-  # Combine the unique Ensembl IDs from the original and filtered data
-  unique_genes <- c(rowData(dds)[grep(TRUE,isUnique(rowData(dds)$display_label)),]$Ensembl_ID,
-                    df_unique$Ensembl_ID)
-  
-  dds_unique <- dds[unique_genes,]
-  
-  # Perform differential expression analysis with different fit types
-  dds_parametric <- DESeq(dds_unique, fitType = "parametric")
-  dds_local <- DESeq(dds_unique, fitType = "local")
-  
-  # Choose the best fit type
-  Best_scoring_fitType <- ifelse(median(abs(log(mcols(dds_parametric)$dispGeneEst)-log(mcols(dds_parametric)$dispFit))) < median(abs(log(mcols(dds_local)$dispGeneEst)-log(mcols(dds_local)$dispFit))), 'parametric', 'local')
-  
-  # Perform differential expression analysis with the best fit type
-  dds <- DESeq(dds_unique, fitType = Best_scoring_fitType)
-  
-  # Get the results
-  res <- results(dds, contrast=c("DrugResponse", "Resistant", "Responsive"), filterFun = ihw)
+  # Define the path to the csv file
+  file <- paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_ALL_DEGs_LFC_Ashr.csv')
 
-  # Shrink the log2 fold changes
-  resAsh <- lfcShrink(dds, coef="DrugResponse_Responsive_vs_Resistant", res = res, type = 'ashr')
+  # Check if the csv file exists
+  if (!file.exists(file)) {
+    
+    # Filter the data for the current drug
+    se_drugtest_filtered <- se_drugtest[, colnames(se_drugtest) %in% rownames(DrugResponse_classification[is.na(DrugResponse_classification[,drug]) == FALSE,])]
+    
+    # Add drug response to the filtered data
+    se_drugtest_filtered$DrugResponse <- DrugResponse_classification[is.na(DrugResponse_classification[,drug]) == FALSE,][colnames(se_drugtest_filtered),drug]
+    
+    # Perform differential expression analysis
+    dds <- DESeqDataSet(se_drugtest_filtered, design = ~ DrugResponse)
+    dds <- estimateSizeFactors(dds)
+    keep <- rowSums(counts(dds, normalized=TRUE) >= 5 ) >= 3
+    dds <- dds[keep,]
+    dds <- DESeq(dds)
+    
+    # Check the number of unique and duplicate gene labels
+    table(isUnique(rowData(dds)$display_label))
+    # Get the rows with duplicate gene labels
+    rowData(dds)[grep(FALSE,isUnique(rowData(dds)$display_label)),]
+    # Convert the rows with duplicate gene labels to a data frame
+    df <- as.data.frame(rowData(dds)[grep(FALSE,isUnique(rowData(dds)$display_label)),])
+    # Calculate the maximum absolute value of baseMean for each gene label
+    maxabs <- with(df, aggregate(baseMean, list(display_label=display_label), FUN=function(x) max(abs(x))))
+    # Merge the maximum absolute values with the original data frame
+    df <- merge(df, maxabs, by="display_label")
+    # Keep only the rows with the maximum absolute value of baseMean for each gene label
+    df_unique <- subset(df, abs(baseMean) == x)
+    # Remove duplicate rows
+    df_unique <- df_unique[!duplicated(df_unique$display_label), ]
+    # Combine the unique Ensembl IDs from the original and filtered data
+    unique_genes <- c(rowData(dds)[grep(TRUE,isUnique(rowData(dds)$display_label)),]$Ensembl_ID,
+                      df_unique$Ensembl_ID)
+    
+    dds_unique <- dds[unique_genes,]
+    
+    # Perform differential expression analysis with different fit types
+    dds_parametric <- DESeq(dds_unique, fitType = "parametric")
+    dds_local <- DESeq(dds_unique, fitType = "local")
+    
+    # Choose the best fit type
+    Best_scoring_fitType <- ifelse(median(abs(log(mcols(dds_parametric)$dispGeneEst)-log(mcols(dds_parametric)$dispFit))) < median(abs(log(mcols(dds_local)$dispGeneEst)-log(mcols(dds_local)$dispFit))), 'parametric', 'local')
+    
+    # Perform differential expression analysis with the best fit type
+    dds <- DESeq(dds_unique, fitType = Best_scoring_fitType)
+    
+    # Get the results
+    res <- results(dds, contrast=c("DrugResponse", "Resistant", "Responsive"), filterFun = ihw)
   
-  # Rank the genes
-  resAsh_df <- as.data.frame(resAsh) %>% add_column(symbol = rowData(dds)[rownames(resAsh),'display_label'], .before = 'baseMean')
-  resAsh_df$rank <- -1*log10(resAsh_df$padj) * resAsh_df$log2FoldChange
-  
-  dir.create(paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug), showWarnings = F)
-  
-  # Write the results to CSV files
-  write.csv(resAsh_df, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_ALL_DEGs_LFC_Ashr.csv'), row.names = TRUE, quote = FALSE)
-  
-  # Filter the results for significant genes and write to CSV files
-  res_significant <- resAsh_df %>% arrange(-rank) 
-  write.csv(res_significant, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_ALL_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
-  
-  res_significant <- resAsh_df %>% dplyr::filter(padj < 0.05) %>% arrange(-rank) 
-  write.csv(res_significant, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_padj_significant_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
-  
-  # Filter the results for upregulated and downregulated genes and write to CSV file
-  res_significant_UP <- res_significant %>% dplyr::filter(log2FoldChange >= 0) %>% dplyr::arrange(padj) 
-  write.csv(res_significant_UP, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_upregulated_padj_significant_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
-  
-  res_significant_DOWN <- res_significant %>% dplyr::filter(log2FoldChange < 0) %>% dplyr::arrange(padj) 
-  write.csv(res_significant_DOWN, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_downregulated_padj_significant_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
-
+    # Shrink the log2 fold changes
+    resAsh <- lfcShrink(dds, coef="DrugResponse_Responsive_vs_Resistant", res = res, type = 'ashr')
+    
+    # Rank the genes
+    resAsh_df <- as.data.frame(resAsh) %>% add_column(symbol = rowData(dds)[rownames(resAsh),'display_label'], .before = 'baseMean')
+    resAsh_df$rank <- -1*log10(resAsh_df$padj) * resAsh_df$log2FoldChange
+    
+    dir.create(paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug), showWarnings = F)
+    
+    # Write the results to CSV files
+    write.csv(resAsh_df, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_ALL_DEGs_LFC_Ashr.csv'), row.names = TRUE, quote = FALSE)
+    
+    # Filter the results for significant genes and write to CSV files
+    res_significant <- resAsh_df %>% arrange(-rank) 
+    write.csv(res_significant, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_ALL_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
+    
+    res_significant <- resAsh_df %>% dplyr::filter(padj < 0.05) %>% arrange(-rank) 
+    write.csv(res_significant, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_padj_significant_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
+    
+    # Filter the results for upregulated and downregulated genes and write to CSV file
+    res_significant_UP <- res_significant %>% dplyr::filter(log2FoldChange >= 0) %>% dplyr::arrange(padj) 
+    write.csv(res_significant_UP, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_upregulated_padj_significant_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
+    
+    res_significant_DOWN <- res_significant %>% dplyr::filter(log2FoldChange < 0) %>% dplyr::arrange(padj) 
+    write.csv(res_significant_DOWN, file = paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', drug, '/', drug, '_Responsive_vs_Resistant_downregulated_padj_significant_DEGs_LFC_Ashr.csv'), row.names = T, quote = FALSE)
+  }
 }
 ```
 
