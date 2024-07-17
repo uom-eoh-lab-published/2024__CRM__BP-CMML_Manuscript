@@ -25,7 +25,7 @@ This is the code repository for the CRM 2024 manuscript on BP-CMML stratificatio
 
 2) To ensure reproducibility, please verify that your R and packages version match those used to generate figures in the manuscript - [Check our session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01/Fig_01_ABE_SessionInfo.txt)
 
-3) Installation of python is only required to produce [Fig2C](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Fig_02/Panel_C.png) and [FigS5](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Supplemental/Fig_S5.png). To ensure reproducibility please verify that your Python modules version match those used to generate the above figures - [Check our PIP requirements file] (https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/python_conda_env_requirements.txt)
+3) Installation of python is only required to produce [Fig2C](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Fig_02/Panel_C.png) and [FigS5](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Supplemental/Fig_S5.png). To ensure reproducibility please verify that your Python modules version match those used to generate the above figures - [Check our PIP requirements file](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/python_conda_env_requirements.txt)
 
 ---
 
