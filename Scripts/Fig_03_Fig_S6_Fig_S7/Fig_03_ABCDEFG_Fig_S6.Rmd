@@ -1,5 +1,5 @@
 ---
-title: "Figure 03 - Panels ABCDEFG + Fig S7"
+title: "Figure 03 - Panels ABCDEFG + Fig S6"
 output: 
   rmdformats::robobook:
     lightbox: true
@@ -133,7 +133,7 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_03_ABCDEFG_Fig_S7_SessionInfo.txt'))
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_03_ABCDEFG_Fig_S6_SessionInfo.txt'))
 
 # Print the session information
 sessionInfo()
