@@ -17,7 +17,7 @@ Daniel Wiseman(daniel.wiseman@manchester.ac.uk)
 **Disease:** Blast Phase Chronic Myelomonocytic Leukemia (CMML)
 
 ## Graphical summary: 
-<img src="https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Graphical_Summary.png" width="307" height="321">
+<img src="https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Graphical_Summary.png" width="415" height="434">
 
 ## Content: 
 This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
