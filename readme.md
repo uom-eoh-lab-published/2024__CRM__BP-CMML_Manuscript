@@ -18,7 +18,7 @@ Daniel Wiseman(daniel.wiseman@manchester.ac.uk)
 
 ## Graphical summary: 
 <p align="center">
-  <img src="https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Graphical_Summary.png" width="445" height="465">
+  <img src="https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Graphical_Summary.png" width="435" height="465">
 </p>
 
 ## Content: 
