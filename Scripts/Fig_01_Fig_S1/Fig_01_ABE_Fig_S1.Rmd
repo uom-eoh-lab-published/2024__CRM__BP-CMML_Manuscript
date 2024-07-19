@@ -697,7 +697,7 @@ for (n in 1:length(datasets)) {
   print(plot)
   
   # Save the plot to a PNG file
-  png(filename = paste(figures_folder, sprintf('/Not_Included/CHR_and_NTUH_contributions_to_%s_cohort.png', set_name), sep = ''),
+  png(filename = paste(figures_folder, sprintf('/Supplemental/Fig_S1-%s.png', n), sep = ''),
       units = 'cm', width = 12, height = 12, res = 300)
   
   print(plot)
