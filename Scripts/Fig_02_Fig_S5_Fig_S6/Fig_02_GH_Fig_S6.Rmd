@@ -1,5 +1,5 @@
 ---
-title: "Figure 02 - Panels GH + Fig S5"
+title: "Figure 02 - Panels GH + Fig S6"
 output: 
   rmdformats::robobook:
     lightbox: true
@@ -94,7 +94,7 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_02_GH_Fig_S5_SessionInfo.txt'))
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_02_GH_Fig_S6_SessionInfo.txt'))
 
 # Print the session information
 sessionInfo()
@@ -585,7 +585,7 @@ invisible(dev.off())
 
 # 6) ssGSEA pathway enrichment
 
-### - Fig S5
+### - Fig S6
 
 Here we define a list of pathways of interest from different sources (Hallmark, Canonical Pathways, and GO Biological Process). We then perform a single-sample Gene Set Enrichment Analysis (ssGSEA) on these pathways using the expression matrix.
 
@@ -708,7 +708,7 @@ p <- p + annotate("segment", x = which(variable_order == "S phase"), xend = whic
 print(p)
 
 # Save the plot as a PNG file
-png(filename = paste(figures_folder, '/Supplemental/Fig_S5.png', sep = ''), res = 300, units = 'cm', height = 12, width  = 22)
+png(filename = paste(figures_folder, '/Supplemental/Fig_S6.png', sep = ''), res = 300, units = 'cm', height = 12, width  = 22)
 print(p)
 invisible(dev.off())
 ```

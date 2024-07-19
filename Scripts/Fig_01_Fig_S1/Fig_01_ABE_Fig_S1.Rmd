@@ -1,5 +1,5 @@
 ---
-title: "Figure 01"
+title: "Figure 01 - Panels ABE + Fig S1"
 output: 
   rmdformats::robobook:
     lightbox: true
@@ -648,11 +648,11 @@ BP_MDS_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_M
 BP_MPN_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_MPN_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
 ```
 
-### - Plotting contributions
+### - Plotting contributions | Panel S1
 
 This code creates a pie chart for each dataset, showing the contributions of the 'CHRISTIE' and 'NTUH' cohorts to the aggregate cohorts. The pie charts are saved as PNG files.
 
-```{r echo=TRUE, fig.align='center', fig.cap='Additional figures. Contributions of Manchester (CHRISTIE) and Taipei (NTUH) cohorts to pulled BP-CMML/MDS/MPN groups', fig.pos='H', fig.height=3, fig.width=3}
+```{r echo=TRUE, fig.align='center', fig.cap='Figure S1', fig.pos='H', fig.height=3, fig.width=3}
 # Create a list of datasets
 datasets = list('BP_CMML' = BP_CMML_binary_mat,
                 'BP_MDS' = BP_MDS_binary_mat,
