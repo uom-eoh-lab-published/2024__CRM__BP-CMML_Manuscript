@@ -16,7 +16,7 @@ Kiran Batta(kiran.batta@manchester.ac.uk),
 Daniel Wiseman(daniel.wiseman@manchester.ac.uk)  
 **Disease:** Blast Phase Chronic Myelomonocytic Leukemia (CMML)
 
-## Graphical summary: 
+## Graphical Abstract: 
 <p align="center">
   <img src="https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Graphical_Abstract.png" width="465" height="465">
 </p>
