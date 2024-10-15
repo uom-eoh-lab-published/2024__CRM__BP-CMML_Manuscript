@@ -10,7 +10,7 @@
 ---
 
 ## General Description: 
-**First Author:** Kristian Gurashi (kristian.gurashi@ndcls.ox.ac.uk) 
+**First Author:** Kristian Gurashi (kristian.gurashi@ndcls.ox.ac.uk)  
 **Correspondance:**   
 Kiran Batta (kiran.batta@manchester.ac.uk),    
 Daniel Wiseman (daniel.wiseman@manchester.ac.uk)  
