@@ -368,6 +368,12 @@ png(filename = paste(figures_folder, '/Fig_05/Panel_H.png', sep = ''),
     res = 300, units = 'cm', height = 10.34, width  = 11.5)
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_H.pdf', sep = ''),
+#     height = 4.0708661, width  = 4.527559)
+# print(plot)
+# invisible(dev.off())
 ```
 
 ## - Enrichment plots selected signatures
@@ -413,6 +419,12 @@ png(filename = paste(figures_folder, '/Fig_05/Panel_I-1.png', sep = ''),
     res = 300, units = 'cm', height = 6.67, width  = 8.8)
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_I-1.pdf', sep = ''),
+#     height = 2.625984, width  = 3.46457)
+# print(plot)
+# invisible(dev.off())
 ```
 
 Here we read in a CSV file containing cell cycle-related gene signatures, perform a fast gene set enrichment analysis (fgsea) on these signatures. We also plot the enrichment of the G2M Phase signature in the results, saving the plot as PNG file.
@@ -453,6 +465,12 @@ png(filename = paste(figures_folder, '/Fig_05/Panel_I-2.png', sep = ''),
     res = 300, units = 'cm', height = 6.67, width  = 8.8)
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_I-2.pdf', sep = ''),
+#     height = 2.625984, width  = 3.46457)
+# print(plot)
+# invisible(dev.off())
 ```
 
 Here we create a plot of the enrichment of the S Phase signature in the cell cycle-related gene signatures results. We then save this plot as a PNG file.
@@ -475,6 +493,12 @@ png(filename = paste(figures_folder, '/Fig_05/Panel_I-3.png', sep = ''),
 print(plot)
 
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_I-3.pdf', sep = ''),
+#     height = 2.625984, width  = 3.46457)
+# print(plot)
+# invisible(dev.off())
 ```
 
 Here we create a plot of the enrichment of the quiescence signature in the cell cycle-related gene signatures results. We then save this plot as a PNG file.
@@ -497,4 +521,10 @@ png(filename = paste(figures_folder, '/Fig_05/Panel_I-4.png', sep = ''),
 print(plot)
 
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_I-4.pdf', sep = ''),
+#     height = 2.625984, width  = 3.46457)
+# print(plot)
+# invisible(dev.off())
 ```

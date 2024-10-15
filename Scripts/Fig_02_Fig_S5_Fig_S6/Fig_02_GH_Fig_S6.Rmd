@@ -393,6 +393,12 @@ png(filename = paste(figures_folder, '/Fig_02/Panel_G.png', sep = ''),
     res = 300, units = 'cm', height = 10.34, width  = 11.5)
 print(plot)
 invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_02/Panel_G.pdf', sep = ''),
+#     height = 4.0708661, width  = 4.527559)
+# print(plot)
+# invisible(dev.off())
 ```
 
 ## - Enrichment plots selected signatures
@@ -436,12 +442,14 @@ print(plot)
 # Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_02/Panel_H-1.png', sep = ''),
     res = 300, units = 'cm', height = 6.67, width  = 8.8)
-
-# Print the plot again to save it to the file
 print(plot)
-
-# Close the PNG device
 invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_02/Panel_H-1.pdf', sep = ''),
+#     height = 2.625984, width  = 3.46457)
+# print(plot)
+# invisible(dev.off())
 ```
 
 Here we read in a CSV file containing cell cycle-related gene signatures, perform a fast gene set enrichment analysis (fgsea) on these signatures. We also plot the enrichment of the G2M Phase signature in the results, saving the plot as PNG file.
@@ -480,12 +488,14 @@ print(plot)
 # Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_02/Panel_H-2.png', sep = ''),
     res = 300, units = 'cm', height = 6.67, width  = 8.8)
-
-# Print the plot again to save it to the file
 print(plot)
-
-# Close the PNG device
 invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_02/Panel_H-2.pdf', sep = ''),
+#     height = 2.625984, width  = 3.46457)
+# print(plot)
+# invisible(dev.off())
 ```
 
 Here we create a plot of the enrichment of the S Phase signature in the cell cycle-related gene signatures results. We then save this plot as a PNG file.
@@ -504,12 +514,14 @@ print(plot)
 # Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_02/Panel_H-3.png', sep = ''),
     res = 300, units = 'cm', height = 6.67, width  = 8.8)
-
-# Print the plot again to save it to the file
 print(plot)
-
-# Close the PNG device
 invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_02/Panel_H-3.pdf', sep = ''),
+#     height = 2.625984, width  = 3.46457)
+# print(plot)
+# invisible(dev.off())
 ```
 
 Here we create a plot of the enrichment of the quiescence signature in the cell cycle-related gene signatures results. We then save this plot as a PNG file.
@@ -528,12 +540,14 @@ print(plot)
 # Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_02/Panel_H-4.png', sep = ''),
     res = 300, units = 'cm', height = 6.67, width  = 8.8)
-
-# Print the plot again to save it to the file
 print(plot)
-
-# Close the PNG device
 invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_02/Panel_H-4.pdf', sep = ''),
+#     height = 2.625984, width  = 3.46457)
+# print(plot)
+# invisible(dev.off())
 ```
 
 Here we read in a GMT file containing pathways related to senescence. We then perform a fast gene set enrichment analysis (fgsea) using these pathways and the ranks of the DEGs.
@@ -575,12 +589,14 @@ print(plot)
 # Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_02/Panel_H-5.png', sep = ''),
     res = 300, units = 'cm', height = 6.67, width  = 8.8)
-
-# Print the plot again to save it to the file
 print(plot)
-
-# Close the PNG device
 invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_02/Panel_H-5.pdf', sep = ''),
+#     height = 2.625984, width  = 3.46457)
+# print(plot)
+# invisible(dev.off())
 ```
 
 # 6) ssGSEA pathway enrichment
@@ -692,7 +708,7 @@ p <- ggplot(long_data, aes(x = variable, y = value, fill = Condition)) +
   scale_fill_manual(values = c('BP-CMML' = '#E35C53', 'Control' = '#B6CBD7')) +
   scale_color_manual(values = c('BP-CMML' = '#901900', 'Control' = '#5E6C7A')) +
   geom_vline(xintercept = which(variable_order == " "), linetype = "dashed") +
-  theme_ipsum() +
+  theme_ipsum(base_family = "sans") +
   theme(
     axis.text.x = element_text(angle = 90, hjust = 1, size = 10),
     axis.title.x = element_blank(),
@@ -711,5 +727,10 @@ print(p)
 png(filename = paste(figures_folder, '/Supplemental/Fig_S6.png', sep = ''), res = 300, units = 'cm', height = 12, width  = 22)
 print(p)
 invisible(dev.off())
-```
 
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Supplemental/Fig_S6.pdf', sep = ''),
+#     height = 4.72441, width  = 8.66142)
+# print(p)
+# invisible(dev.off())
+```

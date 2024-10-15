@@ -10,10 +10,10 @@
 ---
 
 ## General Description: 
-**First Author:** Kristian Gurashi  
+**First Author:** Kristian Gurashi (kristian.gurashi@ndcls.ox.ac.uk) 
 **Correspondance:**   
-Kiran Batta(kiran.batta@manchester.ac.uk),    
-Daniel Wiseman(daniel.wiseman@manchester.ac.uk)  
+Kiran Batta (kiran.batta@manchester.ac.uk),    
+Daniel Wiseman (daniel.wiseman@manchester.ac.uk)  
 **Disease:** Blast Phase Chronic Myelomonocytic Leukemia (CMML)
 
 ## Graphical Abstract: 

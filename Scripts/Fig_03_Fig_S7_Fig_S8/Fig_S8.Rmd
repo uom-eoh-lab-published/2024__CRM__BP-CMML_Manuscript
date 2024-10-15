@@ -122,10 +122,10 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_S8_SessionInfo.txt'))
+# writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_S8_SessionInfo.txt'))
 
 # Print the session information
-sessionInfo()
+# sessionInfo()
 ```
 
 # 2) Loading input files
@@ -672,6 +672,37 @@ draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bo
 png(filename = paste(figures_folder, '/Supplemental/Fig_S8-1.png', sep = ''), units = 'cm', width = 18.62, height = 6, res = 300)
 draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Supplemental/Fig_S8-1.pdf', sep = ''), width = 7.3307087, height = 2.3622)
+# draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
+
+###
+
+# We will also save a version of this figure including the scale, previously omitted to maintain more easily the figure proportions
+
+# Create the heatmap
+HMap_vangalen <- Heatmap(VanGalen_celltype_modules_scores, 
+        name = 'ssGSEA Score',
+        col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05),
+        column_title_gp = gpar(fontsize=11, fontface='bold'),
+        row_names_gp = gpar(fontsize=10), cluster_rows = F,
+        cluster_column_slices = F,
+        column_names_gp = gpar(fontsize=10), show_heatmap_legend = T,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_height = unit(5, "cm")),
+        row_names_side = 'right')
+
+# We also save this as PDF for the manuscript
+png(filename = paste(figures_folder, '/Other/Fig_S8-1_with_legend.png', sep = ''), units = 'cm', width = 18.62, height = 6, res = 300)
+draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Other/Fig_S8-1_with_legend.pdf', sep = ''), width = 7.3307087, height = 2.3622)
+# draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 ## - 2017 Velten L. et al Enrichment Scores HeatMapx
@@ -730,6 +761,40 @@ draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 png(filename = paste(figures_folder, '/Supplemental/Fig_S8-2.png', sep = ''), units = 'cm', width = 19.2, height = 10, res = 300)
 draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Supplemental/Fig_S8-2.pdf', sep = ''), width = 7.559055, height = 3.93701)
+# draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
+
+###
+
+# We will also save a version of this figure including the scale, previously omitted to maintain more easily the figure proportions
+
+# Create the heatmap
+HMap <- Heatmap(Velten_celltype_modules_scores, 
+        name = 'ssGSEA Score',
+        col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05),
+        column_title_gp = gpar(fontsize=11, fontface='bold'),
+        row_split = Module_Identity$Celltype, cluster_rows = F,
+        row_gap = unit(0.05, "cm"), 
+        cluster_column_slices = F,
+        row_names_gp = gpar(fontsize=9), row_title_rot = 0,
+        row_title_gp = gpar(fontsize=9, fontface='bold', col=Celltype$Colour),
+        column_names_gp = gpar(fontsize=9), show_heatmap_legend = T,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_height = unit(5, "cm")),
+        row_names_side = 'right')
+
+# We also save this as PDF for the manuscript
+png(filename = paste(figures_folder, '/Other/Fig_S8-2_with_legend.png', sep = ''), units = 'cm', width = 19.2, height = 10, res = 300)
+draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Other/Fig_S8-2_with_legend.pdf', sep = ''), width = 7.559055, height = 3.93701)
+# draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 ## - 2022 Vizome BeatAML drug response scores Heatmap
@@ -848,7 +913,7 @@ HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response_modules_scores,
     row_names_gp = gpar(fontsize=8), 
     cluster_rows = T,
     column_names_gp = gpar(fontsize=8), 
-    show_heatmap_legend = T,
+    show_heatmap_legend = F,
     heatmap_legend_param = list(legend_direction = "horizontal",
                                 legend_width = unit(2, "cm")),
     row_names_side = 'right')
@@ -860,5 +925,39 @@ draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side =
 png(filename = paste(figures_folder, '/Supplemental/Fig_S8-3.png', sep = ''), units = 'cm', width = 30, height = 20, res = 300)
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Supplemental/Fig_S8-3.pdf', sep = ''), width = 11.811, height = 7.87402)
+# draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
+
+###
+
+# We will also save a version of this figure including the scale, previously omitted to maintain more easily the figure proportions
+
+# Create the heatmap
+HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response_modules_scores, 
+    name = 'ssGSEA Score',
+    col = col_heatmap_guide, 
+    rect_gp = gpar(col = "black", lwd = 0.05),
+    cluster_row_slices = F,
+    column_title_gp = gpar(fontsize=14, fontface='bold'),
+    row_names_gp = gpar(fontsize=8), 
+    cluster_rows = T,
+    column_names_gp = gpar(fontsize=8), 
+    show_heatmap_legend = T,
+    heatmap_legend_param = list(legend_direction = "horizontal",
+                                legend_width = unit(2, "cm")),
+    row_names_side = 'right')
+
+# We also save this as PDF for the manuscript
+png(filename = paste(figures_folder, '/Other/Fig_S8-3_with_legend.png', sep = ''), units = 'cm', width = 30, height = 20, res = 300)
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Other/Fig_S8-3_with_legend.pdf', sep = ''), width = 11.811, height = 7.87402)
+# draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 

@@ -48,7 +48,7 @@ dir.create(paste(local_wd_folder, "/Figures/Fig_05", sep = ''), showWarnings = F
 dir.create(paste(local_wd_folder, "/Figures/Fig_06", sep = ''), showWarnings = F)
 dir.create(paste(local_wd_folder, "/Figures/Fig_07", sep = ''), showWarnings = F)
 dir.create(paste(local_wd_folder, "/Figures/Supplemental", sep = ''), showWarnings = F)
-dir.create(paste(local_wd_folder, "/Figures/Not_Included", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Other", sep = ''), showWarnings = F)
 
 # Define the data folder and output folder
 data_folder <- './Data'
@@ -368,6 +368,26 @@ decorate_annotation("botbar", {
 
 # Close the current plotting device
 invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# # Resolution is in inches
+# pdf(file = paste(figures_folder, '/Fig_01/Panel_A.pdf', sep = ''), width = 14.1732, height = 8.070866, compress = FALSE)
+# 
+# # Draw the oncoprint on the current plotting device
+# draw(oncoPrint_with_legend, heatmap_legend_side = "right", annotation_legend_side = "right")
+# 
+# # Add text to the "rbar" annotation
+# decorate_annotation("rbar", {
+#   grid.text("Relative percentage\nof cohort with\n given mutation", x = unit(10, "mm"), y = unit(150, "mm"), rot = 0, just = "bottom")
+# })
+# 
+# # Add text to the "botbar" annotation
+# decorate_annotation("botbar", {
+#   grid.text("Number of\nmutations\nin patient", x = unit(-9, "mm"), y = unit(10, "mm"), rot = 90, just = "bottom")
+# })
+# 
+# # Close the current plotting device
+# invisible(dev.off())
 ```
 
 ### - Plotting oncoprint
@@ -704,6 +724,12 @@ for (n in 1:length(datasets)) {
   
   # Close the PNG device
   invisible(dev.off())
+  
+  # # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+  # pdf(file = paste(figures_folder, sprintf('/Supplemental/Fig_S1-%s.pdf', n), sep = ''),
+  #     width = 4.72441, height = 4.72441)
+  # print(plot)
+  # invisible(dev.off())
   
 }
 ```

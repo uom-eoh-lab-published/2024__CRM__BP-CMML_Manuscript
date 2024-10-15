@@ -62,7 +62,8 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocMana
 BiocManager::install(version = "3.18", ask = FALSE)
 
 # Define a list of required packages used in this script
-packages_required <- c("GENIE3", "doRNG", "stringr", "WGCNA", 
+packages_required <- c("GENIE3", "doRNG", "stringr", "impute", "GO.db",
+                       "preprocessCore", "WGCNA", 
                        "DESeq2", "flashClust", "ComplexHeatmap", "magick", 
                        "ggplot2", "ggridges", "dplyr", "erer", "enrichR")
 
@@ -743,6 +744,8 @@ TOMplot(dissim = log2(disssim_signed),
         main = "Topological Overlap Matrix", 
         col=RColorBrewer::brewer.pal(n = 9, 'YlOrRd'))
 
+# Saving the plot
+
 # Open a new PNG device for plotting
 png(filename = paste(figures_folder, '/Fig_03/Panel_A.png', sep = ''), units = 'cm', width = 35, height = 17, res = 300)
 
@@ -755,6 +758,20 @@ TOMplot(dissim = log2(disssim_signed),
 
 # Close the PNG device
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction) - not export as pdf due to the plot having too many vectors making illustrator crash
+# # Open a new PNG device for plotting
+# png(filename = paste(figures_folder, '/Fig_03/Panel_A.png', sep = ''), units = 'cm', width = 35, height = 17, res = 900)
+# 
+# # Plot the TOM again, this time saving it to a PNG file
+# TOMplot(dissim = log2(disssim_signed), 
+#         dendro = dendr, 
+#         Colors = as.character(NewModuleColors),
+#         main = "Topological Overlap Matrix", 
+#         col=RColorBrewer::brewer.pal(n = 9, 'YlOrRd'))
+# 
+# # Close the PNG device
+# invisible(dev.off())
 ```
 
 ### - Plotting Modules and Traits : Panel B
@@ -815,6 +832,23 @@ plotDendroAndColors(
 
 # Close the PNG device
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_03/Panel_B.pdf', sep = ''), width = 13.751969, height = 5.7637795)
+# plotDendroAndColors(
+#         dendr,
+#         gene_significance_colors_short_merged,
+#         groupLabels = c("Module color", colnames(model_matrix_short)),
+#         dendroLabels = FALSE,
+#         hang = 0.01,
+#         las = 2,
+#         cex.axis = 0.9,
+#         addGuide = TRUE,
+#         guideHang = 0.05,
+#         cex.main = 0.8,
+#         cex.colorLabels = 1,
+#         main = "", colorHeightMax = 0.01)
+# invisible(dev.off())
 ```
 
 ### - Substituting old MEs for New MEs
@@ -990,6 +1024,12 @@ draw(Heatmap_trait_cor, heatmap_legend_side = "bottom",
 
 # Close the PNG device
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_03/Panel_C.pdf', sep = ''), width = 8.66142, height = 3.93701)
+# draw(Heatmap_trait_cor, heatmap_legend_side = "bottom", 
+#      annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 ### - Levels of ME among samples
@@ -1094,6 +1134,11 @@ png(filename = paste(figures_folder, '/Fig_03/Panel_G.png', sep = ''), width = 5
 # Print the plot again and turn off the device
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_03/Panel_G.pdf', sep = ''), width = 2.50492126, height = 7.523622)
+# print(plot)
+# invisible(dev.off())
 ```
 
 ### - List of Genes Assigned to Modules

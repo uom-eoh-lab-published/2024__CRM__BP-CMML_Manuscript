@@ -618,7 +618,7 @@ fig <- fig %>% layout(
 )
 
 # Save the figure as a PNG file
-save_image(fig, paste(figures_folder, '/Not_Included/DGE_Condition_with_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
+save_image(fig, paste(figures_folder, '/Other/DGE_Condition_with_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
 This script creates a 3D scatter plot of the first three principal components from the PCA analysis, with points colored by condition. The plot is then customized with a specific layout, with the legend hidden, and saved as a PNG file.
@@ -655,7 +655,7 @@ fig <- fig %>% layout(
 )
 
 # Save the figure as a PNG file
-save_image(fig, paste(figures_folder, '/Not_Included/DGE_Condition_without_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
+save_image(fig, paste(figures_folder, '/Other/DGE_Condition_without_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
 ### - By ICC classification : Panel C
@@ -711,6 +711,9 @@ fig
 
 # Save the figure as a PNG file
 save_image(fig, paste(figures_folder, '/Fig_02/Panel_C.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# save_image(fig, paste(figures_folder, '/Fig_02/Panel_C.pdf', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
 This script creates a 3D scatter plot of the first three principal components from the PCA analysis, with points colored by ICC classification. The plot is then customized with a specific layout, with the legend hidden, and saved as a PNG file.
@@ -760,7 +763,7 @@ fig <- fig %>% layout(
 )
 
 # Save the figure as a PNG file
-save_image(fig, paste(figures_folder, '/Not_Included/DGE_ICC_without_legend.png', sep = ''), width = 3 * 300, height = 3 * 300, scale = 2)
+save_image(fig, paste(figures_folder, '/Other/DGE_ICC_without_legend.png', sep = ''), width = 3 * 300, height = 3 * 300, scale = 2)
 ```
 
 ### - By WHO classification : Fig S5
@@ -815,6 +818,9 @@ fig
 
 # Save the figure as a PNG file
 save_image(fig, paste(figures_folder, '/Supplemental/Fig_S5.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# save_image(fig, paste(figures_folder, '/Supplemental/Fig_S5.pdf', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
 This script creates a 3D scatter plot of the first three principal components from the PCA analysis, with points colored by WHO classification. The plot is then customized with a specific layout, with the legend hidden, and saved as a PNG file.
@@ -863,7 +869,7 @@ fig <- fig %>% layout(
 )
 
 # Save the figure as a PNG file
-save_image(fig, paste(figures_folder, '/Not_Included/DGE_WHO_with_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
+save_image(fig, paste(figures_folder, '/Other/DGE_WHO_with_legend.png', sep = ''), width = 2.5 * 300, height = 2.5 * 300, scale = 2)
 ```
 
 ## - DEGs
@@ -920,7 +926,7 @@ resAsh_df_plot[rownames(resAsh_adj %>% filter(padj <0.05)),'Significance'] <- 'S
 cols <- c('Significant' = '#E58368', 'Non-significant' = '#1d1929')
 
 # Save the plot as a PNG file
-png(filename = paste(figures_folder, '/Not_Included/DGE_BP-CMML_vs_Control_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
+png(filename = paste(figures_folder, '/Other/DGE_BP-CMML_vs_Control_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
 
 # Create the plot
 ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, fill = Significance, color = Significance)) + 
@@ -1063,6 +1069,11 @@ print(plot)
 png(filename = paste(figures_folder, '/Fig_02/Panel_D.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
 print(plot)
 invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_02/Panel_D.pdf', sep = ''), width = 4.3, height = 5.5)
+# print(plot)
+# invisible(dev.off())
 ```
 
 # 6) Heatmap : Panel E
@@ -1182,6 +1193,53 @@ ComplexHeatmap::draw(Heatmap_genes, heatmap_legend_side = "bottom", annotation_l
 png(filename = paste(figures_folder, '/Fig_02/Panel_E.png', sep = ''), height = 10, width = 13, units = 'cm',res = 300)
 ComplexHeatmap::draw(Heatmap_genes, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_02/Panel_E.pdf', sep = ''), width = 5.11811 , height = 3.93701)
+# ComplexHeatmap::draw(Heatmap_genes, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
+
+###
+
+# We will also save a version of this figure including the scale, previously omitted to maintain more easily the figure proportions
+
+# Create the heatmap
+Heatmap_genes <- Heatmap(scaled_genemat_ord_GeneSymbol, name = 'Scaled\nExpression',
+                         col = col_heatmap_guide,
+                         show_row_names = FALSE, 
+                         show_column_names = TRUE,
+                         cluster_columns = TRUE,
+                         cluster_rows = TRUE, 
+                         column_split = gene_identity$Group,
+                         row_split = Phenotype_identity$Condition,
+                         border = TRUE,
+                         cluster_row_slices = F, 
+                         cluster_column_slices = F, 
+                         row_gap = unit(0.05, 'cm'),
+                         column_gap = unit(0.05, 'cm'),
+                         show_column_dend = FALSE, 
+                         row_dend_side = 'right',
+                         column_names_side = 'bottom',
+                         use_raster = FALSE, 
+                         rect_gp = gpar(col = "black", lwd = 0.05),
+                         raster_by_magick = TRUE, 
+                         left_annotation = ha,
+                         row_title_gp = gpar(fontsize = 0, angle=45),
+                         row_names_gp = gpar(fontsize = 7, hjust=0),
+                         column_title_gp = gpar(fontsize = 12),
+                         column_names_gp = gpar(fontsize = 4, hjust=0),
+                         show_heatmap_legend = T,
+                         heatmap_legend_param = list(legend_direction = "horizontal", legend_width = unit(5, "cm")))
+
+# Save the heatmap to a PNG file
+png(filename = paste(figures_folder, '/Other/Panel_E_with_legend.png', sep = ''), height = 10, width = 13, units = 'cm',res = 300)
+ComplexHeatmap::draw(Heatmap_genes, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+invisible(dev.off())
+
+# # We also save a PDF copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Other/Panel_E_with_legend.pdf', sep = ''), width = 5.11811 , height = 3.93701)
+# ComplexHeatmap::draw(Heatmap_genes, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 # 7) Gene Dispersion : Panel F

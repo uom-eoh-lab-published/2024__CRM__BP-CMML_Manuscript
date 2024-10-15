@@ -279,7 +279,7 @@ HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response,
         row_names_gp = gpar(fontsize=8), 
         cluster_rows = T,
         column_names_gp = gpar(fontsize=8), 
-        show_heatmap_legend = T,
+        show_heatmap_legend = F,
         heatmap_legend_param = list(legend_direction = "horizontal",
                                     legend_width = unit(5, "cm")),
         row_names_side = 'right')
@@ -293,6 +293,47 @@ png(filename = paste(figures_folder, '/Supplemental/Fig_S11.png', sep = ''), uni
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Supplemental/Fig_S11.pdf', sep = ''), 
+#     width = 11.811, height = 7.87402)
+# draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
+#      annotation_legend_side = "bottom")
+# invisible(dev.off())
+
+###
+
+# We will also save a version of this figure including the scale, previously omitted to maintain more easily the figure proportions
+
+# Create a heatmap of the BeatAML drug response data
+HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response, 
+        name = 'ssGSEA Score',
+        row_split = RF_cluster_metadata$RF_Cluster, 
+        left_annotation  = row_anno,
+        col = col_heatmap_guide, 
+        rect_gp = gpar(col = "black", lwd = 0.05),
+        cluster_row_slices = F,
+        column_title_gp = gpar(fontsize=14, fontface='bold'),
+        row_names_gp = gpar(fontsize=8), 
+        cluster_rows = T,
+        column_names_gp = gpar(fontsize=8), 
+        show_heatmap_legend = T,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_width = unit(5, "cm")),
+        row_names_side = 'right')
+
+# Save the heatmap as a PNG file
+png(filename = paste(figures_folder, '/Other/Fig_S11_with_legend.png', sep = ''), units = "cm", width = 30, height = 20, res = 300)
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Other/Fig_S11_with_legend.pdf', sep = ''), 
+#     width = 11.811, height = 7.87402)
+# draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
+#      annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 # 4) RandomForest Subclustering
@@ -478,6 +519,12 @@ png(filename = paste(figures_folder, '/Fig_07/Panel_A.png', sep = ''), units = "
 print(plot.Hierarchical_clusters_K5)
 invisible(dev.off())
 
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_07/Panel_A.pdf', sep = ''), 
+#     width = 5.51181, height = 5.51181)
+# print(plot.Hierarchical_clusters_K5)
+# invisible(dev.off())
+
 # Create a scatter plot of the MDS coordinates, colored by cluster. With added labels
 plot.Hierarchical_clusters_K5_labelled <- plot.Hierarchical_clusters_K5 + geom_label_repel(aes(label = Sample, color=Cluster),
                   box.padding   = 0.65, 
@@ -656,6 +703,13 @@ draw(HMap_vangalen, heatmap_legend_side = "bottom",
      annotation_legend_side = "bottom")
 
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_07/Panel_C.pdf', sep = ''), 
+#     width = 7.3307087, height = 2.75591)
+# draw(HMap_vangalen, heatmap_legend_side = "bottom", 
+#      annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 # 6) Vizome BeatAML drug responses heatmap - K5 : Panel D
@@ -829,6 +883,13 @@ png(filename = paste(figures_folder, '/Fig_07/Panel_D.png', sep = ''), units = "
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom",
      annotation_legend_side = "bottom")
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_07/Panel_D.pdf', sep = ''), 
+#     width = 11.811, height = 8.66142)
+# draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom",
+#      annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 # 7) Vizome BeatAML drug responses grouped by family heatmap - K5 : Panel E
@@ -924,6 +985,12 @@ draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side =
 png(filename = paste(figures_folder, '/Fig_07/Panel_E.png', sep = ''), units = "cm", width = 24, height = 24, res = 300)
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_07/Panel_E.pdf', sep = ''), 
+#     width = 9.44882, height = 9.44882)
+# draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 # 8) Clinical decision tree : Panel F
@@ -1129,6 +1196,12 @@ rpart.plot::rpart.plot(treeModel, extra = 2)
 png(filename = paste(figures_folder, '/Fig_07/Panel_F.png', sep = ''), units = "cm", width = 18, height = 12, res = 300)
 rpart.plot::rpart.plot(treeModel, extra = 2)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_07/Panel_F.pdf', sep = ''), 
+#     width = 7.08661, height = 4.72441)
+# rpart.plot::rpart.plot(treeModel, extra = 2)
+# invisible(dev.off())
 ```
 
 ## - Evaluating model performance
