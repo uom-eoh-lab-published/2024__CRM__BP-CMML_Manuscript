@@ -44,11 +44,11 @@ gunzip Data.zip
 
   - Linux (HPC)
 
-  - MacOSX/Windows:
+  - MacOSX/Windows:  
 
-    To ensure reproducibility, please verify that your R and packages version match those used to generate figures in the manuscript - [Check exemplar session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01_Fig_S1/Fig_01_ABE_Fig_S1_SessionInfo.txt)
+    Please verify that your R and packages version match those used to generate figures in the manuscript - [Check exemplar session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01_Fig_S1/Fig_01_ABE_Fig_S1_SessionInfo.txt)  
 
-    Installation of python is only required to produce [Fig2C](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Fig_02/Panel_C.png) and [FigS5](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Supplemental/Fig_S5.png). To ensure reproducibility please verify that your Python modules version match those used to generate the above figures - [Check our conda requirements](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/python_conda_env_requirements.txt)
+    Installation of python is only required to produce [Fig2C](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Fig_02/Panel_C.png) and [FigS5](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Supplemental/Fig_S5.png). To ensure reproducibility please verify that your Python modules version match those used to generate the above figures - [Check our conda requirements](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/python_conda_env_requirements.txt)  
 
 ---
 
