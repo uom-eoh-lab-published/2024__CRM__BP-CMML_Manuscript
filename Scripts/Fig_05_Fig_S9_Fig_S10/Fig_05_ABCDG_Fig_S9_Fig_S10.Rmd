@@ -1,5 +1,5 @@
 ---
-title: "Figure 05 - Panels ABCDEFG + Fig S8 + Fig S9"
+title: "Figure 05 - Panels ABCDEFG + Fig S9 + Fig S10"
 output: 
   rmdformats::robobook:
     lightbox: true
@@ -145,7 +145,7 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_05_ABCDG_Fig_S8_Fig_S9_SessionInfo.txt'))
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_05_ABCDG_Fig_S9_Fig_S10_SessionInfo.txt'))
 
 # Print the session information
 sessionInfo()
@@ -158,7 +158,7 @@ RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Cluste
                                     sep = ''), row.names = 'Patient.ID')
 ```
 
-# 3) Panels AB + Fig S8
+# 3) Panels AB + Fig S9
 
 ## - 2019 VanGalen P. V. et al. Enrichment Scores HeatMap : Panel A
 
@@ -245,7 +245,7 @@ draw(HMap_WGCNA, heatmap_legend_side = "bottom", annotation_legend_side = "botto
 invisible(dev.off())
 ```
 
-## - 2017 Velten L. et al Enrichment Scores HeatMap : Fig S8
+## - 2017 Velten L. et al Enrichment Scores HeatMap : Fig S9
 
 This R script reads a CSV file containing enrichment scores for different cell type modules, creates a heatmap of the scores, and saves the heatmap as a PNG file.
 
@@ -297,7 +297,7 @@ HMap <- Heatmap(Velten_celltype_modules_scores, name = 'ssGSEA Score', column_sp
 draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 
 # Open a new PNG device
-png(filename = paste(figures_folder, '/Supplemental/Fig_S8.png', sep = ''), units = 'cm', width = 19.2, height = 11, res = 300)
+png(filename = paste(figures_folder, '/Supplemental/Fig_S9.png', sep = ''), units = 'cm', width = 19.2, height = 11, res = 300)
 
 # Draw the heatmap on the PNG device
 draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
@@ -1091,7 +1091,7 @@ print(plot)
 invisible(dev.off())
 ```
 
-### - C1 v C2 : Fig S9
+### - C1 v C2 : Fig S10
 
 This script creates a volcano plot of differential expression results, adding log10 transformed p-value and fold change, defining a color scheme, and identifying genes of interest. The plot is then displayed and saved as a PNG file.
 
@@ -1161,7 +1161,7 @@ plot <- EnhancedVolcano(genemat_ord,
 print(plot)
 
 # Save the plot as a PNG file
-png(filename = paste(figures_folder, '/Supplemental/Fig_S9.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
+png(filename = paste(figures_folder, '/Supplemental/Fig_S10.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
 print(plot)
 invisible(dev.off())
 ```

@@ -1,5 +1,5 @@
 ---
-title: "Figure 07 - Panels ACDEF + Fig S10"
+title: "Figure 07 - Panels ACDEF + Fig S11"
 output: 
   rmdformats::robobook:
     lightbox: true
@@ -151,11 +151,11 @@ RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Cluste
                                     sep = ''), row.names = 'Patient.ID')
 ```
 
-# 3) Vizome BeatAML drug responses heatmap - K2 : Fig S10
+# 3) Vizome BeatAML drug responses heatmap - K2 : Fig S11
 
 This code extracts the drug response data from a data frame, renames the columns, creates a data frame for the identity of the clusters, defines the colors for the annotation, creates a row annotation for the heatmap, defines the color scheme for the heatmap, creates a heatmap of the drug response data, draws the heatmap, and saves it as a PNG file.
 
-```{r echo=TRUE, fig.align='center', fig.cap='Figure S8', fig.pos='H', fig.height=7.87402, fig.width=11.811}
+```{r echo=TRUE, fig.align='center', fig.cap='Figure S11', fig.pos='H', fig.height=7.87402, fig.width=11.811}
 # Extract the drug response data from the RF_cluster_metadata data frame
 BeatAML_drug_response <- as.matrix(RF_cluster_metadata[,91:177])
 
@@ -289,7 +289,7 @@ draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom",
      annotation_legend_side = "bottom")
 
 # Save the heatmap as a PNG file
-png(filename = paste(figures_folder, '/Supplemental/Fig_S10.png', sep = ''), units = "cm", width = 30, height = 20, res = 300)
+png(filename = paste(figures_folder, '/Supplemental/Fig_S11.png', sep = ''), units = "cm", width = 30, height = 20, res = 300)
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
 invisible(dev.off())
@@ -427,7 +427,7 @@ par(lwd=3)
 
 This code cuts a dendrogram into five clusters, assigns each patient to a cluster, annotates the clusters, adds the cluster annotations to the MDS data, creates a scatter plot of the MDS coordinates colored by cluster, saves the plot as a PNG file, adds the cluster annotations to the RF metadata, and saves the RF metadata with the cluster annotations as a CSV file.
 
-```{r echo=TRUE, fig.align='center', fig.cap='Figure D', fig.pos='H', fig.height=5.51181, fig.width=5.51181}
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 7A', fig.pos='H', fig.height=5.51181, fig.width=5.51181}
 # Cut the dendrogram into 5 clusters
 Hierchical_clusters_K5 <- sort(cutree(dendro, k = 5))
 
