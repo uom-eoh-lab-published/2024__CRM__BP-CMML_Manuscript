@@ -161,7 +161,7 @@ We use the following code to download a gene annotation file, convert it into a 
 
 ```{r}
 # Define the path to the SQLite database
-txdb.filename <- paste(data_folder, "/RNASeq/Annotation_files/GENCODE_v42.annotation.sqlite", sep = '')
+txdb.filename <- paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.annotation.sqlite", sep = '')
 
 # Check if the SQLite database already exists
 if (file.exists(txdb.filename)) {
@@ -177,17 +177,17 @@ if (file.exists(txdb.filename)) {
   # Define the URL of the GTF file to download
   url <- "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_42/gencode.v42.annotation.gtf.gz"
   
-  dir.create(paste(data_folder, "/RNASeq/Annotation_files", sep = ''), 
+  dir.create(paste(data_folder, "/Resources/RNASeq/Annotation_files", sep = ''), 
              showWarnings = F)
   
   # Define the local path where the GTF file will be saved
-  destfile <- paste(data_folder, "/RNASeq/Annotation_files/GENCODE_v42.annotation.gtf.gz", sep = '')
+  destfile <- paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.annotation.gtf.gz", sep = '')
   
   # Download the GTF file
   download.file(url, destfile)
   
   # Define the path of the decompressed GTF file
-  gtf <- paste(data_folder, "/RNASeq/Annotation_files/GENCODE_v42.annotation.gtf", sep = '')
+  gtf <- paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.annotation.gtf", sep = '')
   
   # If the decompressed GTF file already exists, remove it
   if (file.exists(gtf)) {
@@ -218,7 +218,7 @@ We use the following code to load gene metadata from a CSV file, or if it's not 
 
 ```{r}
 # Define the path to the gene metadata CSV file
-gencode_gene_info_df.filename <- paste(data_folder, "/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv", sep = '')
+gencode_gene_info_df.filename <- paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv", sep = '')
 
 # Check if the CSV file already exists
 if (file.exists(gencode_gene_info_df.filename)) {
@@ -227,7 +227,7 @@ if (file.exists(gencode_gene_info_df.filename)) {
   print(sprintf('File %s already exist! Now Loading...',gencode_gene_info_df.filename))
   
   # Load the CSV file into a dataframe
-  Genes_annotation_metadata <- read.csv(paste(data_folder, '/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv', sep = ''), header = TRUE)
+  Genes_annotation_metadata <- read.csv(paste(data_folder, '/Resources/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv', sep = ''), header = TRUE)
   
   # Set the row names of the dataframe to the gene IDs
   rownames(Genes_annotation_metadata) <- Genes_annotation_metadata$gene_id
@@ -235,8 +235,8 @@ if (file.exists(gencode_gene_info_df.filename)) {
 } else {
   
   # Define the path to the GTF file and the SQLite database
-  gtf <- paste(data_folder, "/RNASeq/Annotation_files/GENCODE_v42.annotation.gtf", sep = '')
-  txdb.filename <- paste(data_folder, "/RNASeq/Annotation_files/GENCODE_v42.annotation.sqlite", sep = '')
+  gtf <- paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.annotation.gtf", sep = '')
+  txdb.filename <- paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.annotation.sqlite", sep = '')
   
   # Load the SQLite database
   txdb <- loadDb(txdb.filename)
@@ -286,7 +286,7 @@ if (file.exists(gencode_gene_info_df.filename)) {
   print(sprintf('File %s has been generated! Now loading...',gencode_gene_info_df.filename))
   
   # Load the CSV file into a dataframe
-  Genes_annotation_metadata <- read.csv(paste(data_folder, '/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv', sep = ''), header = TRUE)
+  Genes_annotation_metadata <- read.csv(paste(data_folder, '/Resources/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv', sep = ''), header = TRUE)
   
   # Set the row names of the dataframe to the gene IDs
   rownames(Genes_annotation_metadata) <- Genes_annotation_metadata$gene_id
@@ -296,7 +296,7 @@ if (file.exists(gencode_gene_info_df.filename)) {
 ## - Loading sample metadata files
 
 ```{r}
-Samples_metadata <- read.csv(paste(data_folder, '/RNASeq/Metadata/RNASeq_Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
+Samples_metadata <- read.csv(paste(data_folder, '/InHouse/RNASeq/Metadata/Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
 Samples_metadata$Condition <- factor(Samples_metadata$Condition)
 Samples_metadata$Condition <- relevel(Samples_metadata$Condition, ref = "Control")
 ```
@@ -308,7 +308,7 @@ Only relevant if we start from the raw counts
 ## - Loading counts path
 
 ```{r eval=FALSE, include=FALSE}
-STAR_Salmon_output_path <- paste(data_folder, '/RNASeq/Counts/Raw_counts/Individual', sep = '')
+STAR_Salmon_output_path <- paste(data_folder, '/InHouse/RNASeq/Counts/Raw_counts/Individual', sep = '')
 
 files <- file.path(STAR_Salmon_output_path, list.files(STAR_Salmon_output_path), "quant.sf")
 names(files) <- list.files(STAR_Salmon_output_path)
@@ -327,20 +327,20 @@ TXI.Genes$abundance <- TXI.Genes$abundance[,rownames(Samples_metadata)]
 TXI.Genes$counts <- TXI.Genes$counts[,rownames(Samples_metadata)]
 TXI.Genes$length <- TXI.Genes$length[,rownames(Samples_metadata)]
 
-saveRDS(TXI.Genes, file = paste(data_folder, '/RNASeq/Counts/Raw_counts/Tximport_object.rds', sep = ''))
+saveRDS(TXI.Genes, file = paste(data_folder, '/InHouse/RNASeq/Counts/Raw_counts/Tximport_object.rds', sep = ''))
 ```
 
 ## - Exporting gene-level counts and TPMs
 
 ```{r eval=FALSE, include=FALSE}
-dir.create(paste(data_folder, '/RNASeq/Counts/Raw_counts/Grouped', sep = ''), showWarnings = F)
+dir.create(paste(data_folder, '/InHouse/RNASeq/Counts/Raw_counts/Grouped', sep = ''), showWarnings = F)
 
-dir.create(paste(data_folder, '/RNASeq/Counts/Processed_counts', sep = ''), showWarnings = F)
-dir.create(paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped', sep = ''), showWarnings = F)
+dir.create(paste(data_folder, '/InHouse/RNASeq/Counts/Processed_counts', sep = ''), showWarnings = F)
+dir.create(paste(data_folder, '/InHouse/RNASeq/Counts/Processed_counts/Grouped', sep = ''), showWarnings = F)
 
-write.csv(x = TXI.Genes$counts, file = paste(data_folder, '/RNASeq/Counts/Raw_counts/Grouped/Tximport_raw_countmat.csv', sep = ''), row.names = TRUE, quote = FALSE)
+write.csv(x = TXI.Genes$counts, file = paste(data_folder, '/InHouse/RNASeq/Counts/Raw_counts/Grouped/Tximport_raw_countmat.csv', sep = ''), row.names = TRUE, quote = FALSE)
 
-write.csv(x = TXI.Genes$abundance, file =  paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/Tximport_TPM_mat.csv', sep = ''), row.names = TRUE, quote = FALSE)
+write.csv(x = TXI.Genes$abundance, file =  paste(data_folder, '/InHouse/RNASeq/Counts/Processed_counts/Grouped/Tximport_TPM_mat.csv', sep = ''), row.names = TRUE, quote = FALSE)
 ```
 
 # 4) DESeq2 Analysis
@@ -348,9 +348,9 @@ write.csv(x = TXI.Genes$abundance, file =  paste(data_folder, '/RNASeq/Counts/Pr
 ## - Loading read and TPM matrices
 
 ```{r}
-dir.create(paste(data_folder, '/RNASeq/DESeq2', sep = ''), showWarnings = F)
+dir.create(paste(data_folder, '/InHouse/RNASeq/DESeq2', sep = ''), showWarnings = F)
 
-TXI.Genes <- readRDS(paste(data_folder, '/RNASeq/Counts/Tximport_object.rds', sep = ''))
+TXI.Genes <- readRDS(paste(data_folder, '/InHouse/RNASeq/Counts/Tximport_object.rds', sep = ''))
 ```
 
 ## - Filtering non-unique uninformative Ensembl.id
@@ -399,7 +399,7 @@ Now we generate a list of unique genes for the real DESeq2 run
 unique_genes <- c(rowData(dds)[grep(TRUE,isUnique(rowData(dds)$gene_name)),]$gene_id,
                   df_unique$gene_id)
 
-write.csv(x = data.frame(unique_genes), file = paste(data_folder, '/RNASeq/Counts/List_unique_genes.csv', sep = ''), quote = F, row.names = F)
+write.csv(x = data.frame(unique_genes), file = paste(data_folder, '/InHouse/RNASeq/Counts/Processed_counts/List_unique_genes.csv', sep = ''), quote = F, row.names = F)
 
 table(isUnique(unique_genes))
 ```
@@ -475,7 +475,7 @@ head(assay(vst), 3)
 
 vst_mat <- as.data.frame(vst@assays@data@listData[[1]]) %>% add_column(GeneSymbol = as.data.frame(rowData(vst))[,'gene_name'], .before = colnames(dds)[1]) %>% add_column(GeneBiotype = as.data.frame(rowData(vst))[,'gene_type'], .before = colnames(dds)[1]) 
 
-write.csv(vst_mat, file = paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/DGE_DESeq2_vst_normalised_countmat.csv', sep = ''), quote = F, row.names = T)
+write.csv(vst_mat, file = paste(data_folder, '/InHouse/RNASeq/Counts/Processed_counts/Grouped/DESeq2_vst_normalised_countmat.csv', sep = ''), quote = F, row.names = T)
 
 # Generating rlog normalised counts
 
@@ -484,7 +484,7 @@ head(assay(rlog), 3)
 
 rlog_mat <- as.data.frame(rlog@assays@data@listData[[1]]) %>% add_column(GeneSymbol = as.data.frame(rowData(rlog))[,'gene_name'], .before = colnames(dds)[1]) %>% add_column(GeneBiotype = as.data.frame(rowData(rlog))[,'gene_type'], .before = colnames(dds)[1]) 
 
-write.csv(rlog_mat, file = paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/DGE_DESeq2_rlog_normalised_countmat.csv', sep = ''), quote = F, row.names = T)
+write.csv(rlog_mat, file = paste(data_folder, '/InHouse/RNASeq/Counts/Processed_counts/Grouped/DESeq2_rlog_normalised_countmat.csv', sep = ''), quote = F, row.names = T)
 ```
 
 
@@ -503,16 +503,16 @@ pca_samples$Condition <- colData(dds)[rownames(pca_samples),'Condition']
 pca_genes <- as.data.frame(pca$rotation)
 pca_genes <- add_column(pca_genes, .before = 'PC1', GeneSymbol = rowData(dds)[rownames(pca_genes),'gene_name'])
 
-dir.create(path = paste(data_folder, '/RNASeq/DESeq2/PCs', sep = ''), showWarnings = F)
+dir.create(path = paste(data_folder, '/InHouse/RNASeq/DESeq2/PCs', sep = ''), showWarnings = F)
 
-write.csv(pca_samples, file = paste(data_folder, '/RNASeq/DESeq2/PCs/DGE_Samples_PCs_from_rlog_normalised_count_mat.csv', sep = ''), quote = F, row.names = T)
+write.csv(pca_samples, file = paste(data_folder, '/InHouse/RNASeq/DESeq2/PCs/DGE_Samples_PCs_from_rlog_normalised_count_mat.csv', sep = ''), quote = F, row.names = T)
 
-write.csv(pca_genes, file = paste(data_folder, '/RNASeq/DESeq2/PCs/DGE_Genes_PCs_from_rlog_normalised_count_mat.csv', sep = ''), quote = F, row.names = T)
+write.csv(pca_genes, file = paste(data_folder, '/InHouse/RNASeq/DESeq2/PCs/DGE_Genes_PCs_from_rlog_normalised_count_mat.csv', sep = ''), quote = F, row.names = T)
 
 var_explained_df <- data.frame(PC= paste0("PC",1:49),
                                var_explained=(pca$sdev)^2/sum((pca$sdev)^2))
 
-write.csv(var_explained_df, file = paste(data_folder, '/RNASeq/DESeq2/PCs/DGE_PC_variance_explained.csv', sep = ''), quote = F, row.names = T)
+write.csv(var_explained_df, file = paste(data_folder, '/InHouse/RNASeq/DESeq2/PCs/DGE_PC_variance_explained.csv', sep = ''), quote = F, row.names = T)
 
 tot_var_explained <- (var_explained_df$var_explained[1] + 
   var_explained_df$var_explained[2] +
@@ -806,9 +806,9 @@ save_image(fig, paste(figures_folder, '/Not_Included/DGE_WHO_with_legend.png', s
 ## - DEGs
 
 ```{r}
-TF_list <- read.csv(paste(data_folder, '/RNASeq/Resources/Gene_Metadata/Lambert2018_TFs.txt', sep = ''), sep = '\t', header = F)
+TF_list <- read.csv(paste(data_folder, '/InHouse/RNASeq/Resources/Gene_Metadata/Lambert2018_TFs.txt', sep = ''), sep = '\t', header = F)
 
-HGNC_CD_markers_list <- read.csv(paste(data_folder, '/RNASeq/Resources/Gene_Metadata/HGNC_CD_Markers.csv', sep = ''))
+HGNC_CD_markers_list <- read.csv(paste(data_folder, '/InHouse/RNASeq/Resources/Gene_Metadata/HGNC_CD_Markers.csv', sep = ''))
 ```
 
 ### - BP-CMML vs Control
@@ -872,9 +872,9 @@ invisible(dev.off())
 #### - Performing comparison
 
 ```{r}
-dir.create(path = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons', sep = ''), 
+dir.create(path = paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons', sep = ''), 
            showWarnings = F)
-dir.create(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML', sep = ''), 
+dir.create(paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML', sep = ''), 
            showWarnings = F)
 
 resAsh_df <- as.data.frame(resAsh) %>% add_column(GeneSymbol =rowData(dds)[rownames(resAsh),'gene_name'], .before = 'baseMean') %>% add_column(GeneBiotype =rowData(dds)[rownames(resAsh),'gene_type'], .before = 'baseMean')
@@ -887,29 +887,29 @@ resAsh_df[grep(TRUE, resAsh_df$GeneSymbol %in% HGNC_CD_markers_list$Approved.sym
 
 res_significant <- resAsh_df %>% arrange(padj)
 write.csv(res_significant, 
-          file = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''), 
+          file = paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''), 
           row.names = T, quote = FALSE)
 
 res_significant <- resAsh_df %>% dplyr::filter(padj < 0.05) %>% dplyr::arrange(padj)
 write.csv(res_significant, 
-          file = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
+          file = paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
           row.names = T, quote = FALSE)
 
 res_significant_UP <- res_significant %>% dplyr::filter(log2FoldChange >= 0) %>% dplyr::arrange(padj)
 write.csv(res_significant_UP, 
-          file = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
+          file = paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
           row.names = T, quote = FALSE)
 
 res_significant_DOWN <- res_significant %>% dplyr::filter(log2FoldChange < 0) %>% dplyr::arrange(padj)
 write.csv(res_significant_DOWN, 
-          file = paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
+          file = paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
           row.names = T, quote = FALSE)
 ```
 
 # 5) Vulcano plot
 
 ```{r}
-DESeq2_results <- read.csv(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''))
+DESeq2_results <- read.csv(paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''))
 ```
 
 ```{r echo=FALSE, fig.align='center', fig.cap='Figure 2D. Volcano plot of differentially expressed genes comparing BP- CMML to healthy age-matched control HSPCs.', fig.height=4.656, fig.pos='H', fig.width=3.640}
@@ -982,7 +982,7 @@ invisible(dev.off())
 # 6) Heatmap uniquely up genes
 
 ```{r}
-UP_in_BP_CMML <- read.csv(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
+UP_in_BP_CMML <- read.csv(paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
 
 UP_in_BP_CMML <- UP_in_BP_CMML %>% filter(GeneBiotype == 'protein_coding')
 
@@ -990,7 +990,7 @@ BP_CMML_genes <- (UP_in_BP_CMML %>% arrange(padj))$GeneSymbol[1:30]
 
 # - - - - - - - - - - -
 
-UP_in_healthy <- read.csv(paste(data_folder, '/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
+UP_in_healthy <- read.csv(paste(data_folder, '/InHouse/RNASeq/DESeq2/DEGs_Comparisons/Control_vs_BP-CMML/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
 
 UP_in_healthy <- UP_in_healthy %>% filter(GeneBiotype == 'protein_coding')
 
@@ -1001,7 +1001,7 @@ genes_to_keep <- c(BP_CMML_genes, Healthy_genes)
 
 ```{r echo=FALSE, fig.align='center', fig.cap='Figure 2E. Heatmap showing the top 30 up- and down-regulated DEGs per condition, ranked by p.adj value.', fig.height=5, fig.pos='H', fig.width=6.5}
 
-vst_results <- read.csv(paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/DGE_DESeq2_vst_normalised_countmat.csv', sep = ''), row.names = 'X')
+vst_results <- read.csv(paste(data_folder, '/InHouse/RNASeq/Counts/Processed_counts/Grouped/DESeq2_vst_normalised_countmat.csv', sep = ''), row.names = 'X')
 
 vst_results <- vst_mat
 
@@ -1097,11 +1097,11 @@ invisible(dev.off())
 # 7) Calculating condition transcriptional heterogeneity
 
 ```{r}
-dir.create(path = paste(data_folder, '/RNASeq/DESeq2/Other', sep = ''), 
+dir.create(path = paste(data_folder, '/InHouse/RNASeq/DESeq2/Other', sep = ''), 
            showWarnings = F)
-dir.create(path = paste(data_folder, '/RNASeq/DESeq2/Other/Gene_Dispersion', sep = ''), 
+dir.create(path = paste(data_folder, '/InHouse/RNASeq/DESeq2/Other/Gene_Dispersion', sep = ''), 
            showWarnings = F)
-dir.create(path = paste(data_folder, '/RNASeq/DESeq2/Other/Gene_Dispersion/Control_vs_BP-CMML', sep = ''), 
+dir.create(path = paste(data_folder, '/InHouse/RNASeq/DESeq2/Other/Gene_Dispersion/Control_vs_BP-CMML', sep = ''), 
            showWarnings = F)
 
 Control_samples <- (Samples_metadata %>% mutate(Sample.ID = rownames(Samples_metadata)) %>% filter(Condition == 'Control'))$Sample.ID
@@ -1143,6 +1143,6 @@ df$Disp_Control <- rowData(dds_control)[,'dispersion']
 df$Disp_BPCMML <- rowData(dds_BPCMML)[,'dispersion']
 
 write.csv(df, 
-          file = paste(data_folder, '/RNASeq/DESeq2/Other/Gene_Dispersion/Control_vs_BP-CMML/Gene_Dispersion_per_condition.csv', sep = ''),
+          file = paste(data_folder, '/InHouse/RNASeq/DESeq2/Other/Gene_Dispersion/Control_vs_BP-CMML/Gene_Dispersion_per_condition.csv', sep = ''),
           row.names = T)
 ```

@@ -140,14 +140,14 @@ sessionInfo()
 # 2) Loading input files
 
 ```{r}
-Expression_matrix <- read.csv(paste(data_folder, '/RNASeq/Counts/Processed_counts/Grouped/DGE_DESeq2_vst_normalised_countmat.csv', sep = ''), row.names = 'X')
+Expression_matrix <- read.csv(paste(data_folder, '/InHouse/RNASeq/Counts/Processed_counts/Grouped/DESeq2_vst_normalised_countmat.csv', sep = ''), row.names = 'X')
 
 colnames(Expression_matrix) <- str_replace_all(colnames(Expression_matrix), pattern = 'X', replacement = '')
 
-Genes_annotation_metadata <- read.csv(paste(data_folder, "/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv", sep = ''))
+Genes_annotation_metadata <- read.csv(paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv", sep = ''))
 rownames(Genes_annotation_metadata) <- Genes_annotation_metadata$gene_id
 
-Samples_metadata <- read.csv(paste(data_folder, '/RNASeq/Metadata/RNASeq_Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
+Samples_metadata <- read.csv(paste(data_folder, '/InHouse/RNASeq/Metadata/InHouse/Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
 ```
 
 # 3) Filtering expression matrix
@@ -163,7 +163,7 @@ Expression_matrix <- as.matrix(Expression_matrix)
 ## - Loading human TF list
 
 ```{r}
-Human_TFs <- read.csv(paste(data_folder, '/RNASeq/Resources/Gene_Metadata/Lambert2018_TFs.txt', sep = ''), sep = '\t', header = F)
+Human_TFs <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Metadata/Lambert2018_TFs.txt', sep = ''), sep = '\t', header = F)
 Human_TFs <- Human_TFs$V1
 Human_TFs <- Human_TFs[grep(TRUE, Human_TFs %in% rownames(Expression_matrix))]
 ```
@@ -171,17 +171,17 @@ Human_TFs <- Human_TFs[grep(TRUE, Human_TFs %in% rownames(Expression_matrix))]
 # 4) Genie3
 
 ```{r}
-dir.create(paste(data_folder, '/RNASeq/Genie3', sep = ''), showWarnings = F)
+dir.create(paste(data_folder, '/InHouse/RNASeq/Genie3', sep = ''), showWarnings = F)
 ```
 
 The code below should be ran on a HPC or highly performing computer.
 
 ```{r}
-genie3_weights <- paste(data_folder, '/RNASeq/Genie3/Genie3_Weights.rds', sep = '')
+genie3_weights <- paste(data_folder, '/InHouse/RNASeq/Genie3/Genie3_Weights.rds', sep = '')
 
 if (file.exists(genie3_weights)) {
   
-  weightMat <- readRDS(paste(data_folder, '/RNASeq/Genie3/Genie3_Weights.rds', sep = ''))
+  weightMat <- readRDS(paste(data_folder, '/InHouse/RNASeq/Genie3/Genie3_Weights.rds', sep = ''))
   
 } else {
 
@@ -190,24 +190,25 @@ weightMat <- GENIE3(Expression_matrix,
                     nCores = 12, verbose = TRUE)
 
 saveRDS(object = weightMat, 
-        file = paste(data_folder, '/RNASeq/Genie3/Genie3_Weights.rds', sep = ''))
+        file = paste(data_folder, '/InHouse/RNASeq/Genie3/Genie3_Weights.rds', sep = ''))
 
 }
 ```
 
 ```{r}
-linkList <- paste(data_folder, '/RNASeq/Genie3/Genie3_Linklist.rds', sep = '')
+linkList <- paste(data_folder, '/InHouse/RNASeq/Genie3/Genie3_Linklist.rds', sep = '')
 
 if (file.exists(linkList)) {
 
-linkList <- readRDS(paste(data_folder, '/RNASeq/Genie3/Genie3_Linklist.rds', sep = ''))
+linkList <- readRDS(paste(data_folder, '/InHouse/RNASeq/Genie3/Genie3_Linklist.rds', sep = ''))
 
 } else {
 
+set.seed(123)
 linkList <- getLinkList(weightMat)
   
 saveRDS(linkList, 
-        paste(data_folder, '/RNASeq/Genie3/Genie3_Linklist.rds', sep = ''))
+        paste(data_folder, '/InHouse/RNASeq/Genie3/Genie3_Linklist.rds', sep = ''))
   
 }
 ```
@@ -219,7 +220,7 @@ saveRDS(linkList,
 ### - Pre-filtering
 
 ```{r}
-dir.create(paste(data_folder, '/RNASeq/WGCNA', sep = ''), showWarnings = F)
+dir.create(paste(data_folder, '/InHouse/RNASeq/WGCNA', sep = ''), showWarnings = F)
 
 gene_var <- rowVars(Expression_matrix)
 summary(gene_var)
@@ -1110,7 +1111,7 @@ genes_to_module_df[colnames(WGCNA_Input_ExpMat_filtered[,NewModuleColors == ME_c
 
 genes_to_module_df <- genes_to_module_df %>% arrange(Module)
 
-write.csv(x = genes_to_module_df, file = paste(data_folder, '/RNASeq/WGCNA/ME_Gene_Assignment.csv', sep = ''),
+write.csv(x = genes_to_module_df, file = paste(data_folder, '/InHouse/RNASeq/WGCNA/ME_Gene_Assignment.csv', sep = ''),
           row.names = T)
 
 ```
@@ -1131,7 +1132,7 @@ names(MMPvalue) = paste("p.", modNames, sep="");
 
 Module_Membership_df <- cbind(geneModuleMembership, MMPvalue)
 
-write.csv(Module_Membership_df, paste(data_folder, '/RNASeq/WGCNA/ME_Gene_Membership.csv', sep = ''), 
+write.csv(Module_Membership_df, paste(data_folder, '/InHouse/RNASeq/WGCNA/ME_Gene_Membership.csv', sep = ''), 
           quote = F, row.names = T)
 ```
 
@@ -1140,9 +1141,9 @@ write.csv(Module_Membership_df, paste(data_folder, '/RNASeq/WGCNA/ME_Gene_Member
 ## - Loading WGCNA MEs
 
 ```{r}
-MEs <- read.csv(paste(data_folder, '/RNASeq/WGCNA/ME_Gene_Membership.csv', sep = ''), row.names = 'X')
+MEs <- read.csv(paste(data_folder, '/InHouse/RNASeq/WGCNA/ME_Gene_Membership.csv', sep = ''), row.names = 'X')
 
-MEs_assigned_genes <- read.csv(paste(data_folder, '/RNASeq/WGCNA/ME_Gene_Assignment.csv', sep = ''))
+MEs_assigned_genes <- read.csv(paste(data_folder, '/InHouse/RNASeq/WGCNA/ME_Gene_Assignment.csv', sep = ''))
 
 Module_genes_list <- list()
 
@@ -1197,7 +1198,7 @@ Top_30percent_Module_genes_list[['ME5']] <- rownames(Top_30percent_ME5_genes)
 Top_30percent_Module_genes_list[['ME6']] <- rownames(Top_30percent_ME6_genes)
 
 write.list(Top_30percent_Module_genes_list, 
-           file = paste(data_folder, '/RNASeq/WGCNA/WGCNA_Modules_Top30_percent_genes.csv', sep = ''))
+           file = paste(data_folder, '/InHouse/RNASeq/WGCNA/WGCNA_Modules_Top30_percent_genes.csv', sep = ''))
 ```
 
 ### - Adding the top 10% cor. genes to the uniquely associated genes found by TOM
@@ -1223,19 +1224,19 @@ Module_genes_list_added[['ME6']] <- unique(c(Module_genes_list[['ME6']], Top_30p
 ### - Loading Genie3 weight matrix
 
 ```{r}
-Genie3_weights <- readRDS(paste(data_folder, '/RNASeq/Genie3/Genie3_Weights.rds', sep = ''))
+Genie3_weights <- readRDS(paste(data_folder, '/InHouse/RNASeq/Genie3/Genie3_Weights.rds', sep = ''))
 ```
 
 ### - Loading Genie 3 TF links 
 
 ```{r}
-linkList <- readRDS(paste(data_folder, '/RNASeq/Genie3/Genie3_Linklist.rds', sep = ''))
+linkList <- readRDS(paste(data_folder, '/InHouse/RNASeq/Genie3/Genie3_Linklist.rds', sep = ''))
 ```
 
 ### - Evaluating TF weights for each module identified via WGCNA
 
 ```{r}
-tf_weights <- paste(data_folder, '/RNASeq/WGCNA/WGCNA_Modules_Genie3_TF_regulator_per_module.csv', sep = '')
+tf_weights <- paste(data_folder, '/InHouse/RNASeq/WGCNA/WGCNA_Modules_Genie3_TF_regulator_per_module.csv', sep = '')
 
 if (file.exists(tf_weights)) {
   
@@ -1291,7 +1292,7 @@ if (file.exists(tf_weights)) {
   tf_weights$ME6_rank <- 1:length(rownames(tf_weights))
   
   
-  write.csv(x = tf_weights, file = paste(data_folder, '/RNASeq/WGCNA/WGCNA_Modules_Genie3_TF_regulator_per_module.csv', sep = ''), quote = F, row.names = T)
+  write.csv(x = tf_weights, file = paste(data_folder, '/InHouse/RNASeq/WGCNA/WGCNA_Modules_Genie3_TF_regulator_per_module.csv', sep = ''), quote = F, row.names = T)
   
 }
 ```
@@ -1336,7 +1337,7 @@ modules <- unique(MEs_assigned_genes$Module)
 for (module in modules) {
 
 write.list(Enriched[[module]], file = paste(data_folder, 
-                                            sprintf('/RNASeq/WGCNA/%s_enrichR_pathways.csv', module), 
+                                            sprintf('/InHouse/RNASeq/WGCNA/%s_enrichR_pathways.csv', module), 
                                             sep = ''))
 
 }
