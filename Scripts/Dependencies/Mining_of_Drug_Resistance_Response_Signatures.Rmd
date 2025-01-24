@@ -35,8 +35,18 @@ Here, we define the directories for input data and output files.
 # Get the directory of the current script
 script_folder <- dirname(rstudioapi::getSourceEditorContext()$path)
 
-# Define the data folder and output folder
-data_folder <- './Data'
+dir.create(paste(local_wd_folder, "/Data", sep = ''), showWarnings = F)
+
+dir.create(paste(local_wd_folder, "/Figures", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_01", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_02", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_03", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_04", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_05", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_06", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_07", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Supplemental", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Other", sep = ''), showWarnings = F)
 
 dir.create(paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Sample_Selection'), showWarnings = FALSE)
 dir.create(paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures'), showWarnings = FALSE)
@@ -44,7 +54,7 @@ dir.create(paste0(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/
 #results_folder <- './Results'
 figures_folder <- './Figures'
 
-dir.create(paste0(figures_folder, '/Not_Included/ExVivo_Inhibitor_Response_Distributions'), showWarnings = FALSE)
+dir.create(paste0(figures_folder, '/Other/ExVivo_Inhibitor_Response_Distributions'), showWarnings = FALSE)
 ```
 
 ## - Setting seed
@@ -280,7 +290,7 @@ for (drug in colnames(DrugResponse_classification)) {
   ExVivo_Drug_Response_filtered <- DrugResponse_Data_SelectiveInhi[DrugResponse_Data_SelectiveInhi$dbgap_rnaseq_sample %in% rownames(DrugResponse_classification)[!is.na(DrugResponse_classification[,drug])],]
   
   # Set up PNG output
-  png(filename = paste0(figures_folder, '/Not_Included/ExVivo_Inhibitor_Response_Distributions/', drug, '.png'), 
+  png(filename = paste0(figures_folder, '/Other/ExVivo_Inhibitor_Response_Distributions/', drug, '.png'), 
       res = 300, units = 'in', width = 6, height = 3.5)
   
   # Create histogram and density plot for all samples

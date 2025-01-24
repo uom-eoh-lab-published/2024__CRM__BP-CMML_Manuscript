@@ -1,0 +1,61 @@
+R version 4.3.3 (2024-02-29)
+Platform: aarch64-apple-darwin20 (64-bit)
+Running under: macOS Sonoma 14.7
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.3-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.11.0
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+time zone: Europe/London
+tzcode source: internal
+
+attached base packages:
+[1] grid      stats4    stats     graphics  grDevices utils     datasets  methods  
+[9] base     
+
+other attached packages:
+ [1] ggsci_3.2.0                 scales_1.3.0                yarrr_0.1.5                
+ [4] circlize_0.4.16             BayesFactor_0.9.12-4.7      Matrix_1.6-5               
+ [7] coda_0.19-4.1               jpeg_0.1-10                 RColorBrewer_1.1-3         
+[10] unikn_1.0.0                 ggplot2_3.5.1               ComplexHeatmap_2.18.0      
+[13] stringr_1.5.1               SummarizedExperiment_1.32.0 Biobase_2.62.0             
+[16] GenomicRanges_1.54.1        GenomeInfoDb_1.38.8         IRanges_2.36.0             
+[19] S4Vectors_0.40.2            BiocGenerics_0.48.1         MatrixGenerics_1.14.0      
+[22] matrixStats_1.4.1          
+
+loaded via a namespace (and not attached):
+ [1] DBI_1.2.3               bitops_1.0-9            pbapply_1.7-2          
+ [4] GSEABase_1.64.0         sandwich_3.1-1          rlang_1.1.4            
+ [7] magrittr_2.0.3          clue_0.3-65             GetoptLong_1.0.5       
+[10] multcomp_1.4-26         compiler_4.3.3          RSQLite_2.3.7          
+[13] png_0.1-8               vctrs_0.6.5             shape_1.4.6.1          
+[16] pkgconfig_2.0.3         crayon_1.5.3            fastmap_1.2.0          
+[19] backports_1.5.0         XVector_0.42.0          utf8_1.2.4             
+[22] graph_1.80.0            MatrixModels_0.5-3      purrr_1.0.2            
+[25] bit_4.5.0               xfun_0.48               modeltools_0.2-23      
+[28] zlibbioc_1.48.2         cachem_1.1.0            blob_1.2.4             
+[31] DelayedArray_0.28.0     BiocParallel_1.36.0     cluster_2.1.6          
+[34] broom_1.0.7             parallel_4.3.3          R6_2.5.1               
+[37] coin_1.4-3              stringi_1.8.4           car_3.1-3              
+[40] lubridate_1.9.3         Rcpp_1.0.13             iterators_1.0.14       
+[43] knitr_1.48              zoo_1.8-12              splines_4.3.3          
+[46] timechange_0.3.0        tidyselect_1.2.1        rstudioapi_0.16.0      
+[49] abind_1.4-8             doParallel_1.0.17       codetools_0.2-20       
+[52] lattice_0.22-6          tibble_3.2.1            withr_3.0.1            
+[55] KEGGREST_1.42.0         survival_3.7-0          Biostrings_2.70.3      
+[58] pillar_1.9.0            BiocManager_1.30.25     ggpubr_0.6.0           
+[61] carData_3.0-5           foreach_1.5.2           generics_0.1.3         
+[64] RCurl_1.98-1.16         munsell_0.5.1           xtable_1.8-4           
+[67] glue_1.8.0              tools_4.3.3             annotate_1.80.0        
+[70] ggsignif_0.6.4          mvtnorm_1.3-1           XML_3.99-0.17          
+[73] cowplot_1.1.3           tidyr_1.3.1             libcoin_1.0-10         
+[76] AnnotationDbi_1.64.1    colorspace_2.1-1        GenomeInfoDbData_1.2.11
+[79] Formula_1.2-5           cli_3.6.3               fansi_1.0.6            
+[82] S4Arrays_1.2.1          dplyr_1.1.4             gtable_0.3.5           
+[85] rstatix_0.7.2           digest_0.6.37           SparseArray_1.2.4      
+[88] TH.data_1.1-2           rjson_0.2.23            memoise_2.0.1          
+[91] lifecycle_1.0.4         httr_1.4.7              GlobalOptions_0.1.2    
+[94] bit64_4.5.2             MASS_7.3-60.0.1        

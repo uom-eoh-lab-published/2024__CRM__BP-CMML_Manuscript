@@ -218,6 +218,12 @@ draw(flow_heatmap, heatmap_legend_side = "bottom", annotation_legend_side = "bot
 
 # Shut down the graphics device
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_04/Panel_A.pdf', sep = ''), 
+#     width = 7.87402, height = 4.33071)
+# draw(flow_heatmap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 # - Panel CD
@@ -403,6 +409,13 @@ plot(dendro, axes=F)
 
 # Close PNG device
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_04/Panel_D-1.pdf', sep = ''), 
+#     width = 8.26772, height = 4.133858)
+# par(lwd=3)
+# plot(dendro, axes=F)
+# invisible(dev.off())
 ```
 
 ```{r echo=TRUE, fig.align='center', fig.cap='Figure 4D', fig.pos='H', fig.height=5.51181, fig.width=5.51181}
@@ -448,6 +461,12 @@ print(plot.Hierarchical_clusters_K2_labelled)
 png(filename = paste(figures_folder, '/Fig_04/Panel_D-2.png', sep = ''), units = "cm", width = 14, height = 14, res = 300)
 print(plot.Hierarchical_clusters_K2_labelled)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_04/Panel_D-2.pdf', sep = ''), 
+#     width = 5.51181, height = 5.51181)
+# print(plot.Hierarchical_clusters_K2_labelled)
+# invisible(dev.off())
 
 # Add cluster annotations to metadata
 RF.metadata.hierarchical_clustering_K2 <- RF.metadata
