@@ -1,18 +1,17 @@
 
 # Project information:
 
-Coded in/requires:
+**Coded in/requires**:
 
-![R](https://img.shields.io/badge/r-%23276DC3.svg?style=for-the-badge&logo=r&logoColor=white)
+![Static Badge](https://img.shields.io/badge/v4.3.3-blue?style=flat&logo=R)
 &nbsp;
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Static Badge](https://img.shields.io/badge/v3.12.3-white?style=flat&logo=Python)
 
 ---
 
 **Lead:** KGURASHI  
 **Disease:** Blast Phase Chronic Myelomonocytic Leukemia (CMML)
  
----
  
 This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
 
