@@ -17,7 +17,7 @@
 ## Content: 
 This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
 
-## Instructions on how to reproduce manuscript figures:
+## Instructions on reproducibility:
 
 1) Please download data from Mendeley Data repository at:
 
