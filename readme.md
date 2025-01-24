@@ -1,6 +1,8 @@
 
 ![R](https://img.shields.io/badge/r-%23276DC3.svg?style=for-the-badge&logo=r&logoColor=white)
-[![HitCount](https://hits.dwyl.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript.svg?style=flat-square)](http://hits.dwyl.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+
+![Static Badge](https://img.shields.io/badge/Connect-blue?style=flat&logo=linkedin&link=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fkristiangurashi%2F)
 
 # Project Information:
  
