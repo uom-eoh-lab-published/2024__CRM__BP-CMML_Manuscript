@@ -28,7 +28,7 @@ This is the code repository for the CRM 2024 manuscript on BP-CMML stratificatio
 
 1) Please download the processed input data deposite in the following Mendeley Data repository: [Link to data](https://data.mendeley.com/preview/vcsyd7ns8f?a=416960ed-b18d-4828-ae53-d958751fd08c)
 
-2) To ensure reproducibility, please verify that your R and packages version match those used to generate figures in the manuscript - [Check our session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01_Fig_S1/Fig_01_ABE_Fig_S1_SessionInfo.txt)
+2) To ensure reproducibility, please verify that your R and packages version match those used to generate figures in the manuscript - [Check exemplar session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01_Fig_S1/Fig_01_ABE_Fig_S1_SessionInfo.txt)
 
 3) Installation of python is only required to produce [Fig2C](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Fig_02/Panel_C.png) and [FigS5](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Supplemental/Fig_S5.png). To ensure reproducibility please verify that your Python modules version match those used to generate the above figures - [Check our conda requirements](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/python_conda_env_requirements.txt)
 

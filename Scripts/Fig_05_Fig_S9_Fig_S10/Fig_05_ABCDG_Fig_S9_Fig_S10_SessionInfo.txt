@@ -36,49 +36,44 @@ other attached packages:
 
 loaded via a namespace (and not attached):
   [1] splines_4.3.3            BiocIO_1.12.0            bitops_1.0-9            
-  [4] filelock_1.0.3           lpsymphony_1.30.0        graph_1.80.0            
-  [7] xts_0.14.0               XML_3.99-0.17            lifecycle_1.0.4         
- [10] mixsqp_0.3-54            rstatix_0.7.2            doParallel_1.0.17       
- [13] lattice_0.22-6           MASS_7.3-60.0.1          backports_1.5.0         
- [16] magrittr_2.0.3           plotly_4.10.4            yaml_2.3.10             
- [19] pbapply_1.7-2            cowplot_1.1.3            DBI_1.2.3               
- [22] multcomp_1.4-26          abind_1.4-8              zlibbioc_1.48.2         
- [25] quadprog_1.5-8           RCurl_1.98-1.16          TH.data_1.1-2           
- [28] rappdirs_0.3.3           sandwich_3.1-1           GenomeInfoDbData_1.2.11 
- [31] irlba_2.3.5.1            systemfit_1.1-30         MatrixModels_0.5-3      
- [34] annotate_1.80.0          codetools_0.2-20         coin_1.4-3              
- [37] DelayedArray_0.28.0      xml2_1.3.6               tidyselect_1.2.1        
- [40] shape_1.4.6.1            urca_1.3-4               BiocFileCache_2.10.2    
- [43] GenomicAlignments_1.38.2 jsonlite_1.8.9           GetoptLong_1.0.5        
- [46] Formula_1.2-5            ggridges_0.5.6           survival_3.7-0          
- [49] iterators_1.0.14         bbmle_1.0.25.1           foreach_1.5.2           
- [52] tools_4.3.3              progress_1.2.3           Rcpp_1.0.13             
- [55] glue_1.8.0               SparseArray_1.2.4        xfun_0.48               
- [58] TTR_0.24.4               numDeriv_2016.8-1.1      withr_3.0.1             
- [61] formatR_1.14             BiocManager_1.30.25      fastmap_1.2.0           
- [64] fansi_1.0.6              truncnorm_1.0-9          caTools_1.18.3          
- [67] digest_0.6.37            timechange_0.3.0         R6_2.5.1                
- [70] colorspace_2.1-1         gtools_3.9.5             biomaRt_2.58.2          
- [73] RSQLite_2.3.7            utf8_1.2.4               generics_0.1.3          
- [76] data.table_1.16.2        rtracklayer_1.62.0       prettyunits_1.2.0       
- [79] httr_1.4.7               htmlwidgets_1.6.4        S4Arrays_1.2.1          
- [82] pkgconfig_2.0.3          gtable_0.3.5             modeltools_0.2-23       
- [85] blob_1.2.4               XVector_0.42.0           htmltools_0.5.8.1       
- [88] carData_3.0-5            tseries_0.10-58          GSEABase_1.64.0         
- [91] clue_0.3-65              png_0.1-8                knitr_1.48              
- [94] lambda.r_1.2.4           rstudioapi_0.16.0        tzdb_0.4.0              
- [97] rjson_0.2.23             nlme_3.1-166             curl_5.2.3              
-[100] bdsmatrix_1.3-7          cachem_1.1.0             GlobalOptions_0.1.2     
-[103] KernSmooth_2.23-24       parallel_4.3.3           libcoin_1.0-10          
-[106] restfulr_0.0.15          pillar_1.9.0             vctrs_0.6.5             
-[109] slam_0.1-54              ggpubr_0.6.0             car_3.1-3               
-[112] dbplyr_2.5.0             xtable_1.8-4             cluster_2.1.6           
-[115] invgamma_1.1             mvtnorm_1.3-1            cli_3.6.3               
-[118] locfit_1.5-9.10          compiler_4.3.3           futile.options_1.0.1    
-[121] Rsamtools_2.18.0         rlang_1.1.4              crayon_1.5.3            
-[124] SQUAREM_2021.1           ggsignif_0.6.4           fdrtool_1.2.18          
-[127] emdbook_1.3.13           plyr_1.8.9               stringi_1.8.4           
-[130] viridisLite_0.4.2        BiocParallel_1.36.0      munsell_0.5.1           
-[133] Biostrings_2.70.3        lazyeval_0.2.2           hms_1.1.3               
-[136] bit64_4.5.2              KEGGREST_1.42.0          broom_1.0.7             
-[139] memoise_2.0.1            quantmod_0.4.26          bit_4.5.0               
+  [4] filelock_1.0.3           lpsymphony_1.30.0        xts_0.14.1              
+  [7] XML_3.99-0.17            lifecycle_1.0.4          mixsqp_0.3-54           
+ [10] doParallel_1.0.17        lattice_0.22-6           MASS_7.3-60.0.1         
+ [13] magrittr_2.0.3           yaml_2.3.10              pbapply_1.7-2           
+ [16] DBI_1.2.3                multcomp_1.4-26          abind_1.4-8             
+ [19] zlibbioc_1.48.2          quadprog_1.5-8           RCurl_1.98-1.16         
+ [22] TH.data_1.1-2            rappdirs_0.3.3           sandwich_3.1-1          
+ [25] GenomeInfoDbData_1.2.11  irlba_2.3.5.1            systemfit_1.1-30        
+ [28] MatrixModels_0.5-3       codetools_0.2-20         coin_1.4-3              
+ [31] DelayedArray_0.28.0      xml2_1.3.6               tidyselect_1.2.1        
+ [34] shape_1.4.6.1            urca_1.3-4               BiocFileCache_2.10.2    
+ [37] GenomicAlignments_1.38.2 GetoptLong_1.0.5         Formula_1.2-5           
+ [40] ggridges_0.5.6           survival_3.7-0           iterators_1.0.14        
+ [43] bbmle_1.0.25.1           foreach_1.5.2            tools_4.3.3             
+ [46] progress_1.2.3           Rcpp_1.0.13              glue_1.8.0              
+ [49] SparseArray_1.2.4        xfun_0.48                TTR_0.24.4              
+ [52] withr_3.0.1              numDeriv_2016.8-1.1      formatR_1.14            
+ [55] BiocManager_1.30.25      fastmap_1.2.0            fansi_1.0.6             
+ [58] caTools_1.18.3           digest_0.6.37            truncnorm_1.0-9         
+ [61] timechange_0.3.0         R6_2.5.1                 colorspace_2.1-1        
+ [64] gtools_3.9.5             biomaRt_2.58.2           RSQLite_2.3.7           
+ [67] utf8_1.2.4               generics_0.1.3           rtracklayer_1.62.0      
+ [70] prettyunits_1.2.0        httr_1.4.7               S4Arrays_1.2.1          
+ [73] pkgconfig_2.0.3          gtable_0.3.5             modeltools_0.2-23       
+ [76] blob_1.2.4               XVector_0.42.0           carData_3.0-5           
+ [79] tseries_0.10-58          clue_0.3-65              png_0.1-8               
+ [82] knitr_1.48               lambda.r_1.2.4           rstudioapi_0.17.0       
+ [85] tzdb_0.4.0               rjson_0.2.23             nlme_3.1-166            
+ [88] curl_5.2.3               bdsmatrix_1.3-7          cachem_1.1.0            
+ [91] GlobalOptions_0.1.2      KernSmooth_2.23-24       parallel_4.3.3          
+ [94] libcoin_1.0-10           restfulr_0.0.15          pillar_1.9.0            
+ [97] vctrs_0.6.5              slam_0.1-54              car_3.1-3               
+[100] dbplyr_2.5.0             cluster_2.1.6            invgamma_1.1            
+[103] mvtnorm_1.3-1            cli_3.6.3                locfit_1.5-9.10         
+[106] compiler_4.3.3           futile.options_1.0.1     Rsamtools_2.18.0        
+[109] rlang_1.1.4              crayon_1.5.3             SQUAREM_2021.1          
+[112] fdrtool_1.2.18           emdbook_1.3.13           plyr_1.8.9              
+[115] stringi_1.8.4            BiocParallel_1.36.0      munsell_0.5.1           
+[118] Biostrings_2.70.3        hms_1.1.3                bit64_4.5.2             
+[121] KEGGREST_1.42.0          memoise_2.0.1            quantmod_0.4.26         
+[124] bit_4.5.0               
