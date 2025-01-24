@@ -1,0 +1,460 @@
+---
+title: "Figure 04 - Panels ACDEFG"
+output: 
+  rmdformats::robobook:
+    lightbox: true
+    fig_caption: true
+---
+
+<style type="text/css">
+  body{
+  font-size: 10pt;
+}
+</style>
+
+# 1) Setup
+
+## - Defining work directory
+
+In this section, we define the working directory for the R Markdown document.
+
+```{r setup, include=TRUE}
+# Get the path of the current script
+# Then get the parent directory of the parent directory of the parent directory
+local_wd_folder <- dirname(dirname(dirname(rstudioapi::getSourceEditorContext()$path)))
+
+# Set the root directory for knitr to the local working directory
+knitr::opts_knit$set(root.dir = local_wd_folder)
+```
+
+## - Defining input data and output directories
+
+Here, we define the directories for input data and output files.
+
+```{r}
+# Get the directory of the current script
+script_folder <- dirname(rstudioapi::getSourceEditorContext()$path)
+
+# Define the data folder and output folder
+data_folder <- './Data'
+
+dir.create(paste(data_folder, '/RandomForest/Results', sep = ''), showWarnings = FALSE)
+dir.create(paste(data_folder, '/RandomForest/Results/Model', sep = ''), showWarnings = FALSE)
+dir.create(paste(data_folder, '/RandomForest/Results/Clustering', sep = ''), showWarnings = FALSE)
+dir.create(paste(data_folder, '/RandomForest/Results/Clustering/K2', sep = ''), showWarnings = FALSE)
+
+#results_folder <- './Results'
+figures_folder <- './Figures'
+```
+
+## - Setting seed
+
+Setting a seed ensures that any random processes are reproducible.
+
+```{r}
+# Set a seed for reproducibility
+set.seed(123)
+```
+
+## - Packages installation (optional)
+
+In this section, we ensure that all necessary packages are installed.
+
+```{r}
+# Ensure BiocManager is available for installation of Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+#BiocManager::install(version = "3.18")
+
+# Define a list of required packages used in this script
+packages_required <- c("coin", "randomForest", "dplyr", "circlize", "ComplexHeatmap", 
+                       "dendextend", "ggrepel", "ggplot2", "rstatix",
+                       "unikn", "RColorBrewer", "yarrr", "scales", "ggsci")
+
+# Identify any required packages that are not installed
+packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
+
+# Install any uninstalled packages
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+```
+
+## - Loading packages
+
+Here, we load the necessary packages for our analysis.
+
+```{r message=FALSE, warning=FALSE}
+library(coin, quietly = TRUE)
+library(rstatix, quietly = TRUE)
+library(randomForest, quietly = TRUE)
+library(dplyr, quietly = TRUE)
+library(circlize, quietly = TRUE)
+library(ComplexHeatmap, quietly = TRUE)
+library(dendextend, quietly = TRUE)
+library(ggrepel, quietly = TRUE)
+library(ggplot2, quietly = TRUE)
+```
+
+## - Loading palettes
+
+In this section, we load additional color palettes and define some custom ones.
+
+```{r message=FALSE, warning=FALSE}
+# Load additional colour palette packages
+library(unikn, quietly = TRUE)
+library(RColorBrewer, quietly = TRUE)
+library(yarrr, quietly = TRUE)
+library(scales, quietly = TRUE)
+library(ggsci, quietly = TRUE)
+
+# Define a set of custom color palettes from the unikn package
+mix_1 <- usecol(pal = c(Karpfenblau, "white", Peach), n = 15)
+mix_2 <- usecol(pal = c(rev(pal_seeblau), "white", pal_pinky))
+mix_3 <- usecol(pal = c(rev(pal_bordeaux), "white", pal_petrol), n = 15)
+
+# Display the custom palettes
+seecol(list(mix_1, mix_2, mix_3), col_brd = "white", lwd_brd = 4, title = "Comparing palettes mixed from unikn colors", pal_names = c("mix_1", "mix_2", "mix_3"))
+
+# Define a second set of custom palettes from the RColorBrewer and yarrr packages
+brew_mix <- usecol(c(rev(brewer.pal(n = 4, name = "Reds")), "white", brewer.pal(n = 4, name = "Blues")), n = 13)
+brew_ext <- usecol(brewer.pal(n = 11, name = "Spectral"), n = 12)
+yarrr_mix <- usecol(c(piratepal("nemo"), piratepal("bugs")))
+yarrr_mod <- usecol(c(piratepal("ipod")), n = 9)
+
+# Display the second set of custom palettes
+seecol(pal = list(brew_mix, brew_ext, yarrr_mix, yarrr_mod), col_brd = "white", lwd_brd = 2, title = "Using usecol() and seecol() to mix and modify palettes", pal_names = c("brew_mix", "brew_ext", "yarrr_mix", "yarrr_mod"))
+
+# Define additional custom palettes from the scales package
+natjournals_palette <- pal_npg("nrc")(10)
+```
+
+## - Log Session Info
+
+Finally, we log the session information for reproducibility.
+
+```{r message=TRUE, warning=TRUE}
+# Write the session information to a text file
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_04_ACDEFG_SessionInfo.txt'))
+
+# Print the session information
+sessionInfo()
+```
+
+# 2) Panel A
+
+## - Loading input files
+
+```{r}
+Immunophenotype_data <- read.csv(paste(data_folder, '/Immunophenotype/CHR_BP_CMML_immunophenotype_common_markers.csv', sep = ''), row.names = 'Patient.ID')
+
+# We discard PT426 for the following analysis as RNASeq did not work for this patient's sample
+Immunophenotype_data <- Immunophenotype_data[setdiff(rownames(Immunophenotype_data), '426'),]
+```
+
+## - Heatmap plotting
+
+```{r echo=FALSE, fig.align='center', fig.cap='Figure 4A. Random Forest multiparametric data integration identifies two core BP-CMML subtypes distinguished by blast maturation status', fig.height=4.33071, fig.pos='H', fig.width=7.87402}
+
+flow_data_mat <- as.matrix(Immunophenotype_data[,c('SSCA','CD45','CD34','CD38',
+                                 'CD117','CD135','CD33','CD13',
+                                 'CD45RA','CD123','CD56')])
+
+flow_data_mat
+
+identity_markers <- data.frame(row.names = colnames(flow_data_mat))
+identity_markers[,'Class'] <- 'Cluster of differentiation'
+identity_markers['SSCA','Class'] <- 'Generic flow parameter'
+
+identity_markers$Class <- factor(identity_markers$Class, levels = c('Generic flow parameter', 'Cluster of differentiation'))
+
+normalized = (flow_data_mat-min(flow_data_mat))/(max(flow_data_mat)-min(flow_data_mat))
+
+scaled_flow_data_mat <- t(scale(as.matrix(normalized)))
+
+
+breaks_val <- seq(from = -2, to = 2, length.out = 14)
+col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
+
+set.seed(123)
+
+row_anno = ComplexHeatmap::rowAnnotation(Distribution = anno_density(scaled_flow_data_mat, joyplot_scale = 1, 
+    gp = gpar(fill = "#CCCCCC80")))
+
+
+
+flow_heatmap <- Heatmap(scaled_flow_data_mat, name = 'Scaled\nMFI', col = col_heatmap_guide,
+                        row_split = identity_markers$Class, left_annotation = row_anno, border = T, 
+                        cluster_columns = F, cluster_rows = F, row_title_gp = gpar(col='white'), rect_gp = gpar(col = "white", lwd = 3))
+
+flow_heatmap
+
+ht_opt$COLUMN_ANNO_PADDING = unit(0.4, "cm")
+ht_opt$ROW_ANNO_PADDING = unit(0.4, "cm")
+
+flow_heatmap_with_clustering <- Heatmap(scaled_flow_data_mat, 
+                                        name = 'Scaled\nMFI', 
+                                        col = col_heatmap_guide,
+                                        border = T, 
+                                        row_split = identity_markers$Class,
+                                        cluster_columns = T, 
+                                        cluster_rows = T, 
+                                        row_title_gp = gpar(col='white', fontface = "bold"), 
+                                        row_names_gp = gpar(fontface = "bold"), 
+                                        rect_gp = gpar(col = "black", lwd = 0.05), 
+                                        heatmap_legend_param = list(
+                                      legend_direction = "horizontal", 
+                                      legend_width = unit(5, "cm")), 
+                                      row_names_side = 'left')
+
+draw(flow_heatmap_with_clustering)
+
+png(filename = paste(figures_folder, '/Fig_04/Panel_A.png', sep = ''), units = 'cm', width = 20, height = 11, res = 300)
+
+draw(flow_heatmap_with_clustering, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+invisible(dev.off())
+```
+
+# - Panel CD
+
+## - Loading input files
+
+```{r}
+RF.metadata <- read.csv(paste(data_folder, '/RandomForest/RF_input_data.csv', sep = ''))
+```
+
+## - Data wrangling
+
+### - Assigning rownames
+
+```{r}
+RF.metadata$Patient.ID <- as.factor(RF.metadata$Patient.ID)
+rownames(RF.metadata) <- RF.metadata$Patient.ID
+RF.metadata$Patient.ID <- NULL
+```
+
+### - Converting data categories to factors or integers
+
+```{r}
+RF.metadata$Gender <- as.factor(RF.metadata$Gender)
+RF.metadata$Subtype.at.CMML <- as.factor(RF.metadata$Subtype.at.CMML)
+RF.metadata$ICC.classification <- as.factor(RF.metadata$ICC.classification)
+RF.metadata$Cutaneous.BPDCN <- as.factor(RF.metadata$Cutaneous.BPDCN)
+
+RF.metadata$DNMT3A <- as.factor(RF.metadata$DNMT3A)
+RF.metadata$TET2 <- as.factor(RF.metadata$TET2)
+RF.metadata$SRSF2 <- as.factor(RF.metadata$SRSF2)
+RF.metadata$SF3B1 <- as.factor(RF.metadata$SF3B1)
+RF.metadata$SETBP1 <- as.factor(RF.metadata$SETBP1)
+RF.metadata$U2AF1 <- as.factor(RF.metadata$U2AF1)
+RF.metadata$IDH1 <- as.factor(RF.metadata$IDH1)
+RF.metadata$IDH2 <- as.factor(RF.metadata$IDH2)
+RF.metadata$ASXL1 <- as.factor(RF.metadata$ASXL1)
+RF.metadata$EZH2 <- as.factor(RF.metadata$EZH2)
+RF.metadata$STAG2 <- as.factor(RF.metadata$STAG2)
+RF.metadata$BCOR <- as.factor(RF.metadata$BCOR)
+RF.metadata$PHF6 <- as.factor(RF.metadata$PHF6)
+RF.metadata$NF1 <- as.factor(RF.metadata$NF1)
+RF.metadata$RUNX1 <- as.factor(RF.metadata$RUNX1)
+RF.metadata$FLT3 <- as.factor(RF.metadata$FLT3)
+RF.metadata$NPM1 <- as.factor(RF.metadata$NPM1)
+RF.metadata$CEBPA <- as.factor(RF.metadata$CEBPA)
+RF.metadata$WT1 <- as.factor(RF.metadata$WT1)
+RF.metadata$KIT <- as.factor(RF.metadata$KIT)
+RF.metadata$BRAF <- as.factor(RF.metadata$BRAF)
+RF.metadata$KRAS <- as.factor(RF.metadata$KRAS)
+RF.metadata$NRAS <- as.factor(RF.metadata$NRAS)
+RF.metadata$CBL <- as.factor(RF.metadata$CBL)
+RF.metadata$PTPN11 <- as.factor(RF.metadata$PTPN11)
+RF.metadata$GATA2 <- as.factor(RF.metadata$GATA2)
+RF.metadata$SH2B3 <- as.factor(RF.metadata$SH2B3)
+RF.metadata$ZRSR2 <- as.factor(RF.metadata$ZRSR2)
+RF.metadata$CSF3R <- as.factor(RF.metadata$CSF3R)
+RF.metadata$DTA.mutations..DNMT3A..TET2..ASXL1. <- as.factor(RF.metadata$DTA.mutations..DNMT3A..TET2..ASXL1.)
+RF.metadata$RAS.mutations..NRAS..KRAS..CBL..NF1..PTPN11..BRAF. <- as.factor(RF.metadata$RAS.mutations..NRAS..KRAS..CBL..NF1..PTPN11..BRAF.)
+RF.metadata$IDH.mutations..IDH1..IDH2. <- as.factor(RF.metadata$IDH.mutations..IDH1..IDH2.)
+RF.metadata$Splicing.mutations..U2...SRSF2..SF3B1..U2AF1..ZRSF2. <- as.factor(RF.metadata$Splicing.mutations..U2...SRSF2..SF3B1..U2AF1..ZRSF2.)
+
+RF.metadata$Cytogenetics..at.transformation. <- as.factor(RF.metadata$Cytogenetics..at.transformation.)
+```
+
+## - Generating RandomForest model
+
+```{r}
+set.seed(123)
+
+nTree_iterations <- c(100000)
+
+model <- randomForest(RF.metadata,
+                      proximity = TRUE,
+                      ntree = nTree_iterations, 
+                      importance = TRUE)
+
+# RF changes the seed once ran so it is better to reset the seed following 
+
+set.seed(123)
+
+saveRDS(model, 
+        file = paste(data_folder, '/RandomForest/Results/Model/RF_Classification_Model.RDS', sep = ''))
+```
+
+## - Analysis of RF model
+
+### - Evaluating GINI Importance : Panel C
+
+Evaluation of feature importance according to RF model. Features importance were grouped in classes and illustrated via GraphPad (see under ***GraphPad/Fig_04/Panels_CEFG.pzfx***).
+
+```{r}
+GINI <- suppressWarnings(data.frame(GINI_Index = sort(importance(model)[, "MeanDecreaseGini"], decreasing = TRUE)) %>% dplyr::add_rownames() %>% dplyr::rename(Predictor = 'rowname'))
+
+GINI <- as.data.frame(GINI)
+
+rownames(GINI) <- GINI$Predictor
+
+GINI[colnames(RF.metadata)[1:46],'Feature_class'] <- 'Clinical metadata'
+GINI[colnames(RF.metadata)[47:57],'Feature_class'] <- 'Cytometry data'
+GINI[colnames(RF.metadata)[58:177],'Feature_class'] <- 'Transcriptional data'
+
+write.table(x = GINI, 
+            file = paste(data_folder, '/RandomForest/Results/Model/RF_Classification_Model_GINI_Importance.csv', sep = ''),
+            quote = FALSE, row.names = F, col.names = TRUE, sep = ',')
+```
+
+### - Extracting proximity matrix for distance computation and MDS similarity evaluation
+
+```{r}
+distance.matrix <- dist(1-model$proximity)
+
+mds.stuff <- cmdscale(distance.matrix, eig = TRUE, x.ret = TRUE)
+mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100, 1)
+mds.values <- mds.stuff$points
+mds.data <- data.frame(Sample=rownames(mds.values),
+                       X= mds.values[,1],
+                       Y= mds.values[,2])
+
+ggplot(data = mds.data, aes(x = X, y = Y, label=Sample)) + 
+  geom_text(aes(color=Sample)) +
+  theme_bw() +
+  xlab(paste("MDS1 - ", mds.var.per[1], "%", sep="")) +
+  ylab(paste("MDS2 - ", mds.var.per[2], "%", sep="")) +
+  ggtitle(label = "MDS plot", subtitle = "(1 - Random Forest Proximities)") + theme(legend.position = 'bottom')
+
+```
+
+### - Clustering K = 2
+
+#### - Hierarchical clustering on distance matrix : Panel D
+
+```{r}
+png(filename = paste(figures_folder, '/Fig_04/Panel_D-1.png', sep = ''), units = "cm", width = 21, height = 10.5, res = 300)
+
+dendro <- stats::hclust(distance.matrix, method = "ward.D2") %>% as.dendrogram %>% ladderize  %>% color_branches(k=2, col = c('#793F0B', '#0B544B')) %>% color_labels(k = 2, col = c('#793F0B', '#0B544B'))
+
+par(lwd=3)
+plot(dendro, axes=F)
+
+invisible(dev.off())
+
+#
+
+Hierchical_clusters_K2 <- sort(cutree(dendro, k=2))
+
+Hierarchical_clustering_K2 <- data.frame(row.names = rownames(RF.metadata))
+Hierarchical_clustering_K2$Patient.ID <- rownames(Hierarchical_clustering_K2)
+
+for (ID in Hierarchical_clustering_K2$Patient.ID) {
+  
+Hierarchical_clustering_K2[ID,'Cluster'] <- Hierchical_clusters_K2[[ID]]
+
+}
+
+Hierarchical_clustering_K2[Hierarchical_clustering_K2$Cluster == Hierarchical_clustering_K2['416', 'Cluster'],'Cluster_annotated'] <- 'C1'
+Hierarchical_clustering_K2[Hierarchical_clustering_K2$Cluster == Hierarchical_clustering_K2['55', 'Cluster'],'Cluster_annotated'] <- 'C2'
+
+mds.data.Hierarchical_K2_clustered <- mds.data
+
+mds.data.Hierarchical_K2_clustered$Cluster <- Hierarchical_clustering_K2$Cluster_annotated
+
+cols <- c('C1' = '#793F0B', 'C2' = '#0B544B')
+plot.Hierarchical_clusters_K2 <- ggplot(data = mds.data.Hierarchical_K2_clustered, aes(x = X, y = Y, label=Sample)) + 
+  geom_point(aes(color=Cluster, fill=Cluster), shape = 21, alpha = 0.8, size = 2.5) +
+  theme_linedraw(base_line_size = 0.2) +
+  xlab("MDS1") +
+  ylab("MDS2") +
+  ggtitle(label = "") +
+  scale_colour_manual(
+    values = cols,
+    aesthetics = c("colour", "fill")
+  ) + theme(legend.position = 'none',
+            axis.title.x = element_text(family='Helvetica', size=12, face = 'bold', vjust = 0),
+            axis.title.y = element_text(family='Helvetica', size=12, face = 'bold', vjust = +3))
+
+
+plot.Hierarchical_clusters_K2_labelled <- plot.Hierarchical_clusters_K2 + geom_label_repel(aes(label = Sample, color=Cluster),
+                  box.padding   = 0.65, 
+                  point.padding = 0.1, size = 2,
+                  segment.color = 'grey70', max.overlaps = 15)
+
+print(plot.Hierarchical_clusters_K2_labelled)
+
+png(filename = paste(figures_folder, '/Fig_04/Panel_D-2.png', sep = ''), units = "cm", width = 14, height = 14, res = 300)
+
+print(plot.Hierarchical_clusters_K2_labelled)
+
+invisible(dev.off())
+
+#
+
+RF.metadata.hierarchical_clustering_K2 <- RF.metadata
+RF.metadata.hierarchical_clustering_K2[Hierarchical_clustering_K2$Patient.ID,'RF_Cluster'] <- Hierarchical_clustering_K2$Cluster_annotated
+
+RF.metadata.hierarchical_clustering_K2 <- RF.metadata.hierarchical_clustering_K2 %>% add_column(.before = 'Gender', 'Patient.ID' = rownames(RF.metadata.hierarchical_clustering_K2))
+
+write_csv(x = RF.metadata.hierarchical_clustering_K2, 
+            file = paste(data_folder, '/RandomForest/Results/Clustering/K2/RF_K2_Clustered_Metadata.csv', sep = ''))
+
+RF.metadata.hierarchical_clustering_K2$Patient.ID <- NULL
+```
+
+#### - Wilcox t-test unpaired - median comparisons : Panels EFG
+
+Features were retrospectively compared in the identified groupings. Features were illustrated via GraphPad (see under ***GraphPad/Fig_04/Panels_CEFG.pzfx***).
+
+```{r}
+RF.metadata.hierarchical_clustering_K2_numerised <- RF.metadata.hierarchical_clustering_K2[1:length(colnames(RF.metadata.hierarchical_clustering_K2))]
+
+variable_to_compare <- c(colnames(RF.metadata.hierarchical_clustering_K2_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K2))])
+
+for (variable in colnames(RF.metadata.hierarchical_clustering_K2_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K2))-1]) {
+
+RF.metadata.hierarchical_clustering_K2_numerised[,variable] <- as.numeric(RF.metadata.hierarchical_clustering_K2_numerised[,variable])
+  
+}
+
+
+Group_A <- RF.metadata.hierarchical_clustering_K2_numerised %>% dplyr::filter(RF_Cluster == 'C1')
+Group_B <- RF.metadata.hierarchical_clustering_K2_numerised %>% dplyr::filter(RF_Cluster == 'C2')
+
+
+wilcox_t_test_results <- data.frame(row.names = colnames(RF.metadata.hierarchical_clustering_K2_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K2))-1])
+
+for (variable in colnames(RF.metadata.hierarchical_clustering_K2_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K2))-1]) {
+
+p <- coin::wilcox_test(formula = get(variable) ~ as.factor(RF_Cluster), data=RF.metadata.hierarchical_clustering_K2_numerised, distribution = "exact")
+wilcox_t_test_results[variable,'pval'] <- coin::pvalue(p)
+wilcox_t_test_results[variable,'Median C1'] <- median(Group_A[,variable])
+wilcox_t_test_results[variable,'Median C2'] <- median(Group_B[,variable])
+wilcox_t_test_results[variable, paste('Min', 'C1', sep = ' ')] <- min(Group_A[,variable])
+wilcox_t_test_results[variable, paste('Min', 'C2', sep = ' ')] <- min(Group_B[,variable])
+wilcox_t_test_results[variable, paste('Max', 'C1', sep = ' ')] <- max(Group_A[,variable])
+wilcox_t_test_results[variable, paste('Max', 'C2', sep = ' ')] <- max(Group_B[,variable])
+wilcox_t_test_results[variable, paste('Std', 'C1', sep = ' ')] <- sd(Group_A[,variable])
+wilcox_t_test_results[variable, paste('Std', 'C2', sep = ' ')] <- sd(Group_B[,variable])
+}
+
+wilcox_t_test_results <- wilcox_t_test_results %>% arrange(pval)
+
+write.csv(wilcox_t_test_results, 
+          file = paste(data_folder, '/RandomForest/Results/Clustering/K2/RF_K2_Stats_Wilcox_t_test.csv', sep = ''),
+          row.names = T, quote = F)
+```
+

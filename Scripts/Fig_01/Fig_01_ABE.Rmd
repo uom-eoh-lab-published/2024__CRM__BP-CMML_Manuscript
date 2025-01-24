@@ -1,0 +1,708 @@
+---
+title: "Figure 01"
+output: 
+  rmdformats::robobook:
+    lightbox: true
+    fig_caption: true
+---
+
+```{=html}
+<style type="text/css">
+  body{
+  font-size: 10pt;
+}
+</style>
+```
+
+# 1) Setup
+
+## - Defining work directory
+
+In this section, we define the working directory for the R Markdown document.
+
+```{r setup, include=TRUE}
+# Get the path of the current script
+# Then get the parent directory of the parent directory of the parent directory
+local_wd_folder <- dirname(dirname(dirname(rstudioapi::getSourceEditorContext()$path)))
+
+# Set the root directory for knitr to the local working directory
+knitr::opts_knit$set(root.dir = local_wd_folder)
+```
+
+## - Defining input data and output directories
+
+Here, we define the directories for input data and output files.
+
+```{r}
+# Get the directory of the current script
+script_folder <- dirname(rstudioapi::getSourceEditorContext()$path)
+
+dir.create(paste(local_wd_folder, "/Data", sep = ''), showWarnings = F)
+
+dir.create(paste(local_wd_folder, "/Figures", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_01", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_02", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_03", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_04", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_05", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_06", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Fig_07", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Supplemental", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Not_Included", sep = ''), showWarnings = F)
+
+# Define the data folder and output folder
+data_folder <- './Data'
+figures_folder <- './Figures'
+```
+
+## - Setting seed
+
+Setting a seed ensures that any random processes are reproducible.
+
+```{r}
+# Set a seed for reproducibility
+set.seed(123)
+```
+
+## - Packages installation (optional)
+
+In this section, we ensure that all necessary packages are installed.
+
+```{r}
+# Ensure BiocManager is available for installation of Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+
+# Define a list of required packages used in this script
+packages_required <- c("ComplexHeatmap", "stringr", "ggplot2",
+                        "unikn", "RColorBrewer", "yarrr", 
+                        "scales", "ggsci")
+
+# Identify any required packages that are not installed
+packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
+
+# Install any uninstalled packages
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+```
+
+## - Loading packages
+
+Here, we load the necessary packages for our analysis.
+
+```{r message=FALSE, warning=FALSE}
+library(stringr, quietly = TRUE)
+library(ComplexHeatmap, quietly = TRUE)
+library(ggplot2)
+```
+
+## - Loading palettes
+
+In this section, we load additional color palettes and define some custom ones.
+
+```{r message=FALSE, warning=FALSE}
+# Load additional colour palette packages
+library(unikn, quietly = TRUE)
+library(RColorBrewer, quietly = TRUE)
+library(yarrr, quietly = TRUE)
+library(scales, quietly = TRUE)
+library(ggsci, quietly = TRUE)
+
+# Define a set of custom color palettes from the unikn package
+mix_1 <- usecol(pal = c(Karpfenblau, "white", Peach), n = 15)
+mix_2 <- usecol(pal = c(rev(pal_seeblau), "white", pal_pinky))
+mix_3 <- usecol(pal = c(rev(pal_bordeaux), "white", pal_petrol), n = 15)
+
+# Display the custom palettes
+seecol(list(mix_1, mix_2, mix_3), col_brd = "white", lwd_brd = 4, title = "Comparing palettes mixed from unikn colors", pal_names = c("mix_1", "mix_2", "mix_3"))
+
+# Define a second set of custom palettes from the RColorBrewer and yarrr packages
+brew_mix <- usecol(c(rev(brewer.pal(n = 4, name = "Reds")), "white", brewer.pal(n = 4, name = "Blues")), n = 13)
+brew_ext <- usecol(brewer.pal(n = 11, name = "Spectral"), n = 12)
+yarrr_mix <- usecol(c(piratepal("nemo"), piratepal("bugs")))
+yarrr_mod <- usecol(c(piratepal("ipod")), n = 9)
+
+# Display the second set of custom palettes
+seecol(pal = list(brew_mix, brew_ext, yarrr_mix, yarrr_mod), col_brd = "white", lwd_brd = 2, title = "Using usecol() and seecol() to mix and modify palettes", pal_names = c("brew_mix", "brew_ext", "yarrr_mix", "yarrr_mod"))
+
+# Define additional custom palettes from the scales package
+natjournals_palette <- pal_npg("nrc")(10)
+```
+
+## - Log Session Info
+
+Finally, we log the session information for reproducibility.
+
+```{r message=TRUE, warning=TRUE}
+# Write the session information to a text file
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_01_SessionInfo.txt'))
+
+# Print the session information
+sessionInfo()
+```
+
+# 2) Panel A
+
+Oncoprint
+
+## - Loading input files
+
+Here we load two CSV files containing clinical and mutation metadata.
+
+```{r}
+Clinical_metadata <- read.csv(paste(data_folder, '/Oncoprint/Christie_BP-CMML_cohort_clinical_metadata.csv', sep = ''), row.names = 'Patient.ID')
+Mutation_metadata <- read.csv(paste(data_folder, '/Oncoprint/Christie_BP-CMML_cohort_mutation_metadata.csv', sep = ''), row.names = 'Patient.ID')
+```
+
+## - Heatmap
+
+### - Mutation matrix colors
+
+Here we transformsthe Mutation_metadata dataframe by converting numerical data into categorical data ('MUT' for '1', and '' for '0'), then set up color mapping and rectangle drawing functions for heatmap visualization.
+
+```{r}
+# Loop over all columns in Mutation_metadata
+for (colname in colnames(Mutation_metadata)) {
+  # Convert the column to character
+  Mutation_metadata[,colname] <- as.character(Mutation_metadata[,colname])
+  # Replace '1' with 'MUT'
+  Mutation_metadata[,colname] <- str_replace_all(Mutation_metadata[,colname], pattern = '1', replacement = 'MUT')
+  # Replace '0' with ''
+  Mutation_metadata[,colname] <- str_replace_all(Mutation_metadata[,colname], pattern = '0', replacement = '')
+}
+
+# Define a color mapping
+col = c("MUT" = "grey25")
+
+# Define a list of functions for drawing rectangles
+alter_fun = list(
+  # Function for drawing a light grey rectangle
+  background = function(x, y, w, h) {
+    grid.rect(x, y, w-unit(2, "pt"), h-unit(2, "pt"), 
+              gp = gpar(fill = "grey93", col = NA))
+  },
+  # Function for drawing a rectangle with the color defined for 'MUT'
+  MUT = function(x, y, w, h) {
+    grid.rect(x, y, w-unit(2, "pt"), h-unit(2, "pt"), 
+              gp = gpar(fill = col["MUT"], col = NA))
+  }
+)
+
+# Define an empty column title
+column_title = ""
+
+# Define parameters for the heatmap legend
+heatmap_legend_param = list(title = "Alternations", at = c("MUT"), 
+                            labels = c("Mutation"))
+```
+
+### - Selecting relevant clinical metadata for visualisation
+
+Here we subsets 'Clinical_metadata' to keep relevant features.
+
+```{r}
+# Subset Clinical_metadata to keep only certain columns
+Clinical_metadata_selected <- Clinical_metadata[,c('Cutaneous.BPDCN', 
+                                                   'ICC.classification',
+                                                   'Cytogenetics.CPSS',
+                                                   'Treatment.response',
+                                                   'Upfront.HMA',
+                                                   'Gender')]
+
+# Subset Mutation_metadata to keep only the rows that have the same row names as Clinical_metadata_selected
+Mutation_metadata <- Mutation_metadata[rownames(Clinical_metadata_selected),]
+```
+
+### - Defining categories and levels order
+
+Here we convert several columns in Clinical_metadata_selected to factors with specific levels. We then rename the columns of 'Clinical_metadata_selected'.
+
+```{r}
+# Convert 'Cutaneous.BPDCN' to a factor with levels 'No' and 'Yes'
+Clinical_metadata_selected$Cutaneous.BPDCN <- factor(Clinical_metadata_selected$Cutaneous.BPDCN, 
+                                                     levels = c('No', 'Yes'))
+
+# Convert 'ICC.classification' to a factor with specific levels
+Clinical_metadata_selected$ICC.classification <- factor(Clinical_metadata_selected$ICC.classification, 
+                                                        levels = c('BPDCN',
+                                                                   'AML not otherwise specified',
+                                                                   'AML with CEBPA',
+                                                                   'AML with NPM1',
+                                                                   'AML with MDS-related gene mutations',
+                                                                   'AML with MDS-related cytogenetic abnormalities'))
+
+# Convert 'Cytogenetics.CPSS' to a factor with levels 'Low risk', 'Intermediate risk', and 'High risk'
+Clinical_metadata_selected$Cytogenetics.CPSS <- factor(Clinical_metadata_selected$Cytogenetics.CPSS, 
+                                                       levels = c('Low risk',
+                                                                  'Intermediate risk',
+                                                                  'High risk'))
+
+# Convert 'Treatment.response' to a factor with levels 'CR', 'Refractory', and 'Not evaluable'
+Clinical_metadata_selected$Treatment.response <- factor(Clinical_metadata_selected$Treatment.response, 
+                                                        levels = c('CR',
+                                                                   'Refractory',
+                                                                   'Not evaluable'))
+
+# Convert 'Upfront.HMA' to a factor with levels 'No' and 'Yes'
+Clinical_metadata_selected$Upfront.HMA <- factor(Clinical_metadata_selected$Upfront.HMA, 
+                                                 levels = c('No',
+                                                            'Yes'))
+
+# Convert 'Gender' to a factor with levels 'Female' and 'Male'
+Clinical_metadata_selected$Gender <- factor(Clinical_metadata_selected$Gender, 
+                                            levels = c('Female',
+                                                       'Male'))
+
+# Rename the columns of Clinical_metadata_selected
+colnames(Clinical_metadata_selected) <- c('Cutaneous BPDCN', 
+                                          'ICC classification', 
+                                          'Cytogenetics (CPSS)',
+                                          'Treatment response', 
+                                          'Upfront HMA', 
+                                          'Gender')
+```
+
+### - Heatmap columns metadata annotation colour
+
+Here we define a list of color mappings for different categories in several variables.
+
+```{r}
+# Define a list of color mappings for different categories in several variables
+colors_top_annotation <-  list(
+  `Cutaneous BPDCN` = c('Yes' = '#b5179e', 
+                        'No' = '#ffd2fc'),
+  `ICC classification` = c('BPDCN' = '#fff0f3',
+                           'AML not otherwise specified' = '#ffccd5',
+                           'AML with CEBPA' = '#ff8fa3',
+                           'AML with NPM1' = '#ff4d6d',
+                           'AML with MDS-related gene mutations' = '#c9184a',
+                           'AML with MDS-related cytogenetic abnormalities' = '#800f2f'),
+  `Cytogenetics (CPSS)` = c('Low risk' = '#ffdcc2',
+                            'Intermediate risk' = '#eda268',
+                            'High risk' = '#522500'),
+  `Treatment response` = c('CR' = '#e9f5db',
+                           'Refractory' = '#c2d5aa',
+                           'Not evaluable' = '#606f49'),
+  `Upfront HMA` = c('Yes' = '#72bbce', 
+                    'No' = '#dceef3'),
+  Gender = c('Male' = '#e1e5f2', 
+             'Female' = '#bee3db')
+)
+```
+
+### - Columns annotation
+
+Here we create a heatmap annotation.
+
+```{r}
+# Create a heatmap annotation object
+ha <- HeatmapAnnotation(
+  df = Clinical_metadata_selected, 
+  gp = gpar(lwd = 2, col = 'white'),
+  col = colors_top_annotation, 
+  show_annotation_name = TRUE, 
+  annotation_name_side = "left",
+  show_legend = TRUE,
+  annotation_name_gp = gpar(fontsize = 12, fontfamily = 'sans', fontface = 'bold'), 
+  annotation_legend_param = list(
+    `Cutaneous BPDCN` = list(direction = "horizontal"),
+    `ICC classification` = list(direction = "vertical"),
+    `Cytogenetics (CPSS)` = list(direction = "vertical"),
+    `Treatment response` = list(direction = "vertical"),
+    `Upfront HMA` = list(direction = "horizontal"),
+    `Gender` = list(direction = "horizontal")
+  )
+)
+```
+
+### - Heatmap styling
+
+Here we set custom padding for the column and row annotations in a heatmap.
+
+```{r}
+# Set the padding for the column annotations to 0.4 cm
+ht_opt$COLUMN_ANNO_PADDING = unit(0.4, "cm")
+
+# Set the padding for the row annotations to 0.4 cm
+ht_opt$ROW_ANNO_PADDING = unit(0.4, "cm")
+```
+
+### - Heatmap plotting
+
+Here we create an oncoprint, which is a type of heatmap used in genomics to visualize gene mutations across multiple samples.
+
+```{r}
+# Create an oncoprint
+oncoPrint_with_legend <- oncoPrint(t(Mutation_metadata),
+                                   alter_fun = alter_fun, 
+                                   alter_fun_is_vectorized = FALSE, 
+                                   col = col, 
+                                   remove_empty_columns = TRUE, 
+                                   remove_empty_rows = TRUE,
+                                   pct_side = "right", border = FALSE,
+                                   row_names_side = "left",
+                                   top_annotation = ha,
+                                   pct_gp = gpar(fontsize = 12, fontfamily = 'sans'),
+                                   row_names_gp = gpar(fontsize = 12, fontfamily = 'sans'),
+                                   right_annotation =  rowAnnotation(rbar = anno_oncoprint_barplot()),
+                                   left_annotation = NULL, show_heatmap_legend = TRUE,
+                                   bottom_annotation =  columnAnnotation(botbar = anno_oncoprint_barplot(axis_param = list(direction = "reverse"))),
+                                   column_title = column_title)
+
+# Now we save our plot:
+
+# Open a new PNG device for plotting
+png(filename = paste(figures_folder, '/Fig_01/Panel_A.png', sep = ''), units = 'cm', width = 36, height = 20.5, res = 300)
+
+# Draw the oncoprint on the current plotting device
+draw(oncoPrint_with_legend, heatmap_legend_side = "right", annotation_legend_side = "right")
+
+# Add text to the "rbar" annotation
+decorate_annotation("rbar", {
+  grid.text("Relative percentage\nof cohort with\n given mutation", x = unit(10, "mm"), y = unit(150, "mm"), rot = 0, just = "bottom")
+})
+
+# Add text to the "botbar" annotation
+decorate_annotation("botbar", {
+  grid.text("Number of\nmutations\nin patient", x = unit(-9, "mm"), y = unit(10, "mm"), rot = 90, just = "bottom")
+})
+
+# Close the current plotting device
+invisible(dev.off())
+```
+
+### - Plotting oncoprint
+
+Now that we saved our final oncoprint, let's visualize it here.
+
+```{r echo=FALSE, fig.align='center', fig.cap='Figure 1A', fig.height=8.66142, fig.pos='H', fig.width=13.7795}
+
+# Draw the oncoprint on the current plotting device
+draw(oncoPrint_with_legend, heatmap_legend_side = "right", annotation_legend_side = "right")
+
+# Add text to the "rbar" annotation
+decorate_annotation("rbar", {
+  grid.text("Relative percentage\nof cohort with\n given mutation", x = unit(10, "mm"), y = unit(165, "mm"), rot = 0, just = "bottom")
+})
+
+# Add text to the "botbar" annotation
+decorate_annotation("botbar", {
+  grid.text("Number of\nmutations\nin patient", x = unit(-9, "mm"), y = unit(10, "mm"), rot = 90, just = "bottom")
+})
+
+```
+
+# 3) Panel BE
+
+## - Comparison of overall mutations distributions across cohorts
+
+Comparison of whole mutations distributions across cohorts. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01/Panels_BE.pzfx***)..
+
+### - Loading input files
+
+```{r}
+Summary_Table <- read.csv(paste(data_folder, '/Genotype/Whole/ALL_Genotypes_Summary_Table.csv', sep = ''), row.names = 'Mutation')
+```
+
+### - ChiSquared Test
+
+```{r}
+# Define cohort names
+cohorts <- c('BP_CMML', 'BP_MDS', 'BP_MPN', 'LAML_TCGA', 'BeatAML')
+
+# Initialize results list
+chi_squared_comparisons <- list()
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Loop over each cohort
+for (cohort in cohorts) {
+  # Loop over remaining cohorts
+  for (remaining_cohort in cohorts[!cohorts %in% cohort]) {
+    # Perform Chi-Squared test and store p-value
+    chi_squared_comparisons[[paste(cohort, remaining_cohort, sep = '_vs_')]] <- 
+      suppressWarnings(chisq.test(Summary_Table[,c(cohort, remaining_cohort)], simulate.p.value=TRUE, B = 10000)$p.value)
+  }
+}
+
+# Write results to CSV file
+write.csv(x = cbind(chi_squared_comparisons), 
+          file = paste(data_folder, '/Genotype/Whole/STATS_Comparison_of_whole_mutations_distributions.csv', sep = ''), 
+          row.names = T)
+```
+
+## - Comparison of individual mutation distributions across cohorts
+
+Comparison of individual mutations distributions across cohorts. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01/Panels_BE.pzfx***).
+
+### - Loading input files
+
+```{r}
+BP_CMML_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_CMML_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+#
+BP_MDS_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_MDS_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+#
+BP_MPN_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_MPN_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+#
+TCGA_LAML_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/LAML-TCGA_DeNovo_AML_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+```
+
+For this comparison we omit the cohort columns
+
+```{r}
+BP_CMML_binary_mat$Cohort <- NULL
+BP_MDS_binary_mat$Cohort <- NULL
+BP_MPN_binary_mat$Cohort <- NULL
+```
+
+### - Generating a Summary tables for each mutation
+
+```{r}
+Summary_tables <- list()
+Common_mutations <- colnames(TCGA_LAML_binary_mat)
+
+for (mutation in Common_mutations) {
+
+df <- data.frame()
+
+df['Mutated','LAML_TCGA'] <- length(which(TCGA_LAML_binary_mat[,mutation]==1))
+df['WT','LAML_TCGA'] <- length(which(TCGA_LAML_binary_mat[,mutation]==0))
+#
+df['Mutated','BP_CMML'] <- length(which(BP_CMML_binary_mat[,mutation]==1))
+df['WT','BP_CMML'] <- length(which(BP_CMML_binary_mat[,mutation]==0))
+#
+df['Mutated','BP_MDS'] <- length(which(BP_MDS_binary_mat[,mutation]==1))
+df['WT','BP_MDS'] <- length(which(BP_MDS_binary_mat[,mutation]==0))
+#
+df['Mutated','BP_MPN'] <- length(which(BP_MPN_binary_mat[,mutation]==1))
+df['WT','BP_MPN'] <- length(which(BP_MPN_binary_mat[,mutation]==0))
+
+Summary_tables[[mutation]] <- df
+
+}
+```
+
+### - ChiSquared Test
+
+```{r}
+# Define cohort names
+cohorts <- c('LAML_TCGA', 'BP_CMML', 
+             'BP_MDS', 'BP_MPN')
+
+# Initialize results list
+ChiSquaredMonteCarlo_comparisons <- list()
+
+# Loop over each mutation in the Summary_tables
+for (mutation in names(Summary_tables)) {
+  # Set seed for reproducibility
+  set.seed(123)
+
+  # Loop over each cohort
+  for (cohort in cohorts) {
+    # Loop over remaining cohorts
+    for (remaining_cohort in cohorts[!cohorts %in% cohort]) {
+      # Perform Chi-Squared test and store p-value
+      ChiSquaredMonteCarlo_comparisons[[paste(sprintf('%s',mutation), '_', cohort,'VS', remaining_cohort, sep = '_')]] <- suppressWarnings(chisq.test(Summary_tables[[mutation]][,c(cohort,remaining_cohort)], simulate.p.value=TRUE, B = 10000)[[3]])
+    }
+  }
+}
+
+# Write results to CSV file
+write.csv(x = cbind(ChiSquaredMonteCarlo_comparisons), 
+          file = paste(data_folder, '/Genotype/Binary/STATS_Comparison_of_individual_mutation_distributions.csv', sep = ''), 
+          row.names = T)
+```
+
+# 4) Additional figures
+
+
+## - Comparison of overall mutations distributions to AML with myeloid differentiation subtypes
+
+Comparison of whole mutations distributions across cohorts. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01/Panels_BE.pzfx***)..
+
+### - Loading input files
+
+```{r}
+Summary_Table <- read.csv(paste(data_folder, '/Genotype/Whole/FAB_Subtypes_Genotypes_Summary_Table.csv', sep = ''), row.names = 'Mutation')
+```
+
+### - ChiSquared Test
+
+```{r}
+# Define cohort names
+cohorts <- c('BP_CMML', 'AMML', 'AMoL')
+
+# We remove empty rows as they cannot be used for the following test
+Summary_Table <- Summary_Table[rowSums(Summary_Table) != 0,]
+
+# Initialize results list
+chi_squared_comparisons <- list()
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Loop over each cohort
+for (cohort in cohorts) {
+  # Loop over remaining cohorts
+  for (remaining_cohort in cohorts[!cohorts %in% cohort]) {
+    # Perform Chi-Squared test and store p-value
+    chi_squared_comparisons[[paste(cohort, remaining_cohort, sep = '_vs_')]] <- 
+      suppressWarnings(chisq.test(Summary_Table[,c(cohort, remaining_cohort)], simulate.p.value=TRUE, B = 10000)$p.value)
+  }
+}
+
+# Write results to CSV file
+write.csv(x = cbind(chi_squared_comparisons), 
+          file = paste(data_folder, '/Genotype/Whole/STATS_Comparison_of_whole_mutations_distributions_to_AML_FAB_subtypes.csv', sep = ''), 
+          row.names = T)
+```
+
+## - Comparison of individual mutation distributions to AML with myeloid differentiation subtypes
+
+Comparison of individual mutations distributions across cohorts. Significant differences identified were highlighted in the plots illustrated via GraphPad (see under ***GraphPad/Fig_01/Panels_BE.pzfx***).
+
+### - Loading input files
+
+```{r}
+BP_CMML_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_CMML_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+#
+TCGA_LAML_AMML_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/LAML-TCGA_DeNovo_AML_FABM4_AMML_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+#
+TCGA_LAML_AMoL_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/LAML-TCGA_DeNovo_AML_FABM5_AMoL_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+```
+
+For this comparison we omit the cohort columns
+
+```{r}
+BP_CMML_binary_mat$Cohort <- NULL
+```
+
+### - Generating a Summary tables for each mutation
+
+```{r}
+Summary_tables <- list()
+Common_mutations <- colnames(TCGA_LAML_AMML_binary_mat)
+
+for (mutation in Common_mutations) {
+
+df <- data.frame()
+
+df['Mutated','LAML_TCGA_AMML'] <- length(which(TCGA_LAML_AMML_binary_mat[,mutation]==1))
+df['WT','LAML_TCGA_AMML'] <- length(which(TCGA_LAML_AMML_binary_mat[,mutation]==0))
+#
+df['Mutated','LAML_TCGA_AMoL'] <- length(which(TCGA_LAML_AMoL_binary_mat[,mutation]==1))
+df['WT','LAML_TCGA_AMoL'] <- length(which(TCGA_LAML_AMoL_binary_mat[,mutation]==0))
+#
+df['Mutated','BP_CMML'] <- length(which(BP_CMML_binary_mat[,mutation]==1))
+df['WT','BP_CMML'] <- length(which(BP_CMML_binary_mat[,mutation]==0))
+
+Summary_tables[[mutation]] <- df
+
+}
+```
+
+### - ChiSquared Test
+
+```{r}
+# Define cohort names
+cohorts <- c('LAML_TCGA_AMML', 'LAML_TCGA_AMoL', 'BP_CMML')
+
+# Initialize results list
+ChiSquaredMonteCarlo_comparisons <- list()
+
+# Loop over each mutation in the Summary_tables
+for (mutation in names(Summary_tables)) {
+  # Set seed for reproducibility
+  set.seed(123)
+
+  # Loop over each cohort
+  for (cohort in cohorts) {
+    # Loop over remaining cohorts
+    for (remaining_cohort in cohorts[!cohorts %in% cohort]) {
+      # Perform Chi-Squared test and store p-value
+      ChiSquaredMonteCarlo_comparisons[[paste(sprintf('%s',mutation), '_', cohort,'VS', remaining_cohort, sep = '_')]] <- suppressWarnings(chisq.test(Summary_tables[[mutation]][,c(cohort,remaining_cohort)], simulate.p.value=TRUE, B = 10000)[[3]])
+    }
+  }
+}
+
+# Write results to CSV file
+write.csv(x = cbind(ChiSquaredMonteCarlo_comparisons), 
+          file = paste(data_folder, '/Genotype/Binary/STATS_Comparison_of_individual_mutation_distributions_to_AML_FAB_subtypes.csv', sep = ''), 
+          row.names = T)
+```
+
+## - Respective contributions of CHR and NTUH cohorts to total genotype data
+
+### - Loading input files
+
+```{r}
+BP_CMML_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_CMML_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+#
+BP_MDS_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_MDS_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+#
+BP_MPN_binary_mat <- read.csv(paste(data_folder, '/Genotype/Binary/CHR-NTUH_BP_MPN_common_mutations_binary_mat.csv', sep = ''), row.names = 'Patient.ID')
+```
+
+### - Plotting contributions
+
+```{r echo=FALSE, fig.align='center', fig.cap='Additional figures. Contributions of Manchester (CHRISTIE) and Taipei (NTUH) cohorts to pulled BP-CMML/MDS/MPN groups', fig.height=4, fig.pos='H', fig.width=4}
+
+# Create a list of datasets
+datasets = list('BP_CMML' = BP_CMML_binary_mat,
+                'BP_MDS' = BP_MDS_binary_mat,
+                'BP_MPN' = BP_MPN_binary_mat)
+
+# Loop over each dataset
+for (n in 1:length(datasets)) {
+  
+  # Get the name and the dataset
+  set_name <- names(datasets)[n]
+  dataset <- datasets[[n]]
+  
+  # Create a data frame with counts for each category
+  data <- data.frame(
+    category=c("CHRISTIE", "NTUH"),
+    count=c(table(dataset[['Cohort']])[['CHRISTIE']], 
+            table(dataset[['Cohort']])[['NTUH']])
+  )
+   
+  # Compute fractions and cumulative fractions
+  data$fraction <- data$count / sum(data$count)
+  data$ymax <- cumsum(data$fraction)
+  data$ymin <- c(0, head(data$ymax, n=-1))
+  
+  # Compute label positions and labels
+  data$labelPosition <- (data$ymax + data$ymin) / 2
+  data$label <- paste0(data$category, ":\n No. PTs: ", data$count)
+  
+  # Create the pie chart
+  plot <- ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
+    geom_rect() +
+    geom_text(x=0.5, aes(y=labelPosition, label=label, color=category), size=6) +
+    scale_fill_manual(values = c('CHRISTIE' = '#4DBBD5FF', 'NTUH' = '#00A087FF')) +
+    scale_color_manual(values = c('CHRISTIE' = '#4DBBD5FF', 'NTUH' = '#00A087FF')) +
+    coord_polar(theta="y") +
+    xlim(c(-1, 4)) +
+    theme_void() +
+    theme(legend.position = "none")
+  
+  print(sprintf('CHRISTIE and NTUH contributions to pulled %s cohort', set_name))
+  print(plot)
+  
+  # Save the plot to a PNG file
+  png(filename = paste(figures_folder, sprintf('/Not_Included/CHR_and_NTUH_contributions_to_%s_cohort.png', set_name), sep = ''),
+      units = 'cm', width = 12, height = 12, res = 300)
+  
+  print(plot)
+  
+  # Close the PNG device
+  invisible(dev.off())
+  
+}
+```
+
+
+
+
+
+
+
