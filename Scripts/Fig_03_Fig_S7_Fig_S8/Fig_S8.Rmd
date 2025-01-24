@@ -59,7 +59,7 @@ In this section, we ensure that all necessary packages are installed.
 ```{r}
 # Ensure BiocManager is available for installation of Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-BiocManager::install(version = "3.18", ask = FALSE)
+BiocManager::install(version = "3.18", ask = TRUE)
 
 # Define a list of required packages used in this script
 packages_required <- c("escape", "dplyr", "stringr", "ComplexHeatmap",
@@ -69,7 +69,7 @@ packages_required <- c("escape", "dplyr", "stringr", "ComplexHeatmap",
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
 
 # Install any uninstalled packages
-if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = FALSE)
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = TRUE)
 ```
 
 ## - Loading packages

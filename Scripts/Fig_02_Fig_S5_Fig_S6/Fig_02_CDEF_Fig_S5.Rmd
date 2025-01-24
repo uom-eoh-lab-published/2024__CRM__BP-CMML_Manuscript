@@ -65,7 +65,7 @@ In this section, we ensure that all necessary packages are installed.
 ```{r}
 # Ensure BiocManager is available for installation of Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-BiocManager::install(version = "3.18", ask = FALSE)
+BiocManager::install(version = "3.18", ask = TRUE)
 
 # Define a list of required packages used in this script
 packages_required <- c("ComplexHeatmap", "stringr", "tximport", "DESeq2", "tidyverse", 
@@ -77,7 +77,7 @@ packages_required <- c("ComplexHeatmap", "stringr", "tximport", "DESeq2", "tidyv
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
 
 # Install any uninstalled packages
-if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = FALSE)
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = TRUE)
 ```
 
 ## - Loading packages
@@ -1015,8 +1015,8 @@ genemat_ord$log10FoldChange <- log10(2^genemat_ord$log2FoldChange)
 
 # Define color scheme for the volcano plot
 keyvals <- ifelse(
-  genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 10e-2, '#415384',
-  ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 10e-2, '#C92A1D',
+  genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 50e-3, '#415384',
+  ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 50e-3, '#C92A1D',
     '#727272'))
 keyvals[is.na(keyvals)] <- '#e5e5e5'
 names(keyvals)[keyvals == '#C92A1D'] <- 'Upregulated'
@@ -1036,13 +1036,13 @@ plot <- EnhancedVolcano(genemat_ord,
     cutoffLineWidth = 0,
     selectLab = c(BP_Genes, Control_Genes),
     xlab = bquote(~Log[2]~ 'fold change'),
-    pCutoff = 10e-2,
+    pCutoff = 50e-3,
     FCcutoff = 0,
     vlineWidth = 0,
     pointSize = 2.0, 
     xlim = c(-6,6),
     ylim = c(-0.5,12.5),
-    hline = 10e-2,
+    hline = 50e-3,
     labSize = 2.0,
     labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(BP_Genes, Control_Genes),)],
     labFace = 'bold',

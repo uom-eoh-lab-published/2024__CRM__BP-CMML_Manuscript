@@ -22,7 +22,7 @@ Daniel Wiseman (daniel.wiseman@manchester.ac.uk)
 </p>
 
 ## Content: 
-This is the code repository for the CRM 2025 manuscript on BP-CMML stratification.
+This is the code repository for the manuscript on BP-CMML stratification submitted in 2024 at CRM.
 
 ## Instructions on reproducibility:
 
@@ -32,12 +32,12 @@ This is the code repository for the CRM 2025 manuscript on BP-CMML stratificatio
 git clone https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript.git
 ```
 
-2) Access the cloned directory, download and decompress the processed input data deposited in the following Mendeley Data repository: [Link to repository](https://doi.org/10.17632/vcsyd7ns8f.1)
+2) Access the cloned directory, download and decompress the processed input data deposited in the following Mendeley Data repository: [Link to repository](https://doi.org/10.17632/vcsyd7ns8f)
 
 ```
 cd 2024__CRM__BP-CMML_Manuscript/
 wget https://data.mendeley.com/public-files/datasets/vcsyd7ns8f/files/b557a3ee-1054-4270-82ee-2aa78cd820cb/file_downloaded -O Data.zip
-gunzip Data.zip
+unzip Data.zip
 ```
 
 3) To ensure reproducibility run as follows:
@@ -50,7 +50,7 @@ gunzip Data.zip
 
     Please verify that your R and packages version match those used to generate figures in the manuscript - [Check exemplar session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01_Fig_S1/Fig_01_ABE_Fig_S1_SessionInfo.txt)  
 
-    Installation of python is only required to produce [Fig2C](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Fig_02/Panel_C.png) and [FigS5](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Supplemental/Fig_S5.png). To ensure reproducibility please verify that your Python modules version match those used to generate the above figures - [Check our conda requirements](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/python_conda_env_requirements.txt)  
+    Installation of python is only required to produce [Fig2C](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Fig_02/Panel_C.png) and [FigS5](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Supplemental/Fig_S5.png). To ensure reproducibility please create a Python environment with kaleido or verify that your Python modules version match those used to generate the above figures - [Check our conda requirements](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/python_conda_env_requirements.txt)  
 
 ---
 
