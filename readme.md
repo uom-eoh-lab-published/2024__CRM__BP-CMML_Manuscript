@@ -44,6 +44,8 @@ gunzip Data.zip
 
   - Linux (HPC)
 
+    A singularity container will be generated if required. Until then please follow instructions below.
+
   - MacOSX/Windows:  
 
     Please verify that your R and packages version match those used to generate figures in the manuscript - [Check exemplar session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01_Fig_S1/Fig_01_ABE_Fig_S1_SessionInfo.txt)  
