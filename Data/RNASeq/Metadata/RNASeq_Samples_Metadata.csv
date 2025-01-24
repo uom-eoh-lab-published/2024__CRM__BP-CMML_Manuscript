@@ -1,0 +1,50 @@
+ Patient.ID,Condition,ICC.classification,WHO.classification,Cutaneous.BPDCN,DNMT3A,TET2,SRSF2,SF3B1,SETBP1,U2AF1,IDH1,IDH2,ASXL1,EZH2,STAG2,BCOR,TP53,PHF6,NF1,RUNX1,FLT3,NPM1,CEBPA,WT1,KIT,BRAF,KRAS,NRAS,CBL,PTPN11,GATA2,SH2B3,ZRSR2,CSF3R,"DTA.mutations (DNMT3A, TET2, ASXL1)","Splicing.mutations (U2 - SRSF2, SF3B1, U2AF1, ZRSF2)","RAS.mutations (NRAS, KRAS, CBL, NF1, PTPN11, BRAF)","IDH.mutations (IDH1, IDH2)"
+55,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+136,BP-CMML,AML with NPM1,AML with NPM1,No,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,1,1,1,0
+171,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1
+246,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,0
+279,BP-CMML,AML not otherwise specified,AML with other defined genetic alterations,No,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0
+293,BP-CMML,AML with NPM1,AML with NPM1,Yes,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0
+303,BP-CMML,AML with CEBPA,AML with CEBPA,No,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,1,1,0
+316,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0
+343,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,1,0
+416,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,0,0,0,1,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,1,1
+495,BP-CMML,AML with MDS-related cytogenetic abnormalities,AML with other defined genetic alterations,No,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0
+543,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,0,1,0,0,0,0,0,1,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+544,BP-CMML,AML with NPM1,AML with NPM1,No,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0
+620,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+660,BP-CMML,AML with CEBPA,AML with CEBPA,No,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+671,BP-CMML,AML with NPM1,AML with NPM1,No,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0
+689,BP-CMML,AML with NPM1,AML with NPM1,No,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,1,1,0,0
+697,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+713,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,1,0
+745,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1
+756,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0
+776,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,0
+783,BP-CMML,AML with MDS-related cytogenetic abnormalities,AML with other defined genetic alterations,No,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0
+812,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+821,BP-CMML,BPDCN,BPDCN,No,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0
+822,BP-CMML,AML with NPM1,AML with NPM1,No,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0
+823,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0
+837,BP-CMML,AML not otherwise specified,AML with other defined genetic alterations,No,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0
+872,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0
+888,BP-CMML,AML with MDS-related cytogenetic abnormalities,AML myelodysplasia-related,No,1,1,0,0,0,1,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,1,0
+919,BP-CMML,AML with NPM1,AML with NPM1,No,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+930,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,1,0,0,0,1,0,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1
+963,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+965,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+993,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0
+1007,BP-CMML,BPDCN,BPDCN,No,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0
+1049,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1
+1061,BP-CMML,BPDCN,BPDCN,No,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0
+1068,BP-CMML,AML with MDS-related cytogenetic abnormalities,AML myelodysplasia-related,No,0,1,1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,1,0
+1122,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,1,0
+1159,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,0
+1217,BP-CMML,AML with MDS-related gene mutations,AML myelodysplasia-related,No,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+929,Control,Control,Control,No,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1126,Control,Control,Control,No,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1138,Control,Control,Control,No,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1157,Control,Control,Control,No,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1162,Control,Control,Control,No,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1170,Control,Control,Control,No,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1207,Control,Control,Control,No,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
