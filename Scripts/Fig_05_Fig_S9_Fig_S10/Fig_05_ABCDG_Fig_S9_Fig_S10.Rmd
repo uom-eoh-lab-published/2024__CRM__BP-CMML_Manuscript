@@ -1,16 +1,18 @@
 ---
-title: "Figure 05 - Panels ABCDEFG + FigS5 + FigS6"
+title: "Figure 05 - Panels ABCDEFG + Fig S9 + Fig S10"
 output: 
   rmdformats::robobook:
     lightbox: true
     fig_caption: true
 ---
 
+```{=html}
 <style type="text/css">
   body{
   font-size: 10pt;
 }
 </style>
+```
 
 # 1) Setup
 
@@ -66,18 +68,18 @@ In this section, we ensure that all necessary packages are installed.
 ```{r}
 # Ensure BiocManager is available for installation of Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-#BiocManager::install(version = "3.18")
+BiocManager::install(version = "3.18", ask = FALSE)
 
 # Define a list of required packages used in this script
 packages_required <- c("stringr", "GenomicFeatures", "circlize", "tidyverse",
-                       "DESeq2", "apeglm", "ashr", "ComplexHeatmap", "magick", 
+                       "DESeq2", "apeglm", "ashr", "ComplexHeatmap", "magick", "EnhancedVolcano",
                        "IHW", "ggplot2", "dplyr", "tximport", "VennDiagram", "erer", "gplots")
 
 # Identify any required packages that are not installed
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
 
 # Install any uninstalled packages
-if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = FALSE)
 ```
 
 ## - Loading packages
@@ -92,6 +94,7 @@ library(magick, quietly = TRUE)
 library(ggplot2, quietly = TRUE)
 library(dplyr, quietly = TRUE)
 library(VennDiagram, quietly = TRUE)
+library(EnhancedVolcano, quietly = TRUE)
 library(erer, quietly = TRUE)
 library(gplots, quietly = TRUE)
 library(tximport, quietly = TRUE)
@@ -142,7 +145,7 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_05_ABCDG_Fig_S5_Fig_S6_SessionInfo.txt'))
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_05_ABCDG_Fig_S9_Fig_S10_SessionInfo.txt'))
 
 # Print the session information
 sessionInfo()
@@ -155,234 +158,155 @@ RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Cluste
                                     sep = ''), row.names = 'Patient.ID')
 ```
 
-# 3) Panels AB + Fig S5
+# 3) Panels AB + Fig S9
 
 ## - 2019 VanGalen P. V. et al. Enrichment Scores HeatMap : Panel A
 
-```{r}
-VanGalen_celltype_modules_scores <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/CellType/2019__VanGalen_et_al__AML_signatures__Enrichments.csv', 
-                                    sep = ''), row.names = 'X')
+This R script reads a CSV file containing enrichment scores for different cell types, renames the columns, creates a heatmap of the scores, and saves the heatmap as a PNG file.
 
-colnames(VanGalen_celltype_modules_scores) <- c('HSC-like',
-                                     'HSC.Prog-like',
-                                     'Progenitor-like',
-                                     'GMP-like',
-                                     'Promono-like',
-                                     'Monocyte-like',
-                                     'cDC-like',
-                                     'Myeloid-like')
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5A', fig.pos='H', fig.height=2.95276, fig.width=7.3307087}
+# Read CSV file
+VanGalen_celltype_modules_scores <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/CellType/2019__VanGalen_et_al__AML_signatures__Enrichments.csv', sep = ''), row.names = 'X')
 
+# Rename columns
+colnames(VanGalen_celltype_modules_scores) <- c('HSC-like', 'HSC.Prog-like', 'Progenitor-like', 'GMP-like', 'Promono-like', 'Monocyte-like', 'cDC-like', 'Myeloid-like')
+
+# Transpose the data frame
 VanGalen_celltype_modules_scores <- t(VanGalen_celltype_modules_scores)
 
+# Create a data frame for the cluster identities
 Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
+Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster, levels=c('C1', 'C2'))
 
-Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster, 
-                                         levels=c('C1',
-                                                  'C2'))
+# Define colors for the clusters
+colors_annotation <-  list(RF_Cluster = c('C1' = '#793F0B', 'C2' = '#0B544B'))
 
-colors_annotation <-  list(RF_Cluster = c('C1' = '#793F0B',
-                                          'C2' = '#0B544B'))
+# Create a heatmap annotation
+col_anno <- HeatmapAnnotation(df=Identity, col = colors_annotation, gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(2, "mm"), show_annotation_name = F, show_legend = FALSE, annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
 
-col_anno <- HeatmapAnnotation(df=Identity, col = colors_annotation, 
-                        gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(2, "mm"),
-                        show_annotation_name = F, show_legend = FALSE,
-                        annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
-
+# Define color gradient for the heatmap
 breaks_val <- seq(from = 0, to = 1, length.out = 14)
 col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
 
-HMap_vangalen <- Heatmap(VanGalen_celltype_modules_scores, 
-        name = 'ssGSEA Score',
-        column_split = RF_cluster_metadata$RF_Cluster, top_annotation = col_anno,
-        col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05),
-        column_title_gp = gpar(fontsize=11, fontface='bold'),
-        row_names_gp = gpar(fontsize=10), cluster_rows = F,
-        cluster_column_slices = F,
-        column_names_gp = gpar(fontsize=10), show_heatmap_legend = F,
-        heatmap_legend_param = list(legend_direction = "horizontal",
-                                    legend_width = unit(2, "cm")),
-        row_names_side = 'right') # change show_heatmap_legend to T to plot legend
+# Create a heatmap
+HMap_vangalen <- Heatmap(VanGalen_celltype_modules_scores, name = 'ssGSEA Score', column_split = RF_cluster_metadata$RF_Cluster, top_annotation = col_anno, col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05), column_title_gp = gpar(fontsize=11, fontface='bold'), row_names_gp = gpar(fontsize=10), cluster_rows = F, cluster_column_slices = F, column_names_gp = gpar(fontsize=10), show_heatmap_legend = F, heatmap_legend_param = list(legend_direction = "horizontal", legend_width = unit(2, "cm")), row_names_side = 'right')
 
-ComplexHeatmap::draw(HMap_vangalen, 
-                     heatmap_legend_side = "bottom", 
-                     annotation_legend_side = "bottom")
+# Draw the heatmap
+ComplexHeatmap::draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 
-# Open a new PNG device for plotting
+# Open a new PNG device
 png(filename = paste(figures_folder, '/Fig_05/Panel_A.png', sep = ''), units = 'cm', width = 18.62, height = 7.5, res = 300)
 
-ComplexHeatmap::draw(HMap_vangalen, 
-                     heatmap_legend_side = "bottom", 
-                     annotation_legend_side = "bottom")
+# Draw the heatmap on the PNG device
+ComplexHeatmap::draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 
+# Close the PNG device
 invisible(dev.off())
 ```
 
 ## - WGCNA modules scores Heatmap : Panel B
 
-```{r}
-WGCNA_modules_scores <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/WGCNA/WGCNA_modules__Enrichments.csv', 
-                                    sep = ''), row.names = 'X')
+This R script reads a CSV file containing enrichment scores for different WGCNA modules, creates a heatmap of the scores, and saves the heatmap as a PNG file.
 
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5B', fig.pos='H', fig.height=2.95276, fig.width=6.29921}
+# Read CSV file
+WGCNA_modules_scores <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/WGCNA/WGCNA_modules__Enrichments.csv', sep = ''), row.names = 'X')
+
+# Transpose the data frame
 WGCNA_modules_scores <- t(WGCNA_modules_scores)
 
+# Create a data frame for the cluster identities
 Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
+Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster, levels=c('C1', 'C2'))
 
-Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster, 
-                                         levels=c('C1',
-                                                  'C2'))
+# Define colors for the clusters
+colors_annotation <-  list(RF_Cluster = c('C1' = '#793F0B', 'C2' = '#0B544B'))
 
-colors_annotation <-  list(RF_Cluster = c('C1' = '#793F0B',
-                                          'C2' = '#0B544B'))
+# Create a heatmap annotation
+col_anno <- HeatmapAnnotation(df=Identity, col = colors_annotation, gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(2, "mm"), show_annotation_name = F, show_legend = FALSE, annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
 
-col_anno <- HeatmapAnnotation(df=Identity, col = colors_annotation, 
-                        gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(2, "mm"),
-                        show_annotation_name = F, show_legend = FALSE,
-                        annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
-
+# Define color gradient for the heatmap
 breaks_val <- seq(from = 0, to = 1, length.out = 14)
 col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
 
-# Open a new PNG device for plotting
+# Create a heatmap
+HMap_WGCNA <- Heatmap(WGCNA_modules_scores, name = 'ssGSEA Score', column_split = RF_cluster_metadata$RF_Cluster, top_annotation = col_anno, col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05), column_title_gp = gpar(fontsize=11, fontface='bold'), row_names_gp = gpar(fontsize=10), cluster_rows = F, cluster_column_slices = F, column_names_gp = gpar(fontsize=10), show_heatmap_legend = F, heatmap_legend_param = list(legend_direction = "horizontal", legend_height = unit(5, "cm")), row_names_side = 'right')
+
+# Draw the heatmap
+draw(HMap_WGCNA, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+
+# Open a new PNG device
 png(filename = paste(figures_folder, '/Fig_05/Panel_B.png', sep = ''), units = 'cm', width = 16, height = 7.5, res = 300)
 
-HMap_WGCNA <- Heatmap(WGCNA_modules_scores, 
-        name = 'ssGSEA Score',
-        column_split = RF_cluster_metadata$RF_Cluster, top_annotation = col_anno,
-        col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05),
-        column_title_gp = gpar(fontsize=11, fontface='bold'),
-        row_names_gp = gpar(fontsize=10), cluster_rows = F,
-        cluster_column_slices = F,
-        column_names_gp = gpar(fontsize=10), show_heatmap_legend = F,
-        heatmap_legend_param = list(legend_direction = "horizontal",
-                                    legend_height = unit(5, "cm")),
-        row_names_side = 'right')
+# Draw the heatmap on the PNG device
+draw(HMap_WGCNA, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 
-draw(HMap_WGCNA, heatmap_legend_side = "bottom", 
-     annotation_legend_side = "bottom")
-
-dev.off()
-```
-
-## - 2017 Velten L. et al Enrichment Scores HeatMap : Fig S5
-
-```{r}
-Velten_celltype_modules_scores <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/CellType/2017__Velten_et_al__Healthy_signatures__Enrichments.csv', 
-                                    sep = ''), row.names = 'X')
-
-colnames(Velten_celltype_modules_scores) <- c('HOXA3.HOXB6',
-                               'HLF.ZFP36L2',
-                               'SPINK2.SELL',
-                               'FLT3.SATB1',
-                               'IRF1.CASP1',
-                               'EBF1.ID3',
-                               'EAF2.KLF4',
-                               'IRF7.IRF8',
-                               'SPI1.GFI1',
-                               'CEBPA.CEBPD',
-                               'HDC.LMO4',
-                               'GATA2.NFE2',
-                               'TAL1.HSF1',
-                               'GP1BB.PBX1',
-                               'GATA1.KLF1')
-
-Velten_celltype_modules_scores <- t(Velten_celltype_modules_scores)
-
-Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
-
-Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster, 
-                                         levels=c('C1',
-                                                  'C2'))
-
-colors_annotation <-  list(RF_Cluster = c('C1' = '#793F0B',
-                                          'C2' = '#0B544B'))
-
-col_anno <- HeatmapAnnotation(df=Identity, col = colors_annotation, 
-                        gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(2, "mm"),
-                        show_annotation_name = F, show_legend = FALSE,
-                        annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
-
-Module_Identity <- data.frame(row.names = rownames(Velten_celltype_modules_scores))
-
-Module_Identity[c('HOXA3.HOXB6',
-                  'HLF.ZFP36L2',
-                  'SPINK2.SELL'),'Celltype'] <- 'HSC/MPP'
-Module_Identity[c('FLT3.SATB1'),'Celltype'] <- 'LMPP'
-Module_Identity[c('IRF1.CASP1',
-                  'EBF1.ID3'),'Celltype'] <- 'CLP'
-Module_Identity[c('EAF2.KLF4',
-                  'IRF7.IRF8'),'Celltype'] <- 'MDP'
-Module_Identity[c('SPI1.GFI1',
-                  'CEBPA.CEBPD'),'Celltype'] <- 'NeP'
-Module_Identity[c('HDC.LMO4'),'Celltype'] <- 'EoBaMaP'
-Module_Identity[c('GATA2.NFE2',
-                  'TAL1.HSF1'),'Celltype'] <- 'MEP'
-Module_Identity[c('GP1BB.PBX1'),'Celltype'] <- 'MkP'
-Module_Identity[c('GATA1.KLF1'),'Celltype'] <- 'EP'
-
-Module_Identity$Celltype <- factor(Module_Identity$Celltype, 
-                                   levels = c('HSC/MPP',
-                                              'LMPP',
-                                              'CLP',
-                                              'MDP',
-                                              'NeP',
-                                              'EoBaMaP',
-                                              'MEP',
-                                              'MkP',
-                                              'EP'))
-
-Celltype <- data.frame(row.names = c('HSC/MPP',
-                                              'LMPP',
-                                              'CLP',
-                                              'MDP',
-                                              'NeP',
-                                              'EoBaMaP',
-                                              'MEP',
-                                              'MkP',
-                                              'EP'))
-
-
-Celltype$Colour <- c('#CB181D',
-                         '#000000',
-                         '#000000',
-                         '#CB181D',
-                         '#000000',
-                         '#000000',
-                         '#000000',
-                         '#000000',
-                         '#000000')
-
-
-breaks_val <- seq(from = 0, to = 1, length.out = 14)
-col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
-
-HMap <- Heatmap(Velten_celltype_modules_scores, 
-        name = 'ssGSEA Score',
-        column_split = Identity$RF_Cluster, top_annotation = col_anno,
-        col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05),
-        column_title_gp = gpar(fontsize=11, fontface='bold'),
-        row_split = Module_Identity$Celltype, cluster_rows = F,
-        row_gap = unit(0.05, "cm"), 
-        cluster_column_slices = F,
-        row_names_gp = gpar(fontsize=9), row_title_rot = 0,
-        row_title_gp = gpar(fontsize=9, fontface='bold', col=Celltype$Colour),
-        column_names_gp = gpar(fontsize=9), show_heatmap_legend = F,
-        heatmap_legend_param = list(legend_direction = "horizontal",
-                                    legend_height = unit(5, "cm")),
-        row_names_side = 'right')
-
-draw(HMap, heatmap_legend_side = "bottom", 
-     annotation_legend_side = "bottom")
-
-# Open a new PNG device for plotting
-png(filename = paste(figures_folder, '/Supplemental/Fig_S5.png', sep = ''), units = 'cm', width = 19.2, height = 11, res = 300)
-
-draw(HMap, heatmap_legend_side = "bottom", 
-     annotation_legend_side = "bottom")
-
+# Close the PNG device
 invisible(dev.off())
 ```
 
-# 4) DGE C1 vs C2
+## - 2017 Velten L. et al Enrichment Scores HeatMap : Fig S9
+
+This R script reads a CSV file containing enrichment scores for different cell type modules, creates a heatmap of the scores, and saves the heatmap as a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure S9', fig.pos='H', fig.height=4.33071, fig.width=7.559055}
+# Read CSV file
+Velten_celltype_modules_scores <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/CellType/2017__Velten_et_al__Healthy_signatures__Enrichments.csv', sep = ''), row.names = 'X')
+
+# Rename columns
+colnames(Velten_celltype_modules_scores) <- c('HOXA3.HOXB6', 'HLF.ZFP36L2', 'SPINK2.SELL', 'FLT3.SATB1', 'IRF1.CASP1', 'EBF1.ID3', 'EAF2.KLF4', 'IRF7.IRF8', 'SPI1.GFI1', 'CEBPA.CEBPD', 'HDC.LMO4', 'GATA2.NFE2', 'TAL1.HSF1', 'GP1BB.PBX1', 'GATA1.KLF1')
+
+# Transpose the data frame
+Velten_celltype_modules_scores <- t(Velten_celltype_modules_scores)
+
+# Create a data frame for the cluster identities
+Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
+Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster, levels=c('C1', 'C2'))
+
+# Define colors for the clusters
+colors_annotation <-  list(RF_Cluster = c('C1' = '#793F0B', 'C2' = '#0B544B'))
+
+# Create a heatmap annotation
+col_anno <- HeatmapAnnotation(df=Identity, col = colors_annotation, gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(2, "mm"), show_annotation_name = F, show_legend = FALSE, annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
+
+# Create a data frame for the module identities
+Module_Identity <- data.frame(row.names = rownames(Velten_celltype_modules_scores))
+Module_Identity[c('HOXA3.HOXB6', 'HLF.ZFP36L2', 'SPINK2.SELL'),'Celltype'] <- 'HSC/MPP'
+Module_Identity[c('FLT3.SATB1'),'Celltype'] <- 'LMPP'
+Module_Identity[c('IRF1.CASP1', 'EBF1.ID3'),'Celltype'] <- 'CLP'
+Module_Identity[c('EAF2.KLF4', 'IRF7.IRF8'),'Celltype'] <- 'MDP'
+Module_Identity[c('SPI1.GFI1', 'CEBPA.CEBPD'),'Celltype'] <- 'NeP'
+Module_Identity[c('HDC.LMO4'),'Celltype'] <- 'EoBaMaP'
+Module_Identity[c('GATA2.NFE2', 'TAL1.HSF1'),'Celltype'] <- 'MEP'
+Module_Identity[c('GP1BB.PBX1'),'Celltype'] <- 'MkP'
+Module_Identity[c('GATA1.KLF1'),'Celltype'] <- 'EP'
+Module_Identity$Celltype <- factor(Module_Identity$Celltype, levels = c('HSC/MPP', 'LMPP', 'CLP', 'MDP', 'NeP', 'EoBaMaP', 'MEP', 'MkP', 'EP'))
+
+# Define colors for the cell types
+Celltype <- data.frame(row.names = c('HSC/MPP', 'LMPP', 'CLP', 'MDP', 'NeP', 'EoBaMaP', 'MEP', 'MkP', 'EP'))
+Celltype$Colour <- c('#CB181D', '#000000', '#000000', '#CB181D', '#000000', '#000000', '#000000', '#000000', '#000000')
+
+# Define color gradient for the heatmap
+breaks_val <- seq(from = 0, to = 1, length.out = 14)
+col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
+
+# Create a heatmap
+HMap <- Heatmap(Velten_celltype_modules_scores, name = 'ssGSEA Score', column_split = Identity$RF_Cluster, top_annotation = col_anno, col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05), column_title_gp = gpar(fontsize=11, fontface='bold'), row_split = Module_Identity$Celltype, cluster_rows = F, row_gap = unit(0.05, "cm"), cluster_column_slices = F, row_names_gp = gpar(fontsize=9), row_title_rot = 0, row_title_gp = gpar(fontsize=9, fontface='bold', col=Celltype$Colour), column_names_gp = gpar(fontsize=9), show_heatmap_legend = F, heatmap_legend_param = list(legend_direction = "horizontal", legend_height = unit(5, "cm")), row_names_side = 'right')
+
+# Draw the heatmap
+draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+
+# Open a new PNG device
+png(filename = paste(figures_folder, '/Supplemental/Fig_S9.png', sep = ''), units = 'cm', width = 19.2, height = 11, res = 300)
+
+# Draw the heatmap on the PNG device
+draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+
+# Close the PNG device
+invisible(dev.off())
+```
+
+# 4) DGE
 
 ## - Loading gene annotation files
 
@@ -537,6 +461,52 @@ Samples_metadata$Cluster <- factor(Samples_metadata$Cluster)
 Samples_metadata$Cluster <- relevel(Samples_metadata$Cluster, ref = "Control")
 ```
 
+## - Importing and grouping raw counts
+
+Here we check for the existence of a specific RDS file. If it doesn't exist, we perform gene-level summarization and save the results as CSV files.
+
+```{r}
+# Define the path to the RDS file
+rds_file <- paste(data_folder, '/RNASeq/InHouse/Counts/Tximport_object.rds', sep = '')
+
+# Check if the RDS file exists
+if (!file.exists(rds_file)) {
+
+  ## - Loading counts path
+  
+  STAR_Salmon_output_path <- paste(data_folder, '/RNASeq/InHouse/Counts/Raw_counts/Individual', sep = '')
+  
+  files <- file.path(STAR_Salmon_output_path, list.files(STAR_Salmon_output_path), "quant.sf")
+  names(files) <- list.files(STAR_Salmon_output_path)
+  
+  ## - Gene-level summarization via tximport
+  
+  k <- keys(txdb, keytype = "TXNAME")
+  tx2gene <- AnnotationDbi::select(txdb, k, "GENEID", "TXNAME")
+  
+  TXI.Genes <- tximport(files, type="salmon", tx2gene=tx2gene, 
+                    txIn = TRUE, txOut = FALSE, countsFromAbundance = 'no')
+  
+  TXI.Genes$abundance <- TXI.Genes$abundance[,rownames(Samples_metadata)]
+  TXI.Genes$counts <- TXI.Genes$counts[,rownames(Samples_metadata)]
+  TXI.Genes$length <- TXI.Genes$length[,rownames(Samples_metadata)]
+  
+  saveRDS(TXI.Genes, file = paste(data_folder, '/RNASeq/InHouse/Counts/Tximport_object.rds', sep = ''))
+  
+  ## - Exporting gene-level counts and TPMs
+  
+  dir.create(paste(data_folder, '/RNASeq/InHouse/Counts/Raw_counts/Grouped', sep = ''), showWarnings = F)
+  
+  dir.create(paste(data_folder, '/RNASeq/InHouse/Counts/Processed_counts', sep = ''), showWarnings = F)
+  dir.create(paste(data_folder, '/RNASeq/InHouse/Counts/Processed_counts/Grouped', sep = ''), showWarnings = F)
+  
+  write.csv(x = TXI.Genes$counts, file = paste(data_folder, '/RNASeq/InHouse/Counts/Raw_counts/Grouped/Tximport_raw_countmat.csv', sep = ''), row.names = TRUE, quote = FALSE)
+  
+  write.csv(x = TXI.Genes$abundance, file =  paste(data_folder, '/RNASeq/InHouse/Counts/Processed_counts/Grouped/Tximport_TPM_mat.csv', sep = ''), row.names = TRUE, quote = FALSE)
+
+}
+```
+
 ## - Loading SE object
 
 ```{r}
@@ -554,29 +524,36 @@ Unique_genes <- read.table(file = paste(data_folder, '/RNASeq/InHouse/Counts/Pro
 
 ### - Testing parametric dispersion vs local
 
-```{r}
-library(DESeq2)
-library(dplyr)
-library(tidyverse)
+This script performs differential expression analysis using both parametric and local fit types, and then determines the best scoring fit type based on the median absolute residuals.
 
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=5, fig.width=6}
+# Create a DESeqDataSet object from the count data, sample metadata, and gene annotation metadata
+# Perform differential expression analysis using the "parametric" method of dispersion estimation
 dds_parametric = DESeqDataSetFromTximport(txi = TXI.Genes, 
-                               colData = Samples_metadata,
-                               rowData = Genes_annotation_metadata[rownames(TXI.Genes$counts),], 
-                               design = ~ Cluster)
+                                         colData = Samples_metadata,
+                                         rowData = Genes_annotation_metadata[rownames(TXI.Genes$counts),], 
+                                         design = ~ Cluster)
 dds_parametric <- estimateSizeFactors(dds_parametric)
 dds_parametric <- dds_parametric[Unique_genes,]
 dds_parametric <- DESeq(dds_parametric, fitType = "parametric")
 
+# Calculate the residuals of the dispersion fit
 Residuals_parametric <- log(mcols(dds_parametric)$dispGeneEst)-log(mcols(dds_parametric)$dispFit)
+
+# Plot the residuals
 plotDispEsts(dds_parametric, main= "dispEst: Parametric")
+
+# Plot a histogram of the residuals
 hist(x = Residuals_parametric, xlim = c(-20,10))
+
+# Calculate the median absolute residual
 Median_Absolute_Residual_parametric <- median(abs(log(mcols(dds_parametric)$dispGeneEst)-log(mcols(dds_parametric)$dispFit)))
 
-
+# Repeat the above steps for the "local" method of dispersion estimation
 dds_local = DESeqDataSetFromTximport(txi = TXI.Genes, 
-                               colData = Samples_metadata,
-                               rowData= Genes_annotation_metadata[rownames(TXI.Genes$counts),], 
-                               design = ~ Cluster)
+                                     colData = Samples_metadata,
+                                     rowData= Genes_annotation_metadata[rownames(TXI.Genes$counts),], 
+                                     design = ~ Cluster)
 dds_local <- estimateSizeFactors(dds_local)
 dds_local <- dds_local[Unique_genes,]
 dds_local <- DESeq(dds_local, fitType = "local")
@@ -586,7 +563,7 @@ plotDispEsts(dds_local, main= "dispEst: Local")
 hist(x = Residuals_local, xlim = c(-20,10))
 Median_Absolute_Residual_local <- median(abs(log(mcols(dds_local)$dispGeneEst)-log(mcols(dds_local)$dispFit)))
 
-
+# Determine which method of dispersion estimation has the smaller median absolute residual
 if ((Median_Absolute_Residual_parametric < Median_Absolute_Residual_local) == TRUE) {
   Best_scoring_fitType <- 'parametric'
 } else {
@@ -594,59 +571,89 @@ if ((Median_Absolute_Residual_parametric < Median_Absolute_Residual_local) == TR
 }
 ```
 
+Here we create a DESeqDataSet object from the gene-level summarization data, normalize the count data, filter out rows based on unique genes, and then perform differential expression analysis using the best scoring fit type.
+
 ```{r}
-dds = DESeqDataSetFromTximport(txi = TXI.Genes, 
-                               colData = Samples_metadata,
-                               rowData= Genes_annotation_metadata[rownames(TXI.Genes$counts),], 
-                               design = ~ Cluster)
+# Create a DESeqDataSet from the Tximport object
+dds <- DESeqDataSetFromTximport(
+  txi = TXI.Genes, 
+  colData = Samples_metadata,
+  rowData = Genes_annotation_metadata[rownames(TXI.Genes$counts),], 
+  design = ~ Cluster
+)
+
+# Estimate size factors
 dds <- estimateSizeFactors(dds)
+
+# Filter rows based on unique genes
 dds <- dds[Unique_genes,]
+
+# Run DESeq with the best scoring fit type
 dds <- DESeq(dds, fitType = Best_scoring_fitType)
 ```
 
 ### - DEGs
 
-```{r}
-TF_list <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Metadata/Lambert2018_TFs.txt', sep = ''), sep = '\t', header = F)
+Here we load useful gene metadata
 
-HGNC_CD_markers_list <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Metadata/HGNC_CD_Markers.csv', sep = ''))
+```{r}
+# Read the transcription factors list
+TF_list <- read.csv(
+  file = paste(data_folder, '/Resources/RNASeq/Gene_Metadata/Lambert2018_TFs.txt', sep = ''), 
+  sep = '\t', 
+  header = FALSE
+)
+
+# Read the HGNC CD markers list
+HGNC_CD_markers_list <- read.csv(
+  file = paste(data_folder, '/Resources/RNASeq/Gene_Metadata/HGNC_CD_Markers.csv', sep = '')
+)
 ```
 
 #### - C1 vs Control
 
 ##### - Evaluating number of significant genes
 
+This script performs differential expression analysis between "C1" and "Control" conditions, applies three shrinkage estimators for log2 fold changes, and creates MA plots. It also prepares a ggplot scatter plot, colored by significance status, and saves it as a PNG file.
+
 ```{r include=FALSE}
+# Perform differential expression analysis
 res <- results(dds, contrast=c("Cluster", "C1", "Control"), filterFun = ihw)
 
+# Apply log fold change shrinkage using 'normal' method and filter significant results
 resNorm <- lfcShrink(dds, coef="Cluster_C1_vs_Control", res = res, type = 'normal')
 resNorm_adj <- as.data.frame(resNorm) %>% filter(padj < 0.05)
 
+# Apply log fold change shrinkage using 'ashr' method and filter significant results
 resAsh <- lfcShrink(dds, coef="Cluster_C1_vs_Control", res = res, type = 'ashr')
 resAsh_adj <- as.data.frame(resAsh) %>% filter(padj < 0.05)
 
+# Apply log fold change shrinkage using 'apeglm' method and filter significant results
 resLFC <- lfcShrink(dds, coef="Cluster_C1_vs_Control", type="apeglm")
 resLFC_adj <- as.data.frame(resLFC) %>% filter(padj < 0.05)
 
+# Set up the plot parameters
 par(mfrow=c(1,3), mar=c(4,4,2,1))
 xlim <- c(1,1e5); ylim <- c(-3,3)
+
+# Plot the results of each method
 plotMA(resNorm, xlim=xlim, ylim=ylim, main="normal")
 plotMA(resAsh, xlim=xlim, ylim=ylim, main="ashr")
 plotMA(resLFC, xlim=xlim, ylim=ylim, main="apeglm")
 
-
+# Add a 'Significance' column to the 'ashr' results
 resAsh_df_plot <- as.data.frame(resAsh)
 resAsh_df_plot[,'Significance'] <- 'Non-significant'
 resAsh_df_plot[rownames(resAsh_adj %>% filter(padj <0.05)),'Significance'] <- 'Significant'
 
+# Define the colors for the plot
+cols <- c('Significant' = '#E58368', 'Non-significant' = '#1d1929')
 
-cols <- c('Significant' = '#E58368', 
-          'Non-significant' = '#1d1929')
-
+# Start recording plot to a PNG file
 png(filename = paste(figures_folder, '/Not_Included/DGE_C1_vs_Control_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
 
-ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, 
-                      fill = Significance, color = Significance)) + theme_linedraw(base_line_size = 0.2) +
+# Create a scatter plot of the 'ashr' results
+ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, fill = Significance, color = Significance)) + theme_linedraw(base_line_size = 0.2) +
   ggtitle(label = "") + 
   geom_point(inherit.aes = T, shape = 21, alpha = 0.8, size = 1.5) +
   coord_cartesian(ylim = c(-4,4), xlim = c(-0.5,5))  +
@@ -666,35 +673,47 @@ ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange,
                               title.hjust = 0.5, nrow = 1, override.aes = list(size=3)),
          color = guide_none())
 
+# Stop recording plot to file
 invisible(dev.off())
 ```
 
 ##### - Performing comparison
 
-```{r}
-resAsh_df <- as.data.frame(resAsh) %>% add_column(GeneSymbol =rowData(dds)[rownames(resAsh),'gene_name'], .before = 'baseMean') %>% add_column(GeneBiotype =rowData(dds)[rownames(resAsh),'gene_type'], .before = 'baseMean')
+This script enriches the differential expression results with gene symbol, gene biotype, and flags for transcription factors and CD markers. It then sorts the results by p-value, filters for significant, upregulated, and downregulated genes, and writes each subset to a separate CSV file.
 
+```{r}
+# Convert the "ashr" results to a data frame and add the "GeneSymbol" and "GeneBiotype" columns
+resAsh_df <- as.data.frame(resAsh) %>% 
+  add_column(GeneSymbol = rowData(dds)[rownames(resAsh),'gene_name'], .before = 'baseMean') %>% 
+  add_column(GeneBiotype = rowData(dds)[rownames(resAsh),'gene_type'], .before = 'baseMean')
+
+# Add a 'Is_TF' column to indicate if the gene is a transcription factor
 resAsh_df$Is_TF <- 'No'
 resAsh_df[grep(TRUE, resAsh_df$GeneSymbol %in% TF_list$V1),'Is_TF'] <- 'Yes'
 
+# Add a 'Is_CD_Marker' column to indicate if the gene is a CD marker
 resAsh_df$Is_CD_Marker <- 'No'
 resAsh_df[grep(TRUE, resAsh_df$GeneSymbol %in% HGNC_CD_markers_list$Approved.symbol),'Is_CD_Marker'] <- 'Yes'
 
+# Filter the significant results and write them to a CSV file
 res_significant <- resAsh_df %>% arrange(padj)
 write.csv(res_significant, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_Control/DGE_C1_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''), 
           row.names = T, quote = FALSE)
 
+# Filter the significant results with padj < 0.05 and write them to a CSV file
 res_significant <- resAsh_df %>% dplyr::filter(padj < 0.05) %>% dplyr::arrange(padj)
 write.csv(res_significant, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_Control/DGE_C1_vs_Control_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
           row.names = T, quote = FALSE)
 
+# Filter the upregulated significant results and write them to a CSV file
 res_significant_UP <- res_significant %>% dplyr::filter(log2FoldChange >= 0) %>% dplyr::arrange(padj)
 write.csv(res_significant_UP, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_Control/DGE_C1_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
           row.names = T, quote = FALSE)
 
+# Filter the downregulated significant results and write them to a CSV file
 res_significant_DOWN <- res_significant %>% dplyr::filter(log2FoldChange < 0) %>% dplyr::arrange(padj)
 write.csv(res_significant_DOWN, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_Control/DGE_C1_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
@@ -705,38 +724,47 @@ write.csv(res_significant_DOWN,
 
 ##### - Evaluating number of significant genes
 
+This script performs differential expression analysis between "C2" and "Control" conditions, applies three shrinkage estimators for log2 fold changes, and creates MA plots. It also prepares a ggplot scatter plot, colored by significance status, and saves it as a PNG file.
+
 ```{r include=FALSE}
+# Perform differential expression analysis
 res <- results(dds, contrast=c("Cluster", "C2", "Control"), filterFun = ihw)
 
+# Apply log fold change shrinkage using 'normal' method and filter significant results
 resNorm <- lfcShrink(dds, coef="Cluster_C2_vs_Control", res = res, type = 'normal')
 resNorm_adj <- as.data.frame(resNorm) %>% filter(padj < 0.05)
 
+# Apply log fold change shrinkage using 'ashr' method and filter significant results
 resAsh <- lfcShrink(dds, coef="Cluster_C2_vs_Control", res = res, type = 'ashr')
 resAsh_adj <- as.data.frame(resAsh) %>% filter(padj < 0.05)
 
+# Apply log fold change shrinkage using 'apeglm' method and filter significant results
 resLFC <- lfcShrink(dds, coef="Cluster_C2_vs_Control", type="apeglm")
 resLFC_adj <- as.data.frame(resLFC) %>% filter(padj < 0.05)
 
+# Set up the plot parameters
 par(mfrow=c(1,3), mar=c(4,4,2,1))
 xlim <- c(1,1e5); ylim <- c(-3,3)
+
+# Plot the results of each method
 plotMA(resNorm, xlim=xlim, ylim=ylim, main="normal")
 plotMA(resAsh, xlim=xlim, ylim=ylim, main="ashr")
 plotMA(resLFC, xlim=xlim, ylim=ylim, main="apeglm")
 
-
+# Add a 'Significance' column to the 'ashr' results
 resAsh_df_plot <- as.data.frame(resAsh)
 resAsh_df_plot[,'Significance'] <- 'Non-significant'
 resAsh_df_plot[rownames(resAsh_adj %>% filter(padj <0.05)),'Significance'] <- 'Significant'
 
+# Define the colors for the plot
+cols <- c('Significant' = '#E58368', 'Non-significant' = '#1d1929')
 
-cols <- c('Significant' = '#E58368', 
-          'Non-significant' = '#1d1929')
-
-
+# Start recording plot to a PNG file
 png(filename = paste(figures_folder, '/Not_Included/DGE_C2_vs_Control_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
 
-ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, 
-                      fill = Significance, color = Significance)) + theme_linedraw(base_line_size = 0.2) +
+# Create a scatter plot of the 'ashr' results
+ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, fill = Significance, color = Significance)) + 
+  theme_linedraw(base_line_size = 0.2) +
   ggtitle(label = "") + 
   geom_point(inherit.aes = T, shape = 21, alpha = 0.8, size = 1.5) +
   coord_cartesian(ylim = c(-4,4), xlim = c(-0.5,5))  +
@@ -747,44 +775,51 @@ ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange,
         axis.title.y = element_text(family='Helvetica', size=12, face = 'bold'),
         legend.title = element_text(family='Helvetica', size=12), 
         legend.text = element_text(family='Helvetica', size=10)) +
-  scale_colour_manual(
-    values = cols,
-    aesthetics = c("colour", "fill")
-  ) + 
-  guides(fill = guide_legend(title = 'Significance status (padj)', 
-                              title.position = "top", 
-                              title.hjust = 0.5, nrow = 1, override.aes = list(size=3)),
+  scale_colour_manual(values = cols, aesthetics = c("colour", "fill")) + 
+  guides(fill = guide_legend(title = 'Significance status (padj)', title.position = "top", title.hjust = 0.5, nrow = 1, override.aes = list(size=3)),
          color = guide_none())
 
+# Stop recording plot to file
 invisible(dev.off())
 ```
 
 ##### - Performing comparison
 
-```{r}
-resAsh_df <- as.data.frame(resAsh) %>% add_column(GeneSymbol =rowData(dds)[rownames(resAsh),'gene_name'], .before = 'baseMean') %>% add_column(GeneBiotype =rowData(dds)[rownames(resAsh),'gene_type'], .before = 'baseMean')
+This script enriches the differential expression results with gene symbol, gene biotype, and flags for transcription factors and CD markers. It then sorts the results by p-value, filters for significant, upregulated, and downregulated genes, and writes each subset to a separate CSV file.
 
+```{r}
+# Convert the 'ashr' results to a data frame and add 'GeneSymbol' and 'GeneBiotype' columns
+resAsh_df <- as.data.frame(resAsh) %>% 
+  add_column(GeneSymbol = rowData(dds)[rownames(resAsh),'gene_name'], .before = 'baseMean') %>% 
+  add_column(GeneBiotype = rowData(dds)[rownames(resAsh),'gene_type'], .before = 'baseMean')
+
+# Add a 'Is_TF' column to indicate if the gene is a transcription factor
 resAsh_df$Is_TF <- 'No'
 resAsh_df[grep(TRUE, resAsh_df$GeneSymbol %in% TF_list$V1),'Is_TF'] <- 'Yes'
 
+# Add a 'Is_CD_Marker' column to indicate if the gene is a CD marker
 resAsh_df$Is_CD_Marker <- 'No'
 resAsh_df[grep(TRUE, resAsh_df$GeneSymbol %in% HGNC_CD_markers_list$Approved.symbol),'Is_CD_Marker'] <- 'Yes'
 
+# Filter the significant results and write them to a CSV file
 res_significant <- resAsh_df %>% arrange(padj)
 write.csv(res_significant, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_vs_Control/DGE_C2_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''), 
           row.names = T, quote = FALSE)
 
+# Filter the significant results with padj < 0.05 and write them to a CSV file
 res_significant <- resAsh_df %>% dplyr::filter(padj < 0.05) %>% dplyr::arrange(padj)
 write.csv(res_significant, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_vs_Control/DGE_C2_vs_Control_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
           row.names = T, quote = FALSE)
 
+# Filter the upregulated significant results and write them to a CSV file
 res_significant_UP <- res_significant %>% dplyr::filter(log2FoldChange >= 0) %>% dplyr::arrange(padj)
 write.csv(res_significant_UP, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_vs_Control/DGE_C2_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
           row.names = T, quote = FALSE)
 
+# Filter the downregulated significant results and write them to a CSV file
 res_significant_DOWN <- res_significant %>% dplyr::filter(log2FoldChange < 0) %>% dplyr::arrange(padj)
 write.csv(res_significant_DOWN, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_vs_Control/DGE_C2_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
@@ -796,42 +831,49 @@ write.csv(res_significant_DOWN,
 ##### - Evaluating number of significant genes
 
 ```{r}
+# Relevel the 'Cluster' factor to use 'C2' as the reference level
 dds$Cluster <- relevel(dds$Cluster, ref = "C2")
+
+# Perform differential expression analysis using the best scoring fit type
 dds <- DESeq(dds, fitType = Best_scoring_fitType)
 ```
 
+This script performs differential expression analysis between "C1" and "C2" conditions, applies three shrinkage estimators for log2 fold changes, and creates MA plots. It also prepares a ggplot scatter plot, colored by significance status, and saves it as a PNG file.
+
 ```{r include=FALSE}
+# Perform differential expression analysis and apply independent hypothesis weighting
 res <- results(dds, contrast=c("Cluster", "C1", "C2"), filterFun = ihw)
 
+# Apply different shrinkage estimators for log2 fold changes
 resNorm <- lfcShrink(dds, coef="Cluster_C1_vs_C2", res = res, type = 'normal')
-resNorm_adj <- as.data.frame(resNorm) %>% filter(padj < 0.05)
-
 resAsh <- lfcShrink(dds, coef="Cluster_C1_vs_C2", res = res, type = 'ashr')
-resAsh_adj <- as.data.frame(resAsh) %>% filter(padj < 0.05)
-
 resLFC <- lfcShrink(dds, coef="Cluster_C1_vs_C2", type="apeglm")
+
+# Filter results for adjusted p-value < 0.05
+resNorm_adj <- as.data.frame(resNorm) %>% filter(padj < 0.05)
+resAsh_adj <- as.data.frame(resAsh) %>% filter(padj < 0.05)
 resLFC_adj <- as.data.frame(resLFC) %>% filter(padj < 0.05)
 
+# Plot MA plots for each shrinkage type
 par(mfrow=c(1,3), mar=c(4,4,2,1))
 xlim <- c(1,1e5); ylim <- c(-3,3)
 plotMA(resNorm, xlim=xlim, ylim=ylim, main="normal")
 plotMA(resAsh, xlim=xlim, ylim=ylim, main="ashr")
 plotMA(resLFC, xlim=xlim, ylim=ylim, main="apeglm")
 
-
+# Add a 'Significance' column to the 'ashr' results
 resAsh_df_plot <- as.data.frame(resAsh)
 resAsh_df_plot[,'Significance'] <- 'Non-significant'
 resAsh_df_plot[rownames(resAsh_adj %>% filter(padj <0.05)),'Significance'] <- 'Significant'
 
+# Define colors for the plot
+cols <- c('Significant' = '#E58368', 'Non-significant' = '#1d1929')
 
-cols <- c('Significant' = '#E58368', 
-          'Non-significant' = '#1d1929')
-
-
+# Save the plot to a PNG file
 png(filename = paste(figures_folder, '/Not_Included/DGE_C1_vs_C2_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
 
-ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, 
-                      fill = Significance, color = Significance)) + theme_linedraw(base_line_size = 0.2) +
+# Create a scatter plot of the 'ashr' results
+ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, fill = Significance, color = Significance)) + theme_linedraw(base_line_size = 0.2) +
   ggtitle(label = "") + 
   geom_point(inherit.aes = T, shape = 21, alpha = 0.8, size = 1.5) +
   coord_cartesian(ylim = c(-4,4), xlim = c(-0.5,5))  +
@@ -856,30 +898,41 @@ invisible(dev.off())
 
 ##### - Performing comparison
 
-```{r}
-resAsh_df <- as.data.frame(resAsh) %>% add_column(GeneSymbol =rowData(dds)[rownames(resAsh),'gene_name'], .before = 'baseMean') %>% add_column(GeneBiotype =rowData(dds)[rownames(resAsh),'gene_type'], .before = 'baseMean')
+This script enriches the differential expression results with gene symbol, gene biotype, and flags for transcription factors and CD markers. It then sorts the results by p-value, filters for significant, upregulated, and downregulated genes, and writes each subset to a separate CSV file.
 
+```{r}
+# Add gene symbol and gene type to the data frame
+resAsh_df <- as.data.frame(resAsh) %>% 
+  add_column(GeneSymbol = rowData(dds)[rownames(resAsh),'gene_name'], .before = 'baseMean') %>% 
+  add_column(GeneBiotype = rowData(dds)[rownames(resAsh),'gene_type'], .before = 'baseMean')
+
+# Add columns indicating whether the gene is a transcription factor or a CD marker
 resAsh_df$Is_TF <- 'No'
 resAsh_df[grep(TRUE, resAsh_df$GeneSymbol %in% TF_list$V1),'Is_TF'] <- 'Yes'
-
 resAsh_df$Is_CD_Marker <- 'No'
 resAsh_df[grep(TRUE, resAsh_df$GeneSymbol %in% HGNC_CD_markers_list$Approved.symbol),'Is_CD_Marker'] <- 'Yes'
 
+# Filter for significant results and sort by adjusted p-value
 res_significant <- resAsh_df %>% arrange(padj)
+
+# Write all results to a CSV file
 write.csv(res_significant, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_C2/DGE_C1_vs_C2_ALL_DEGs_LFC_Ashr.csv', sep = ''), 
           row.names = T, quote = FALSE)
 
+# Filter for significant results and write to a CSV file
 res_significant <- resAsh_df %>% dplyr::filter(padj < 0.05) %>% dplyr::arrange(padj)
 write.csv(res_significant, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_C2/DGE_C1_vs_C2_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
           row.names = T, quote = FALSE)
 
+# Filter for upregulated significant results and write to a CSV file
 res_significant_UP <- res_significant %>% dplyr::filter(log2FoldChange >= 0) %>% dplyr::arrange(padj)
 write.csv(res_significant_UP, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_C2/DGE_C1_vs_C2_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
           row.names = T, quote = FALSE)
 
+# Filter for downregulated significant results and write to a CSV file
 res_significant_DOWN <- res_significant %>% dplyr::filter(log2FoldChange < 0) %>% dplyr::arrange(padj)
 write.csv(res_significant_DOWN, 
           file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_C2/DGE_C1_vs_C2_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
@@ -890,60 +943,63 @@ write.csv(res_significant_DOWN,
 
 ### - C1 v Control
 
+This script creates a volcano plot of differential expression results, adding log10 transformed p-value and fold change, defining a color scheme, and identifying genes of interest. The plot is then displayed and saved as a PNG file.
+
 ```{r}
 DESeq2_results <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_Control/DGE_C1_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''))
 ```
 
-```{r}
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5C', fig.pos='H', fig.height=5.5, fig.width=4.3}
+# Assign DESeq2 results to genemat_ord
 genemat_ord <- DESeq2_results
+
+# Convert p-value and fold change to log scale
 genemat_ord$Log10pval <- log10(genemat_ord$padj)
 genemat_ord$log10FoldChange <- log10(2^genemat_ord$log2FoldChange)
 
-# load library
-library(EnhancedVolcano)
-library(ggrepel)
-# plot adding up all layers we have seen so far
+# Define color scheme for points
+keyvals <- ifelse(
+  genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 10e-2, '#415384',
+  ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 10e-2, '#C92A1D',
+    '#727272'))
+keyvals[is.na(keyvals)] <- '#e5e5e5'
+names(keyvals)[keyvals == '#C92A1D'] <- 'Upregulated'
+names(keyvals)[keyvals == '#727272'] <- 'NS'
+names(keyvals)[keyvals == '#415384'] <- 'Downregulated'
 
-  keyvals <- ifelse(
-    genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 10e-2, '#415384',
-      ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 10e-2, '#C92A1D',
-        '#727272'))
-  keyvals[is.na(keyvals)] <- '#e5e5e5'
-  names(keyvals)[keyvals == '#C92A1D'] <- 'Upregulated'
-  names(keyvals)[keyvals == '#727272'] <- 'NS'
-  names(keyvals)[keyvals == '#415384'] <- 'Downregulated'
-
+# Define gene sets
 C1_Genes <- c('MAX', 'FOXC1', 'MYCN', 'JUNB', 'ETV6', 'HOPX', 'CNST', 'CD99')  
 Control_Genes <- c('IRF8','CD79B', 'CD79A','VPREB3', 'MYC','TOP2A', 'TOP2B', 'CDK4','MKI67') 
 
+# Create volcano plot
 plot <- EnhancedVolcano(genemat_ord,
-    lab = genemat_ord$GeneSymbol,
-    x = 'log2FoldChange',
-    y = 'pvalue',
-    cutoffLineCol = "grey10",
-    cutoffLineWidth = 0,
-    selectLab = c(C1_Genes, Control_Genes),
-    xlab = bquote(~Log[2]~ 'fold change'),
-    pCutoff = 10e-2,
-    FCcutoff = 0,
-    vlineWidth = 0,
-    pointSize = 2.0, 
-    xlim = c(-6,6),
-    ylim = c(-0.5,12.5),
-    hline = 10e-2,
-    labSize = 2.0,
-    labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(C1_Genes, Control_Genes),)],
-    labFace = 'bold',
-    caption = NULL,
-    boxedLabels = TRUE,
-    colAlpha = 4/5,
-    legendPosition = 'bottom',
-    legendLabSize = 3.5,
-    legendIconSize = 1.0,
-    drawConnectors = TRUE,
-    widthConnectors = 0.5,
-    colConnectors = 'black',
-    colCustom = keyvals) + ggtitle(label = '', subtitle = '') +
+  lab = genemat_ord$GeneSymbol,
+  x = 'log2FoldChange',
+  y = 'pvalue',
+  cutoffLineCol = "grey10",
+  cutoffLineWidth = 0,
+  selectLab = c(C1_Genes, Control_Genes),
+  xlab = bquote(~Log[2]~ 'fold change'),
+  pCutoff = 10e-2,
+  FCcutoff = 0,
+  vlineWidth = 0,
+  pointSize = 2.0, 
+  xlim = c(-6,6),
+  ylim = c(-0.5,12.5),
+  hline = 10e-2,
+  labSize = 2.0,
+  labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(C1_Genes, Control_Genes),)],
+  labFace = 'bold',
+  caption = NULL,
+  boxedLabels = TRUE,
+  colAlpha = 4/5,
+  legendPosition = 'bottom',
+  legendLabSize = 3.5,
+  legendIconSize = 1.0,
+  drawConnectors = TRUE,
+  widthConnectors = 0.5,
+  colConnectors = 'black',
+  colCustom = keyvals) + ggtitle(label = '', subtitle = '') +
   theme_bw(base_line_size = 0.2) + 
   theme(axis.title.y = element_text(family='Helvetica', size = 12, face = 'bold'),
         axis.title.x = element_text(family='Helvetica', size = 12, face = 'bold'), 
@@ -951,71 +1007,74 @@ plot <- EnhancedVolcano(genemat_ord,
         legend.position = 'bottom') + 
   guides(color = guide_legend(title = ''))
 
-plot
-
-png(filename = paste(figures_folder, '/Fig_05/Panel_C-1.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
-
+# Display the plot
 print(plot)
 
-invisible(dev.off())
+# Save the plot as a PNG file
+png(filename = paste(figures_folder, '/Fig_05/Panel_C-1.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
+print(plot)
+dev.off()
 ```
 
 ### - C2 v Control
+
+This script creates a volcano plot of differential expression results, adding log10 transformed p-value and fold change, defining a color scheme, and identifying genes of interest. The plot is then displayed and saved as a PNG file.
 
 ```{r}
 DESeq2_results <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_vs_Control/DGE_C2_vs_Control_ALL_DEGs_LFC_Ashr.csv', sep = ''))
 ```
 
-```{r}
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5C', fig.pos='H', fig.height=5.5, fig.width=4.3}
+# Assign DESeq2 results to genemat_ord
 genemat_ord <- DESeq2_results
+
+# Convert p-value and fold change to log scale
 genemat_ord$Log10pval <- log10(genemat_ord$padj)
 genemat_ord$log10FoldChange <- log10(2^genemat_ord$log2FoldChange)
 
-# load library
-library(EnhancedVolcano)
-library(ggrepel)
-# plot adding up all layers we have seen so far
+# Define color scheme for points
+keyvals <- ifelse(
+  genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 10e-2, '#415384',
+  ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 10e-2, '#C92A1D',
+    '#727272'))
+keyvals[is.na(keyvals)] <- '#e5e5e5'
+names(keyvals)[keyvals == '#C92A1D'] <- 'Upregulated'
+names(keyvals)[keyvals == '#727272'] <- 'NS'
+names(keyvals)[keyvals == '#415384'] <- 'Downregulated'
 
-  keyvals <- ifelse(
-    genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 10e-2, '#415384',
-      ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 10e-2, '#C92A1D',
-        '#727272'))
-  keyvals[is.na(keyvals)] <- '#e5e5e5'
-  names(keyvals)[keyvals == '#C92A1D'] <- 'Upregulated'
-  names(keyvals)[keyvals == '#727272'] <- 'NS'
-  names(keyvals)[keyvals == '#415384'] <- 'Downregulated'
-
+# Define gene sets
 C2_Genes <- c('SPI1', 'KLF4', 'MARCO', 'BCL2A1', 'TLR4', 'NCF2', 'MCL1', 'S100A8', 'S100A9', 'S100A12', 'HK3', 'IL6', 'IL6R', 'IL6ST', 'JAK2')  
 Control_Genes <- c('CD79B', 'CD79A','VPREB3', 'MYC','TOP2A', 'TOP2B', 'CDK4','CDK6','FOXCUT') 
 
+# Create volcano plot
 plot <- EnhancedVolcano(genemat_ord,
-    lab = genemat_ord$GeneSymbol,
-    x = 'log2FoldChange',
-    y = 'pvalue',
-    cutoffLineCol = "grey10",
-    cutoffLineWidth = 0,
-    selectLab = c(C2_Genes, Control_Genes),
-    xlab = bquote(~Log[2]~ 'fold change'),
-    pCutoff = 10e-2,
-    FCcutoff = 0,
-    vlineWidth = 0,
-    pointSize = 2.0, 
-    xlim = c(-6,6),
-    ylim = c(-0.5,12.5),
-    hline = 10e-2,
-    labSize = 2.0,
-    labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(C2_Genes, Control_Genes),)],
-    labFace = 'bold',
-    caption = NULL,
-    boxedLabels = TRUE,
-    colAlpha = 4/5,
-    legendPosition = 'bottom',
-    legendLabSize = 3.5,
-    legendIconSize = 1.0,
-    drawConnectors = TRUE,
-    widthConnectors = 0.5,
-    colConnectors = 'black',
-    colCustom = keyvals) + ggtitle(label = '', subtitle = '') +
+  lab = genemat_ord$GeneSymbol,
+  x = 'log2FoldChange',
+  y = 'pvalue',
+  cutoffLineCol = "grey10",
+  cutoffLineWidth = 0,
+  selectLab = c(C2_Genes, Control_Genes),
+  xlab = bquote(~Log[2]~ 'fold change'),
+  pCutoff = 10e-2,
+  FCcutoff = 0,
+  vlineWidth = 0,
+  pointSize = 2.0, 
+  xlim = c(-6,6),
+  ylim = c(-0.5,12.5),
+  hline = 10e-2,
+  labSize = 2.0,
+  labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(C2_Genes, Control_Genes),)],
+  labFace = 'bold',
+  caption = NULL,
+  boxedLabels = TRUE,
+  colAlpha = 4/5,
+  legendPosition = 'bottom',
+  legendLabSize = 3.5,
+  legendIconSize = 1.0,
+  drawConnectors = TRUE,
+  widthConnectors = 0.5,
+  colConnectors = 'black',
+  colCustom = keyvals) + ggtitle(label = '', subtitle = '') +
   theme_bw(base_line_size = 0.2) + 
   theme(axis.title.y = element_text(family='Helvetica', size = 12, face = 'bold'),
         axis.title.x = element_text(family='Helvetica', size = 12, face = 'bold'), 
@@ -1023,71 +1082,74 @@ plot <- EnhancedVolcano(genemat_ord,
         legend.position = 'bottom') + 
   guides(color = guide_legend(title = ''))
 
-plot
-
-png(filename = paste(figures_folder, '/Fig_05/Panel_C-2.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
-
+# Display the plot
 print(plot)
 
+# Save the plot as a PNG file
+png(filename = paste(figures_folder, '/Fig_05/Panel_C-2.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
+print(plot)
 invisible(dev.off())
 ```
 
-### - C1 v C2 : Fig S6 
+### - C1 v C2 : Fig S10
+
+This script creates a volcano plot of differential expression results, adding log10 transformed p-value and fold change, defining a color scheme, and identifying genes of interest. The plot is then displayed and saved as a PNG file.
 
 ```{r}
 DESeq2_results <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_C2/DGE_C1_vs_C2_ALL_DEGs_LFC_Ashr.csv', sep = ''))
 ```
 
-```{r}
+```{r echo=TRUE, fig.align='center', fig.cap='Figure S10', fig.pos='H', fig.height=5.5, fig.width=4.3}
+# Assign DESeq2 results to genemat_ord
 genemat_ord <- DESeq2_results
+
+# Convert p-value and fold change to log scale
 genemat_ord$Log10pval <- log10(genemat_ord$padj)
 genemat_ord$log10FoldChange <- log10(2^genemat_ord$log2FoldChange)
 
-# load library
-library(EnhancedVolcano)
-library(ggrepel)
-# plot adding up all layers we have seen so far
+# Define color scheme for points
+keyvals <- ifelse(
+  genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 10e-2, '#415384',
+  ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 10e-2, '#C92A1D',
+    '#727272'))
+keyvals[is.na(keyvals)] <- '#e5e5e5'
+names(keyvals)[keyvals == '#C92A1D'] <- 'Upregulated'
+names(keyvals)[keyvals == '#727272'] <- 'NS'
+names(keyvals)[keyvals == '#415384'] <- 'Downregulated'
 
-  keyvals <- ifelse(
-    genemat_ord$log2FoldChange < 0 & genemat_ord$pvalue < 10e-2, '#415384',
-      ifelse(genemat_ord$log2FoldChange > 0 & genemat_ord$pvalue < 10e-2, '#C92A1D',
-        '#727272'))
-  keyvals[is.na(keyvals)] <- '#e5e5e5'
-  names(keyvals)[keyvals == '#C92A1D'] <- 'Upregulated'
-  names(keyvals)[keyvals == '#727272'] <- 'NS'
-  names(keyvals)[keyvals == '#415384'] <- 'Downregulated'
-
+# Define gene sets
 C1_Genes <- c('FOXCUT', 'GATA2', 'MYCN', 'CD69', 'CD99', 'CD82', 'HOPX', 'ERG', 'FOXC1')  
 C2_Genes <- c('IRF8','MARCO', 'S100A11','KLF4', 'S100A8','S100A9', 'SPIB', 'ATF5', 'CD14', 'BCL2L11', 'SPI1') 
 
+# Create volcano plot
 plot <- EnhancedVolcano(genemat_ord,
-    lab = genemat_ord$GeneSymbol,
-    x = 'log2FoldChange',
-    y = 'pvalue',
-    cutoffLineCol = "grey10",
-    cutoffLineWidth = 0,
-    selectLab = c(C1_Genes, C2_Genes),
-    xlab = bquote(~Log[2]~ 'fold change'),
-    pCutoff = 10e-2,
-    FCcutoff = 0,
-    vlineWidth = 0,
-    pointSize = 2.0, 
-    xlim = c(-6,6),
-    ylim = c(-0.5,12.5),
-    hline = 10e-2,
-    labSize = 2.0,
-    labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(C1_Genes, C2_Genes))],
-    labFace = 'bold',
-    caption = NULL,
-    boxedLabels = TRUE,
-    colAlpha = 4/5,
-    legendPosition = 'bottom',
-    legendLabSize = 3.5,
-    legendIconSize = 1.0,
-    drawConnectors = TRUE,
-    widthConnectors = 0.5,
-    colConnectors = 'black',
-    colCustom = keyvals) + ggtitle(label = '', subtitle = '') +
+  lab = genemat_ord$GeneSymbol,
+  x = 'log2FoldChange',
+  y = 'pvalue',
+  cutoffLineCol = "grey10",
+  cutoffLineWidth = 0,
+  selectLab = c(C1_Genes, C2_Genes),
+  xlab = bquote(~Log[2]~ 'fold change'),
+  pCutoff = 10e-2,
+  FCcutoff = 0,
+  vlineWidth = 0,
+  pointSize = 2.0, 
+  xlim = c(-6,6),
+  ylim = c(-0.5,12.5),
+  hline = 10e-2,
+  labSize = 2.0,
+  labCol = keyvals[grep(TRUE,genemat_ord$GeneSymbol %in% c(C1_Genes, C2_Genes))],
+  labFace = 'bold',
+  caption = NULL,
+  boxedLabels = TRUE,
+  colAlpha = 4/5,
+  legendPosition = 'bottom',
+  legendLabSize = 3.5,
+  legendIconSize = 1.0,
+  drawConnectors = TRUE,
+  widthConnectors = 0.5,
+  colConnectors = 'black',
+  colCustom = keyvals) + ggtitle(label = '', subtitle = '') +
   theme_bw(base_line_size = 0.2) + 
   theme(axis.title.y = element_text(family='Helvetica', size = 12, face = 'bold'),
         axis.title.x = element_text(family='Helvetica', size = 12, face = 'bold'), 
@@ -1095,12 +1157,12 @@ plot <- EnhancedVolcano(genemat_ord,
         legend.position = 'bottom') + 
   guides(color = guide_legend(title = ''))
 
-plot
-
-png(filename = paste(figures_folder, '/Supplemental/Fig_S6.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
-
+# Display the plot
 print(plot)
 
+# Save the plot as a PNG file
+png(filename = paste(figures_folder, '/Supplemental/Fig_S10.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
+print(plot)
 invisible(dev.off())
 ```
 
@@ -1109,29 +1171,27 @@ invisible(dev.off())
 ### - UP
 
 ```{r}
-Cluster_1_UP <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_Control/DGE_C1_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
-                         row.names = 'X')
+# Read upregulated genes for each cluster
+Cluster_1_UP <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_Control/DGE_C1_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
+Cluster_2_UP <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_vs_Control/DGE_C2_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
 
-Cluster_2_UP <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_vs_Control/DGE_C2_vs_Control_upregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
-                         row.names = 'X')
+# Calculate intersections between the two clusters
+VennIntersections <- gplots::venn(list('C1:Immature' = Cluster_1_UP$GeneSymbol, 'C2:Mature' = Cluster_2_UP$GeneSymbol), show.plot = FALSE)
 
-VennIntersections <- gplots::venn(list('C1:Immature' = Cluster_1_UP$GeneSymbol,
-                                       'C2:Mature' = Cluster_2_UP$GeneSymbol), show.plot = TRUE)
-
+# Extract unique and shared genes
 DEGs_Cluster_1_vs_Cluster_2 <- attr(VennIntersections,'intersections')
-
 Cluster_1_Unique_DEGs <- sort(DEGs_Cluster_1_vs_Cluster_2$`C1:Immature`)
 Cluster_2_Unique_DEGs <- sort(DEGs_Cluster_1_vs_Cluster_2$`C2:Mature`)
 Shared_DEGs <- sort(DEGs_Cluster_1_vs_Cluster_2$`C1:Immature:C2:Mature`)
 
-
+# Filter shared genes from each cluster
 Cluster_1_UP_shared <- Cluster_1_UP %>% filter(GeneSymbol %in% Shared_DEGs)
 rownames(Cluster_1_UP_shared) <- Cluster_1_UP_shared$GeneSymbol
 Cluster_2_UP_shared <- Cluster_2_UP %>% filter(GeneSymbol %in% Shared_DEGs)
 rownames(Cluster_2_UP_shared) <- Cluster_2_UP_shared$GeneSymbol
 
+# Create dataframe for shared genes
 shared <- data.frame(row.names = Shared_DEGs)
-
 shared$Cluster_1_LFC <- Cluster_1_UP_shared[Shared_DEGs,'log2FoldChange']
 shared$Cluster_1_padj <- Cluster_1_UP_shared[Shared_DEGs,'padj']
 shared$Cluster_2_LFC <- Cluster_2_UP_shared[Shared_DEGs,'log2FoldChange']
@@ -1143,45 +1203,19 @@ shared[grep(TRUE,rownames(shared) %in% HGNC_CD_markers_list$Approved.symbol),'Is
 shared$Is_TF <- 'No'
 shared[grep(TRUE, rownames(shared) %in% TF_list$V1),'Is_TF'] <- 'Yes'
 
-write.csv(shared, file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/Shared_UP_DEGs_C1_Immature_vs_C2_Mature.csv', 
-                               sep = ''),
-          row.names = T, quote = F)
+# Save shared genes to CSV
+write.csv(shared, file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/Shared_UP_DEGs_C1_Immature_vs_C2_Mature.csv', sep = ''), row.names = T, quote = F)
 
-#
-
+# Filter unique genes from each cluster
 Cluster_1_UP_unique <- Cluster_1_UP[grep(TRUE, Cluster_1_UP$GeneSymbol %in% Cluster_1_Unique_DEGs),]
-
-rownames(Cluster_1_UP_unique) <- Cluster_1_UP_unique$X
-Cluster_1_UP_unique$X <- NULL
-
-Cluster_1_UP_unique <- Cluster_1_UP_unique %>% arrange(padj)
-
-Cluster_1_UP_unique$Is_CD_Marker <- 'No'
-
-Cluster_1_UP_unique[grep(TRUE, Cluster_1_UP_unique$GeneSymbol %in% HGNC_CD_markers_list$Approved.symbol),'Is_CD_Marker'] <- 'Yes'
-
-write.csv(Cluster_1_UP_unique, file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_Immature_Unique_UP_DEGs_LFC.csv', 
-                               sep = ''),
-          row.names = T, quote = F)
-
-#
-
 Cluster_2_UP_unique <- Cluster_2_UP[grep(TRUE, Cluster_2_UP$GeneSymbol %in% Cluster_2_Unique_DEGs),]
 
-rownames(Cluster_2_UP_unique) <- Cluster_2_UP_unique$X
-Cluster_2_UP_unique$X <- NULL
+# Save unique genes to CSV
+write.csv(Cluster_1_UP_unique, file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_Immature_Unique_UP_DEGs_LFC.csv', sep = ''), row.names = T, quote = F)
+write.csv(Cluster_2_UP_unique, file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_Mature_Unique_UP_DEGs_LFC.csv', sep = ''), row.names = T, col.names = T, quote = F)
 
-Cluster_2_UP_unique <- Cluster_2_UP_unique %>% arrange(padj)
 
-Cluster_2_UP_unique$Is_CD_Marker <- 'No'
-
-Cluster_2_UP_unique[grep(TRUE, Cluster_2_UP_unique$GeneSymbol %in% HGNC_CD_markers_list$Approved.symbol),'Is_CD_Marker'] <- 'Yes'
-
-write.csv(Cluster_2_UP_unique, file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_Mature_Unique_UP_DEGs_LFC.csv', 
-                               sep = ''), row.names = T, col.names = T, quote = F)
-
-#
-
+# Generate Venn diagram
 venn.diagram(
   x = list('C2' = Cluster_1_UP$GeneSymbol,
            'C1' = Cluster_2_UP$GeneSymbol),
@@ -1205,8 +1239,6 @@ venn.diagram(
   cat.fontfamily = 'sans',
   inverted = TRUE,
   rotation.degree = 180,
-  
-  # Numbers
   cex = 2.5,
   fontfamily = "sans",
   scaled = FALSE)
@@ -1215,110 +1247,139 @@ venn.diagram(
 
 ## - Heatmap uniquely up genes
 
-```{r}
-UP_in_C1 <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_Immature_Unique_UP_DEGs_LFC.csv', 
-                               sep = ''),
-                     row.names = 'X')
+This script reads a CSV file containing upregulated genes in C1, filters for protein-coding genes, and selects the top 30 genes based on adjusted p-value.
 
+```{r}
+# Load upregulated genes in Cluster 1
+UP_in_C1 <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_Immature_Unique_UP_DEGs_LFC.csv', sep = ''), row.names = 'X')
+
+# Keep only protein-coding genes
 UP_in_C1 <- UP_in_C1 %>% filter(GeneBiotype == 'protein_coding')
+
+# Get the top 30 genes based on 'padj' value
 C1_genes <- (UP_in_C1 %>% arrange(padj))$GeneSymbol[1:30]
+```
 
-# - - - - - - - - - - -
+This script reads a CSV file containing upregulated genes in C2, filters for protein-coding genes, and selects the top 30 genes based on adjusted p-value.
 
-UP_in_C2 <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_Mature_Unique_UP_DEGs_LFC.csv', 
-                               sep = ''),
-                     row.names = 'X')
+```{r}
+# Load upregulated genes in Cluster 2
+UP_in_C2 <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C2_Mature_Unique_UP_DEGs_LFC.csv', sep = ''), row.names = 'X')
 
+# Keep only protein-coding genes
 UP_in_C2 <- UP_in_C2 %>% filter(GeneBiotype == 'protein_coding')
-C2_genes <- ((UP_in_C2 %>% arrange(padj))$GeneSymbol[1:30])
 
-# - - - - - - - - - - -
+# Get the top 30 genes based on 'padj' value
+C2_genes <- (UP_in_C2 %>% arrange(padj))$GeneSymbol[1:30]
+```
 
-UP_in_both <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/Shared_UP_DEGs_C1_Immature_vs_C2_Mature.csv', 
-                               sep = ''),
-                       row.names = 'X')
+This script reads a CSV file containing upregulated genes in both C1 and C2, filters for protein-coding genes, and selects the top 30 genes based on adjusted p-value.
 
-C1_and_C2_genes <- unique(c(rownames(((UP_in_both %>% arrange(Cluster_1_padj))))[1:24],
-                     rownames(((UP_in_both %>% arrange(Cluster_2_padj))))[1:23]))
+```{r}
+# Load upregulated genes in both Clusters
+UP_in_both <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/Shared_UP_DEGs_C1_Immature_vs_C2_Mature.csv', sep = ''), row.names = 'X')
 
-# - - - - - - - - - - -
+# Get the top genes based on 'padj' value from both clusters and combine
+C1_and_C2_genes <- unique(c(rownames((UP_in_both %>% arrange(Cluster_1_padj)))[1:24],
+                            rownames((UP_in_both %>% arrange(Cluster_2_padj)))[1:23]))
+```
 
-UP_in_healthy <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/BP-CMML_vs_Control/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''),
-                          row.names = 'X')
+This script reads a CSV file containing upregulated genes in Control, filters for protein-coding genes, and selects the top 30 genes based on adjusted p-value.
 
+```{r}
+# Load downregulated genes in healthy control
+UP_in_healthy <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/BP-CMML_vs_Control/DGE_BP-CMML_vs_Control_downregulated_padj_significant_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
+
+# Keep only protein-coding genes
 UP_in_healthy <- UP_in_healthy %>% filter(GeneBiotype == 'protein_coding')
-Healthy_genes <- ((UP_in_healthy %>% arrange(padj))$GeneSymbol[1:30])
 
-genes_to_keep <- c(C2_genes, C1_and_C2_genes, C1_genes, Healthy_genes)
+# Get the top 30 genes based on 'padj' value
+Healthy_genes <- (UP_in_healthy %>% arrange(padj))$GeneSymbol[1:30]
 ```
 
-```{r}
-# Set the padding for the column annotations to 0.4 cm
-ht_opt$COLUMN_ANNO_PADDING = unit(0.8, "cm")
+This script keeps the genes on interest selected above
 
-# Set the padding for the row annotations to 0.4 cm
-ht_opt$ROW_ANNO_PADDING = unit(0.8, "cm")
+```{r}
+genes_to_keep <- c(C1_genes, 
+                   C2_genes,
+                   C1_and_C2_genes, Healthy_genes)
 ```
 
-```{r}
-vst_results <- read.csv(paste(data_folder, '/RNASeq/InHouse/Counts/Processed_counts/Grouped/DESeq2_vst_normalised_countmat.csv', 
-                              sep = ''), row.names = 'X')
+Here we change the padding for the annotations of the following heatmap
 
+```{r}
+# Set the padding for the column annotations to 0.2 cm
+ht_opt$COLUMN_ANNO_PADDING = unit(0.2, "cm")
+
+# Set the padding for the row annotations to 0.2 cm
+ht_opt$ROW_ANNO_PADDING = unit(0.2, "cm")
+```
+
+This script processes VST normalised counts, selects and scales specific genes, and creates a heatmap of the scaled expression data using the ComplexHeatmap package. The heatmap is then displayed and saved as a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5D', fig.pos='H', fig.height=5.51181, fig.width=11.811}
+# Load VST normalized count matrix
+vst_results <- read.csv(paste(data_folder, '/RNASeq/InHouse/Counts/Processed_counts/Grouped/DESeq2_vst_normalised_countmat.csv', sep = ''), row.names = 'X')
+
+# Remove 'X' from column names
 colnames(vst_results) <- str_replace_all(colnames(vst_results), pattern = 'X', replacement = '')
 
+# Keep only the genes of interest
 vst_results_to_keep <- vst_results[grep(TRUE,vst_results$GeneSymbol %in% genes_to_keep),]
 
+# Set row names to GeneSymbol and remove unnecessary columns
 rownames(vst_results_to_keep) <- vst_results_to_keep$GeneSymbol
 vst_results_to_keep$GeneSymbol <- NULL
 vst_results_to_keep$GeneBiotype <- NULL
 
+# Convert dataframe to matrix
 vst_results_to_keep_mat <- as.matrix(vst_results_to_keep)
 
+# Keep only the top and bottom 30 genes
 vst_results_to_keep_mat_top30bot30 <- vst_results_to_keep_mat[genes_to_keep,]
 scaled_genemat_ord_symbol <- scale(t(vst_results_to_keep_mat_top30bot30))
 
+# Create a dataframe to store gene group information
 gene_identity <- data.frame(row.names = genes_to_keep)
 gene_identity[C2_genes,'Group'] <- 'Up in C2'
 gene_identity[C1_and_C2_genes,'Group'] <- 'Up in Both'
 gene_identity[C1_genes,'Group'] <- 'Up in C1'
 gene_identity[Healthy_genes,'Group'] <- 'Up in Control'
-gene_identity$Group <- factor(gene_identity$Group, levels = c('Up in C2',
-                                                              'Up in Both',
-                                                              'Up in C1',
-                                                              'Up in Control'))
+gene_identity$Group <- factor(gene_identity$Group, levels = c('Up in Control', 'Up in C1', 'Up in Both', 'Up in C2'))
 
+# Prepare metadata for heatmap
 Samples_metadata_heatmap <- data.frame(Samples_metadata[,'Cluster'])
 colnames(Samples_metadata_heatmap) <- 'Cluster'
 rownames(Samples_metadata_heatmap) <- rownames(Samples_metadata)
 Samples_metadata_heatmap$RF_Cluster_short <- 'NA'
 
+# Assign short cluster names
 Samples_metadata_heatmap[rownames(Samples_metadata_heatmap %>% filter(Cluster == 'C1')),'RF_Cluster_short'] <- 'C1'
 Samples_metadata_heatmap[rownames(Samples_metadata_heatmap %>% filter(Cluster == 'C2')),'RF_Cluster_short'] <- 'C2'
 Samples_metadata_heatmap[rownames(Samples_metadata_heatmap %>% filter(Cluster == 'Control')),'RF_Cluster_short'] <- 'Control'
 
+# Remove unnecessary columns and set factor levels
 Samples_metadata_heatmap$Cluster <- NULL
+Samples_metadata_heatmap$RF_Cluster_short <- factor(Samples_metadata_heatmap$RF_Cluster_short, levels=c('Control', 'C1', 'C2'))
 
-Samples_metadata_heatmap$RF_Cluster_short <- factor(Samples_metadata_heatmap$RF_Cluster_short, levels=c('C1',
-                                                          'Control',
-                                                          'C2'))
+# Define colors for annotation
+colors_annotation <-  list(RF_Cluster_short = c('Control' = '#A4BECE', 'C1'    = '#793F0B', 'C2'    = '#0B544B'))
 
-colors_annotation <-  list(RF_Cluster_short = c('Control' = '#A4BECE',
-                                   'C1'    = '#793F0B',
-                                   'C2'    = '#0B544B'))
-
+# Create row annotation for heatmap
 ha <- rowAnnotation(df=Samples_metadata_heatmap, col = colors_annotation, 
                         gp = gpar(lwd =0.5, col = 'white'),
                         simple_anno_size = unit(0.25, 'cm'),
                         show_annotation_name = F, show_legend = FALSE,
                         annotation_legend_param = list(RF_Cluster_short = list(direction = "horizontal")))
 
-# Working on the rest of the heatmap
-
+# Define color gradient for heatmap
 breaks_val <- seq(from = -1.5, to = 2, length.out = 13)
 col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(brew_mix))
 
+# Set seed for reproducibility
 set.seed(123)
 
+# Create the heatmap object
 Heatmap_genes <- Heatmap(scaled_genemat_ord_symbol, name = 'Scaled\nExpression',
                          col = col_heatmap_guide, 
                          show_row_names = FALSE,
@@ -1326,7 +1387,7 @@ Heatmap_genes <- Heatmap(scaled_genemat_ord_symbol, name = 'Scaled\nExpression',
                          cluster_columns = TRUE,
                          cluster_rows = TRUE,
                          row_split = Samples_metadata_heatmap$RF_Cluster_short,
-                         column_split = rev(gene_identity$Group), 
+                         column_split = gene_identity$Group, 
                          border = TRUE, row_dend_side = 'right',
                          cluster_column_slices = FALSE, 
                          row_gap = unit(0.05, 'cm'),
@@ -1345,14 +1406,18 @@ Heatmap_genes <- Heatmap(scaled_genemat_ord_symbol, name = 'Scaled\nExpression',
                              legend_direction = "horizontal", 
                              legend_width = unit(5, "cm")))
 
-Heatmap_genes
-
-png(filename = paste(figures_folder, '/Fig_05/Panel_G.png', sep = ''), units = 'cm', width = 30, height = 14, res = 300)
-
+# Draw the heatmap
 draw(Heatmap_genes, heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
 
-dev.off()
+# Save the heatmap as a PNG file
+png(filename = paste(figures_folder, '/Fig_05/Panel_G.png', sep = ''), units = 'cm', width = 30, height = 14, res = 300)
 
+# Draw the heatmap again for saving
+draw(Heatmap_genes, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+# Close the PNG device
+invisible(dev.off())
 ```
 

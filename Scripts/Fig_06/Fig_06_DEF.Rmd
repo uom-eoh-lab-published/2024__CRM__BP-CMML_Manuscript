@@ -6,11 +6,13 @@ output:
     fig_caption: true
 ---
 
+```{=html}
 <style type="text/css">
   body{
   font-size: 10pt;
 }
 </style>
+```
 
 # 1) Setup
 
@@ -60,17 +62,18 @@ In this section, we ensure that all necessary packages are installed.
 ```{r}
 # Ensure BiocManager is available for installation of Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-#BiocManager::install(version = "3.18")
+BiocManager::install(version = "3.18", ask = FALSE)
 
 # Define a list of required packages used in this script
 packages_required <- c("ggplot2", "dplyr", "smplot2", "WGCNA", "tidyr",
-                       "ggrepel")
+                       "ggrepel", "ComplexHeatmap",
+                       "unikn", "RColorBrewer", "yarrr", "scales", "ggsci")
 
 # Identify any required packages that are not installed
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
 
 # Install any uninstalled packages
-if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = FALSE)
 ```
 
 ## - Loading packages
@@ -81,6 +84,7 @@ Here, we load the necessary packages for our analysis.
 library(ggplot2, quietly = TRUE)
 library(ggrepel, quietly = TRUE)
 library(smplot2, quietly = TRUE)
+library(ComplexHeatmap, quietly = TRUE)
 library(dplyr, quietly = TRUE)
 library(WGCNA, quietly = TRUE)
 library(tidyr, quietly = TRUE)
@@ -166,57 +170,51 @@ Cor_df <- cbind(WGCNA_score, Common_drugs_response)
 
 ## - Data wrangling
 
-```{r}
-model_matrix_C1 <- as.data.frame(model.matrix( ~ DNMT3A + TET2 + SRSF2 + SF3B1 + SETBP1 + U2AF1 + IDH1 + IDH2 + ASXL1 + EZH2 + STAG2 + BCOR + TP53 + PHF6 + NF1 + RUNX1 + FLT3 + NPM1 + CEBPA + WT1 + KIT + BRAF + KRAS + NRAS + CBL + PTPN11 + GATA2 + SH2B3 + ZRSR2 + CSF3R + DTA.mutations..DNMT3A..TET2..ASXL1. +Splicing.mutations..U2...SRSF2..SF3B1..U2AF1..ZRSF2. +RAS.mutations..NRAS..KRAS..CBL..NF1..PTPN11..BRAF. + IDH.mutations..IDH1..IDH2. - 1 , data = RF_cluster_metadata %>% filter(RF_Cluster == 'C1')))
+This code creates model matrices for two different clusters of data, calculates correlations and p-values between these matrices and subsets of another data frame, transforms these p-values into a different scale, and reshapes the data for plotting. The transformed p-values are used to create a new variable for coloring a plot.
 
+```{r}
+# Create model matrices for clusters C1 and C2
+model_matrix_C1 <- as.data.frame(model.matrix( ~ DNMT3A + TET2 + SRSF2 + SF3B1 + SETBP1 + U2AF1 + IDH1 + IDH2 + ASXL1 + EZH2 + STAG2 + BCOR + TP53 + PHF6 + NF1 + RUNX1 + FLT3 + NPM1 + CEBPA + WT1 + KIT + BRAF + KRAS + NRAS + CBL + PTPN11 + GATA2 + SH2B3 + ZRSR2 + CSF3R + DTA.mutations..DNMT3A..TET2..ASXL1. +Splicing.mutations..U2...SRSF2..SF3B1..U2AF1..ZRSF2. +RAS.mutations..NRAS..KRAS..CBL..NF1..PTPN11..BRAF. + IDH.mutations..IDH1..IDH2. - 1 , data = RF_cluster_metadata %>% filter(RF_Cluster == 'C1')))
 model_matrix_C2 <- as.data.frame(model.matrix( ~ DNMT3A + TET2 + SRSF2 + SF3B1 + SETBP1 + U2AF1 + IDH1 + IDH2 + ASXL1 + EZH2 + STAG2 + BCOR + TP53 + PHF6 + NF1 + RUNX1 + FLT3 + NPM1 + CEBPA + WT1 + KIT + BRAF + KRAS + NRAS + CBL + PTPN11 + GATA2 + SH2B3 + ZRSR2 + CSF3R + DTA.mutations..DNMT3A..TET2..ASXL1. +Splicing.mutations..U2...SRSF2..SF3B1..U2AF1..ZRSF2. +RAS.mutations..NRAS..KRAS..CBL..NF1..PTPN11..BRAF. + IDH.mutations..IDH1..IDH2. - 1 , data = RF_cluster_metadata %>% filter(RF_Cluster == 'C2')))
 
+# Rename the columns of the model matrices
 colnames(model_matrix_C1) <- c(colnames(model_matrix_C1[,1:30]), 'DTA.mut.', 'Splicing.mut.', 'RAS.mut.', 'IDH.mut.')
 colnames(model_matrix_C2) <- c(colnames(model_matrix_C1[,1:30]), 'DTA.mut.', 'Splicing.mut.', 'RAS.mut.', 'IDH.mut.')
 
-#
-
+# Calculate correlations and p-values for cluster C1
 Cor_modules_C1 <- WGCNA::cor(model_matrix_C1, Cor_df[grep(TRUE, RF_cluster_metadata$RF_Cluster == 'C1'),7:10], use = "p")
 Cor_modules_stat_C1 <- WGCNA::corPvalueStudent(Cor_modules_C1, nrow(model_matrix_C1))
-
 Cor_modules_stat_C1_rank <- as.data.frame(sign(Cor_modules_C1)*(-1*log10(Cor_modules_stat_C1)))
-
 Cor_modules_stat_C1_rank$Mutation <- rownames(Cor_modules_stat_C1_rank)
-
 Cor_modules_stat_C1_rank_ggplot_df <- pivot_longer(as.data.frame(Cor_modules_stat_C1_rank), cols = c('Azacitidine resistance', `Cytarabine response`, `Daunorubicin resistance`, `Venetoclax resistance`))
-
 Cor_modules_stat_C1_rank_ggplot_df$value_to_colour <- Cor_modules_stat_C1_rank_ggplot_df$value
 Cor_modules_stat_C1_rank_ggplot_df[grep(TRUE,Cor_modules_stat_C1_rank_ggplot_df$value_to_colour < 1.30103 & Cor_modules_stat_C1_rank_ggplot_df$value_to_colour > -1.30103),'value_to_colour'] <- NA
 
-#
-
+# Calculate correlations and p-values for cluster C2
 Cor_modules_C2 <- WGCNA::cor(model_matrix_C2, Cor_df[grep(TRUE, RF_cluster_metadata$RF_Cluster == 'C2'),7:10], use = "p")
 Cor_modules_stat_C2 <- WGCNA::corPvalueStudent(Cor_modules_C2, nrow(model_matrix_C2))
-
 Cor_modules_stat_C2_rank <- as.data.frame(sign(Cor_modules_C2)*(-1*log10(Cor_modules_stat_C2)))
-
 Cor_modules_stat_C2_rank$Mutation <- rownames(Cor_modules_stat_C2_rank)
-
 Cor_modules_stat_C2_rank_ggplot_df <- pivot_longer(as.data.frame(Cor_modules_stat_C2_rank), cols = c('Azacitidine resistance', `Cytarabine response`, `Daunorubicin resistance`, `Venetoclax resistance`))
-
 Cor_modules_stat_C2_rank_ggplot_df$value_to_colour <- Cor_modules_stat_C2_rank_ggplot_df$value
 Cor_modules_stat_C2_rank_ggplot_df[grep(TRUE,Cor_modules_stat_C2_rank_ggplot_df$value_to_colour < 1.30103 & Cor_modules_stat_C2_rank_ggplot_df$value_to_colour > -1.30103),'value_to_colour'] <- NA
 ```
 
 ## - Plotting
 
-```{r}
 ### - C1: Immature
 
-plot <- ggplot(data = Cor_modules_stat_C1_rank_ggplot_df, aes(x=value, y = name, 
-                                                      colour = value_to_colour)) + 
+This code creates a scatter plot of the transformed p-values against the names of the variables, with the points colored according to the transformed p-values. It also adds vertical lines to the plot, sets the theme and labels of the plot, adds text to the plot, and sets the color gradient of the plot. The plot is then printed and saved as a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 6F', fig.pos='H', fig.height=3.333, fig.width=6.254}
+# Create a ggplot object
+plot <- ggplot(data = Cor_modules_stat_C1_rank_ggplot_df, aes(x=value, y = name, colour = value_to_colour)) + 
+  # Add points to the plot
   geom_point(size=3, stroke=0.2) + 
-  geom_vline(xintercept = 1.30103,
-             linetype="dashed", alpha = 0.45,
-             color = "gray44", size=0.75) +  
-  geom_vline(xintercept = -1.30103,
-             linetype="dashed", alpha = 0.45,
-             color = "gray44", size=0.75) +  
+  # Add vertical lines to the plot
+  geom_vline(xintercept = 1.30103, linetype="dashed", alpha = 0.45, color = "gray44", size=0.75) +  
+  geom_vline(xintercept = -1.30103, linetype="dashed", alpha = 0.45, color = "gray44", size=0.75) +  
+  # Set the theme of the plot
   theme_light(base_rect_size = 0) + 
   theme(legend.position = 'none', 
         panel.grid.major.y = element_line(color = "gray22", size = 0.35),
@@ -225,9 +223,11 @@ plot <- ggplot(data = Cor_modules_stat_C1_rank_ggplot_df, aes(x=value, y = name,
         axis.text.y = element_text(size = 12, face= 'bold'),
         axis.title.x = element_text(size = 12, face= 'bold', hjust = 0.5),
         plot.title = element_text(size = 14, face= 'bold', hjust = 0.5),
-        plot.subtitle = element_text(size = 12, hjust = 0.5), ) +
+        plot.subtitle = element_text(size = 12, hjust = 0.5)) +
+  # Set the labels of the plot
   xlab(bquote(~Sign. -Log[10]~ '(P.Value)')) + ylab('') + 
   ggtitle(label = 'Genotype to drug response cor.', subtitle = 'C1: Immature') +
+  # Add text to the plot
   geom_text_repel(aes(label = ifelse(value > 1.30103, as.character(Mutation), '')),
                   size = 4,
                   nudge_x = -0.05, 
@@ -240,28 +240,33 @@ plot <- ggplot(data = Cor_modules_stat_C1_rank_ggplot_df, aes(x=value, y = name,
                     nudge_y = -0.25, 
                     segment.size = 1,
                     direction = 'x') +
+  # Set the color gradient of the plot
   scale_colour_gradient(low = '#2171B5', high = '#CB181D', na.value = ggplot2::alpha('grey72', 1)) +
+  # Set the position of the y-axis
   scale_y_discrete(position = "right")
 
+# Print the plot
 print(plot)
 
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_06/Panel_F-1.png', sep = ''), units = "px", width = 1876.2, height = 1000, res = 300)
-
 print(plot)
-
 invisible(dev.off())
+```
 
 ### - C2: Mature
 
-plot <- ggplot(data = Cor_modules_stat_C2_rank_ggplot_df, aes(x=value, y = name, 
-                                                      colour = value_to_colour)) + 
+This code creates a scatter plot of the transformed p-values against the names of the variables, with the points colored according to the transformed p-values. It also adds vertical lines to the plot, sets the theme and labels of the plot, adds text to the plot, and sets the color gradient of the plot. The plot is then printed and saved as a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 6F', fig.pos='H', fig.height=3.333, fig.width=6.254}
+# Create a ggplot object
+plot <- ggplot(data = Cor_modules_stat_C2_rank_ggplot_df, aes(x=value, y = name, colour = value_to_colour)) + 
+  # Add points to the plot
   geom_point(size=3, stroke=0.2) + 
-  geom_vline(xintercept = 1.30103,
-             linetype="dashed", alpha = 0.45,
-             color = "gray44", size=0.75) +  
-  geom_vline(xintercept = -1.30103,
-             linetype="dashed", alpha = 0.45,
-             color = "gray44", size=0.75) +  
+  # Add vertical lines to the plot
+  geom_vline(xintercept = 1.30103, linetype="dashed", alpha = 0.45, color = "gray44", size=0.75) +  
+  geom_vline(xintercept = -1.30103, linetype="dashed", alpha = 0.45, color = "gray44", size=0.75) +  
+  # Set the theme of the plot
   theme_light(base_rect_size = 0) + 
   theme(legend.position = 'none', 
         panel.grid.major.y = element_line(color = "gray22", size = 0.35),
@@ -270,9 +275,11 @@ plot <- ggplot(data = Cor_modules_stat_C2_rank_ggplot_df, aes(x=value, y = name,
         axis.text.y = element_text(size = 12, face= 'bold'),
         axis.title.x = element_text(size = 12, face= 'bold', hjust = 0.5),
         plot.title = element_text(size = 14, face= 'bold', hjust = 0.5),
-        plot.subtitle = element_text(size = 12, hjust = 0.5), ) +
+        plot.subtitle = element_text(size = 12, hjust = 0.5)) +
+  # Set the labels of the plot
   xlab(bquote(~Sign. -Log[10]~ '(P.Value)')) + ylab('') + 
   ggtitle(label = 'Genotype to drug response cor.', subtitle = 'C2: Mature') +
+  # Add text to the plot
   geom_text_repel(aes(label = ifelse(value > 1.30103, as.character(Mutation), '')),
                   size = 4,
                   nudge_x = -0.025, 
@@ -285,15 +292,17 @@ plot <- ggplot(data = Cor_modules_stat_C2_rank_ggplot_df, aes(x=value, y = name,
                     nudge_y = -0.15, 
                     segment.size = 1,
                     direction = 'x') +
+  # Set the color gradient of the plot
   scale_colour_gradient(low = '#2171B5', high = '#CB181D', na.value = ggplot2::alpha('grey72', 1)) +
+  # Set the position of the y-axis
   scale_y_discrete(position = "right")
 
+# Print the plot
 print(plot)
 
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_06/Panel_F-2.png', sep = ''), units = "px", width = 1876.2, height = 1000, res = 300)
-
 print(plot)
-
 invisible(dev.off())
 ```
 
@@ -301,15 +310,22 @@ invisible(dev.off())
 
 ## - Heatmap : Panel D
 
-```{r}
+This code calculates the correlation and p-values between the columns of a data frame, creates a heatmap of the correlation, and saves the heatmap as a PNG file. It also saves the correlation and p-values as CSV files. The heatmap is colored according to the correlation values, and cells are marked with "*" or "•" based on the p-values.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 6D', fig.pos='H', fig.height=2.75591, fig.width=4.33071}
+# Calculate the correlation between the columns of the data frame
 Cor_modules <- WGCNA::cor(Cor_df[,7:10], Cor_df[,1:6], use = "p")
+# Calculate the p-values of the correlation
 Cor_modules_stat <- WGCNA::corPvalueStudent(Cor_modules, nrow(RF_cluster_metadata))
 
+# Define the color gradient for the heatmap
 breaks_val <- seq(from = -1, to = 1, length.out = 13)
 col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(brew_mix))
 
+# Set the seed for reproducibility
 set.seed(123)
 
+# Create a heatmap
 Heatmap_genes <- Heatmap(Cor_modules, name = 'Correlation score\n(pearson)',
                             col = col_heatmap_guide,
                             cell_fun = function(j, i, x, y, w, h, fill) {
@@ -332,25 +348,26 @@ Heatmap_genes <- Heatmap(Cor_modules, name = 'Correlation score\n(pearson)',
                                       legend_direction = "horizontal", 
                                       legend_width = unit(3, "cm")), row_names_side = 'right')
 
-draw(Heatmap_genes)
-
-png(filename = paste(figures_folder, '/Fig_06/Panel_D.png', sep = ''), units = "cm", width = 11, height = 7, res = 300)
-
+# Draw the heatmap
 draw(Heatmap_genes, heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
 
+# Save the heatmap as a PNG file
+png(filename = paste(figures_folder, '/Fig_06/Panel_D.png', sep = ''), units = "cm", width = 11, height = 7, res = 300)
+draw(Heatmap_genes, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
 invisible(dev.off())
 
+# Save the correlation and p-values as CSV files
 write.csv(x = Cor_modules, 
           file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/Pathway_Correlations/Correlation_WGCNA_modules_to_Common_drug_response__COR.csv', sep = ''), quote = F)
-
 write.csv(x = Cor_modules_stat, 
           file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/Pathway_Correlations/Correlation_WGCNA_modules_to_Common_drug_response__STATS.csv', sep = ''), quote = F)
 ```
 
 ## - Cor. WGCNA M5 to Venetoclax resistance : Panel E-1
 
-For this correlation we also compared healthy donors, so we will load enrichment scores that include those samples.
+This code loads two CSV files containing enrichment scores for WGCNA modules and Venetoclax resistance, respectively, against all samples including healthies.
 
 ```{r}
 # Loading WGCNA Modules enrichment scores including healthy donors
@@ -364,11 +381,17 @@ Venetoclax_resistance <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_An
 colnames(Venetoclax_resistance) <- 'Venetoclax resistance'
 ```
 
-```{r}
+This code combines two data frames, adds a new column 'Cluster', and updates its values based on another data frame. It then creates a scatter plot of the 'ME5' column against the 'Venetoclax resistance' column, adds a grid, calculates and displays the correlation, and adds points to the plot with different colors based on the 'Cluster' column. The plot is then saved as a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 6E', fig.pos='H', fig.height=2.2800409449, fig.width=2.4477917323}
+# Combine the WGCNA score and Venetoclax resistance data frames
 Cor_df <- cbind(WGCNA_score, Venetoclax_resistance)
+# Add a new column 'Cluster' and set its default value to 'Control'
 Cor_df$Cluster <- 'Control'
+# Update the 'Cluster' values for the rows that exist in the RF_cluster_metadata data frame
 Cor_df[rownames(RF_cluster_metadata),'Cluster'] <- RF_cluster_metadata[,'RF_Cluster']
 
+# Create a scatter plot with correlation
 plot <- ggplot(data = Cor_df, mapping = aes(x = ME5, y = `Venetoclax resistance`)) + sm_hvgrid() + 
   sm_statCorr(color = 'black', corr_method = 'spearman') + 
   ylab('Venetoclax\nresistance') + xlab('WGCNA ME5') +
@@ -379,40 +402,45 @@ plot <- ggplot(data = Cor_df, mapping = aes(x = ME5, y = `Venetoclax resistance`
         axis.text.y = element_text(size = 9), 
         legend.position = 'none')
 
-plot + geom_point(data = Cor_df, aes(fill=Cluster), 
+# Add points to the plot with different colors based on the 'Cluster' column
+plot <- plot + geom_point(data = Cor_df, aes(fill=Cluster), 
                   shape = 21, color = 'white', size = 3) +
   scale_fill_manual(values = c('Control' = '#A4BECE',
                                'C1'    = '#793F0B',
                                'C2'    = '#0B544B'))
 
+print(plot)
+
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_06/Panel_E-1.png', sep = ''), units = "cm", width = 6.217391, height = 5.791304, res = 300)
-
-plot + geom_point(data = Cor_df, aes(fill=Cluster), 
-                  shape = 21, color = 'white', size = 3) +
-  scale_fill_manual(values = c('Control' = '#A4BECE',
-                               'C1'    = '#793F0B',
-                               'C2'    = '#0B544B'))
-
+print(plot)
 invisible(dev.off())
 ```
 
 ## - Cor. WGCNA M3 to Cytarabine response : Panel E-2
 
-As above, we will load enrichment scores that include healthy samples.
+This code loads two CSV files containing enrichment scores for WGCNA modules and Cytarabine response, respectively, against all samples including healthies.
 
 ```{r}
-# Loading Venetoclax resistance enrichment scores including healthy donors
+# Load the Cytarabine response enrichment scores including healthy donors
 Cytarabine_response <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Response/2019__Xu_et_al_cytarabine_response_signature__Enrichments_w_healthies.csv', 
                                     sep = ''), row.names = 'X')
 
+# Rename the column of the Cytarabine response data frame
 colnames(Cytarabine_response) <- 'Cytarabine response'
 ```
 
-```{r}
+This code combines two data frames, adds a new column 'Cluster', and updates its values based on another data frame. It then creates a scatter plot of the 'ME3' column against the 'Cytarabine response' column, adds a grid, calculates and displays the correlation, and adds points to the plot with different colors based on the 'Cluster' column. The plot is then saved as a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 6E', fig.pos='H', fig.height=2.2800409449, fig.width=2.4477917323}
+# Combine the WGCNA score and Cytarabine response data frames
 Cor_df <- cbind(WGCNA_score, Cytarabine_response)
+# Add a new column 'Cluster' and set its default value to 'Control'
 Cor_df$Cluster <- 'Control'
+# Update the 'Cluster' values for the rows that exist in the RF_cluster_metadata data frame
 Cor_df[rownames(RF_cluster_metadata),'Cluster'] <- RF_cluster_metadata[,'RF_Cluster']
 
+# Create a scatter plot with correlation
 plot <- ggplot(data = Cor_df, mapping = aes(x = ME3, y = `Cytarabine response`)) + sm_hvgrid() + 
   sm_statCorr(color = 'black', corr_method = 'spearman') + 
   ylab('Cytarabine\nresponse') + xlab('WGCNA ME3') +
@@ -423,19 +451,17 @@ plot <- ggplot(data = Cor_df, mapping = aes(x = ME3, y = `Cytarabine response`))
         axis.text.y = element_text(size = 9), 
         legend.position = 'none')
 
-plot + geom_point(data = Cor_df, aes(fill=Cluster), 
+# Add points to the plot with different colors based on the 'Cluster' column
+plot <- plot + geom_point(data = Cor_df, aes(fill=Cluster), 
                   shape = 21, color = 'white', size = 3) +
   scale_fill_manual(values = c('Control' = '#A4BECE',
                                'C1'    = '#793F0B',
                                'C2'    = '#0B544B'))
 
+print(plot)
+
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_06/Panel_E-2.png', sep = ''), units = "cm", width = 6.217391, height = 5.791304, res = 300)
-
-plot + geom_point(data = Cor_df, aes(fill=Cluster), 
-                  shape = 21, color = 'white', size = 3) +
-  scale_fill_manual(values = c('Control' = '#A4BECE',
-                               'C1'    = '#793F0B',
-                               'C2'    = '#0B544B'))
-
+print(plot)
 invisible(dev.off())
 ```

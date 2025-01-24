@@ -1,16 +1,18 @@
 ---
-title: "Figure 07 - Panels ACDEF + FigS7"
+title: "Figure 07 - Panels ACDEF + Fig S11"
 output: 
   rmdformats::robobook:
     lightbox: true
     fig_caption: true
 ---
 
+```{=html}
 <style type="text/css">
   body{
   font-size: 10pt;
 }
 </style>
+```
 
 # 1) Setup
 
@@ -59,17 +61,19 @@ In this section, we ensure that all necessary packages are installed.
 ```{r}
 # Ensure BiocManager is available for installation of Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-#BiocManager::install(version = "3.18")
+BiocManager::install(version = "3.18", ask = FALSE)
 
 # Define a list of required packages used in this script
 packages_required <- c("ggplot2", "dplyr", "coin", "randomForest", "rstatix",
-                       "Boruta", "rattle", "caret", "ROCR", "pROC", "dendextend")
+                       "Boruta", "rattle", "caret", "ROCR", "pROC", "dendextend",
+                       "ComplexHeatmap", "ggrepel", "readr",
+                       "unikn", "RColorBrewer", "yarrr", "scales", "ggsci")
 
 # Identify any required packages that are not installed
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
 
 # Install any uninstalled packages
-if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = FALSE)
 ```
 
 ## - Loading packages
@@ -78,7 +82,10 @@ Here, we load the necessary packages for our analysis.
 
 ```{r message=FALSE, warning=FALSE}
 library(ggplot2, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(ggrepel, quietly = TRUE)
 library(randomForest, quietly = TRUE)
+library(ComplexHeatmap, quietly = TRUE)
 library(dplyr, quietly = TRUE)
 library(coin, quietly = TRUE)
 library(rstatix, quietly = TRUE)
@@ -129,7 +136,7 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_07_ACDEF_Fig_S7_SessionInfo.txt'))
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_07_ACDEF_Fig_S11_SessionInfo.txt'))
 
 # Print the session information
 sessionInfo()
@@ -144,11 +151,15 @@ RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Cluste
                                     sep = ''), row.names = 'Patient.ID')
 ```
 
-# 3) Vizome BeatAML drug responses heatmap - K2 : Fig S7
+# 3) Vizome BeatAML drug responses heatmap - K2 : Fig S11
 
-```{r}
+This code extracts the drug response data from a data frame, renames the columns, creates a data frame for the identity of the clusters, defines the colors for the annotation, creates a row annotation for the heatmap, defines the color scheme for the heatmap, creates a heatmap of the drug response data, draws the heatmap, and saves it as a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure S8', fig.pos='H', fig.height=7.87402, fig.width=11.811}
+# Extract the drug response data from the RF_cluster_metadata data frame
 BeatAML_drug_response <- as.matrix(RF_cluster_metadata[,91:177])
 
+# Rename the columns of the BeatAML_drug_response data frame
 colnames(BeatAML_drug_response) <- c(
                                 "A-674563",
                                 "ABT-737",
@@ -238,23 +249,25 @@ colnames(BeatAML_drug_response) <- c(
                                 "VX-745",
                                 "Tanespimycin (17-AAG)")
 
+# Create a data frame for the identity of the clusters
 Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
-
 Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster, 
-                                         levels=c('C1',
-                                                  'C2'))
+                                         levels=c('C1', 'C2'))
 
-colors_annotation <-  list(RF_Cluster = c('C1' = '#793F0B',
-                                          'C2' = '#0B544B'))
+# Define the colors for the annotation
+colors_annotation <-  list(RF_Cluster = c('C1' = '#793F0B', 'C2' = '#0B544B'))
 
+# Create a row annotation for the heatmap
 row_anno <- rowAnnotation(df=Identity, col = colors_annotation, 
                         gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(5, "mm"),
                         show_annotation_name = F, show_legend = FALSE,
                         annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
 
+# Define the color scheme for the heatmap
 breaks_val <- seq(from = 0, to = 1, length.out = 14)
 col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
 
+# Create a heatmap of the BeatAML drug response data
 HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response, 
         name = 'ssGSEA Score',
         row_split = RF_cluster_metadata$RF_Cluster, 
@@ -271,20 +284,93 @@ HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response,
                                     legend_width = unit(5, "cm")),
         row_names_side = 'right')
 
+# Draw the heatmap
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
 
-png(filename = paste(figures_folder, '/Supplemental/Fig_S7.png', sep = ''), units = "cm", width = 30, height = 20, res = 300)
-
+# Save the heatmap as a PNG file
+png(filename = paste(figures_folder, '/Supplemental/Fig_S11.png', sep = ''), units = "cm", width = 30, height = 20, res = 300)
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
-
 invisible(dev.off())
 ```
 
 # 4) RandomForest Subclustering
 
+## - Loading input files
+
+```{r}
+RF.metadata <- read.csv(paste(data_folder, '/RandomForest/RF_input_data.csv', sep = ''))
+```
+
+## - Data wrangling
+
+### - Assigning rownames
+
+This code first converts the 'Patient.ID' column of the RF.metadata dataframe to a factor. It then sets the row names of the RF.metadata dataframe to the 'Patient.ID' column. Finally, it removes the 'Patient.ID' column from the RF.metadata dataframe.
+
+```{r}
+# Convert the 'Patient.ID' column of the RF.metadata dataframe to a factor
+RF.metadata$Patient.ID <- as.factor(RF.metadata$Patient.ID)
+
+# Set the row names of the RF.metadata dataframe to the 'Patient.ID' column
+rownames(RF.metadata) <- RF.metadata$Patient.ID
+
+# Remove the 'Patient.ID' column from the RF.metadata dataframe
+RF.metadata$Patient.ID <- NULL
+```
+
+### - Converting data categories to factors or integers
+
+Here we convert multiple columns in the RF.metadata dataframe to factors. Factors are used represent categorical data and can be used for statistical modeling.
+
+```{r}
+# Convert the specified columns of the RF.metadata dataframe to factors
+RF.metadata$Gender <- as.factor(RF.metadata$Gender)
+RF.metadata$Subtype.at.CMML <- as.factor(RF.metadata$Subtype.at.CMML)
+RF.metadata$ICC.classification <- as.factor(RF.metadata$ICC.classification)
+RF.metadata$Cutaneous.BPDCN <- as.factor(RF.metadata$Cutaneous.BPDCN)
+
+RF.metadata$DNMT3A <- as.factor(RF.metadata$DNMT3A)
+RF.metadata$TET2 <- as.factor(RF.metadata$TET2)
+RF.metadata$SRSF2 <- as.factor(RF.metadata$SRSF2)
+RF.metadata$SF3B1 <- as.factor(RF.metadata$SF3B1)
+RF.metadata$SETBP1 <- as.factor(RF.metadata$SETBP1)
+RF.metadata$U2AF1 <- as.factor(RF.metadata$U2AF1)
+RF.metadata$IDH1 <- as.factor(RF.metadata$IDH1)
+RF.metadata$IDH2 <- as.factor(RF.metadata$IDH2)
+RF.metadata$ASXL1 <- as.factor(RF.metadata$ASXL1)
+RF.metadata$EZH2 <- as.factor(RF.metadata$EZH2)
+RF.metadata$STAG2 <- as.factor(RF.metadata$STAG2)
+RF.metadata$BCOR <- as.factor(RF.metadata$BCOR)
+RF.metadata$PHF6 <- as.factor(RF.metadata$PHF6)
+RF.metadata$NF1 <- as.factor(RF.metadata$NF1)
+RF.metadata$RUNX1 <- as.factor(RF.metadata$RUNX1)
+RF.metadata$FLT3 <- as.factor(RF.metadata$FLT3)
+RF.metadata$NPM1 <- as.factor(RF.metadata$NPM1)
+RF.metadata$CEBPA <- as.factor(RF.metadata$CEBPA)
+RF.metadata$WT1 <- as.factor(RF.metadata$WT1)
+RF.metadata$KIT <- as.factor(RF.metadata$KIT)
+RF.metadata$BRAF <- as.factor(RF.metadata$BRAF)
+RF.metadata$KRAS <- as.factor(RF.metadata$KRAS)
+RF.metadata$NRAS <- as.factor(RF.metadata$NRAS)
+RF.metadata$CBL <- as.factor(RF.metadata$CBL)
+RF.metadata$PTPN11 <- as.factor(RF.metadata$PTPN11)
+RF.metadata$GATA2 <- as.factor(RF.metadata$GATA2)
+RF.metadata$SH2B3 <- as.factor(RF.metadata$SH2B3)
+RF.metadata$ZRSR2 <- as.factor(RF.metadata$ZRSR2)
+RF.metadata$CSF3R <- as.factor(RF.metadata$CSF3R)
+RF.metadata$DTA.mutations..DNMT3A..TET2..ASXL1. <- as.factor(RF.metadata$DTA.mutations..DNMT3A..TET2..ASXL1.)
+RF.metadata$RAS.mutations..NRAS..KRAS..CBL..NF1..PTPN11..BRAF. <- as.factor(RF.metadata$RAS.mutations..NRAS..KRAS..CBL..NF1..PTPN11..BRAF.)
+RF.metadata$IDH.mutations..IDH1..IDH2. <- as.factor(RF.metadata$IDH.mutations..IDH1..IDH2.)
+RF.metadata$Splicing.mutations..U2...SRSF2..SF3B1..U2AF1..ZRSF2. <- as.factor(RF.metadata$Splicing.mutations..U2...SRSF2..SF3B1..U2AF1..ZRSF2.)
+
+RF.metadata$Cytogenetics..at.transformation. <- as.factor(RF.metadata$Cytogenetics..at.transformation.)
+```
+
 ## - Loading RandomForest model
+
+Now we load our previously computed RF model from which we can extract distances
 
 ```{r}
 model <- readRDS(file = paste(data_folder, '/RandomForest/Results/Model/RF_Classification_Model.RDS', sep = ''))
@@ -294,62 +380,82 @@ model <- readRDS(file = paste(data_folder, '/RandomForest/Results/Model/RF_Class
 
 ### - Extracting proximity matrix for distance computation and MDS similarity evaluation
 
-```{r}
+This script calculates a distance matrix from a Random Forest model's proximity matrix, performs multidimensional scaling (MDS) on the distance matrix, creates a data frame with the MDS values, and generates an MDS plot using ggplot2. The plot is labeled with the percentage of variance explained by each dimension.
+
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=8, fig.width=5}
+# Calculate distance matrix from Random Forest model's proximity matrix
 distance.matrix <- dist(1-model$proximity)
 
+# Perform multidimensional scaling (MDS) on the distance matrix
 mds.stuff <- cmdscale(distance.matrix, eig = TRUE, x.ret = TRUE)
+
+# Calculate the percentage of variance explained by each dimension
 mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100, 1)
+
+# Extract the MDS values
 mds.values <- mds.stuff$points
+
+# Create a data frame with the MDS values
 mds.data <- data.frame(Sample=rownames(mds.values),
                        X= mds.values[,1],
                        Y= mds.values[,2])
 
+# Generate an MDS plot using ggplot2
 ggplot(data = mds.data, aes(x = X, y = Y, label=Sample)) + 
   geom_text(aes(color=Sample)) +
   theme_bw() +
   xlab(paste("MDS1 - ", mds.var.per[1], "%", sep="")) +
   ylab(paste("MDS2 - ", mds.var.per[2], "%", sep="")) +
-  ggtitle(label = "MDS plot", subtitle = "(1 - Random Forest Proximities)") + theme(legend.position = 'bottom')
-
+  ggtitle(label = "MDS plot", subtitle = "(1 - Random Forest Proximities)") + 
+  theme(legend.position = 'bottom')
 ```
 
 ### - Clustering K = 5
 
 #### - Hierarchical clustering on distance matrix : Panel A
 
-```{r}
+This script generates a hierarchical clustering dendrogram from a distance matrix and cuts the dendrogram into five clusters.
+
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=4.133858, fig.width=8.26772}
+# Generate hierarchical clustering dendrogram
 dendro <- stats::hclust(distance.matrix, method = "ward.D2") %>% as.dendrogram %>% ladderize  %>% color_branches(k = 5, col = c('#C67942', '#E0B090', '#87551B', '#7CB7B0', '#539690')) %>% color_labels(k = 5, col = c('#C67942', '#E0B090', '#87551B', '#7CB7B0', '#539690'))
 
+# Plot dendrogram
 plot(dendro, axes=F)
 par(lwd=3)
+```
 
-#
+This code cuts a dendrogram into five clusters, assigns each patient to a cluster, annotates the clusters, adds the cluster annotations to the MDS data, creates a scatter plot of the MDS coordinates colored by cluster, saves the plot as a PNG file, adds the cluster annotations to the RF metadata, and saves the RF metadata with the cluster annotations as a CSV file.
 
-
+```{r echo=TRUE, fig.align='center', fig.cap='Figure D', fig.pos='H', fig.height=5.51181, fig.width=5.51181}
+# Cut the dendrogram into 5 clusters
 Hierchical_clusters_K5 <- sort(cutree(dendro, k = 5))
 
+# Create a data frame for the hierarchical clustering
 Hierarchical_clustering_K5 <- data.frame(row.names = rownames(RF.metadata))
 Hierarchical_clustering_K5$Patient.ID <- rownames(Hierarchical_clustering_K5)
 
+# Assign each patient to a cluster
 for (ID in Hierarchical_clustering_K5$Patient.ID) {
-  
-Hierarchical_clustering_K5[ID,'Cluster'] <- Hierchical_clusters_K5[[ID]]
-
+  Hierarchical_clustering_K5[ID,'Cluster'] <- Hierchical_clusters_K5[[ID]]
 }
 
+# Annotate the clusters
 Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['671', 'Cluster'],'Cluster_annotated'] <- 'C1A: CD34- HSC/MPP primed'
 Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['543', 'Cluster'],'Cluster_annotated'] <- 'C1B: CD34+ HSC/MPP primed'
 Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['544', 'Cluster'],'Cluster_annotated'] <- 'C1C: Myeloid Prog. primed'
 Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['303', 'Cluster'],'Cluster_annotated'] <- 'C2A: Promonocyte primed'
 Hierarchical_clustering_K5[Hierarchical_clustering_K5$Cluster == Hierarchical_clustering_K5['55', 'Cluster'],'Cluster_annotated'] <- 'C2B: Monocyte primed'
 
+# Add the cluster annotations to the MDS data
 mds.data.Hierarchical_K5_clustered <- mds.data
-
 mds.data.Hierarchical_K5_clustered$Cluster <- Hierarchical_clustering_K5$Cluster_annotated
 
+# Define the colors for the clusters
 cols <- c('C1B: CD34+ HSC/MPP primed' = '#C67942', 'C1C: Myeloid Prog. primed' = '#E0B090', 'C1A: CD34- HSC/MPP primed' = '#87551B', 
           'C2A: Promonocyte primed' = '#7CB7B0', 'C2B: Monocyte primed' = '#539690')
 
+# Create a scatter plot of the MDS coordinates, colored by cluster
 plot.Hierarchical_clusters_K5 <- ggplot(data = mds.data.Hierarchical_K5_clustered, aes(x = X, y = Y, label=Sample, color=Cluster)) + 
   geom_point(aes(color=Cluster, fill=Cluster), shape = 21, alpha = 1, size = 2.5) +
   theme_linedraw(base_line_size = 0.2) +
@@ -367,14 +473,12 @@ plot.Hierarchical_clusters_K5 <- ggplot(data = mds.data.Hierarchical_K5_clustere
 
 print(plot.Hierarchical_clusters_K5)
 
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_07/Panel_A.png', sep = ''), units = "cm", width = 14, height = 14, res = 300)
-
 print(plot.Hierarchical_clusters_K5)
-
 invisible(dev.off())
 
-#
-
+# Create a scatter plot of the MDS coordinates, colored by cluster. With added labels
 plot.Hierarchical_clusters_K5_labelled <- plot.Hierarchical_clusters_K5 + geom_label_repel(aes(label = Sample, color=Cluster),
                   box.padding   = 0.65, 
                   point.padding = 0.1, size = 2,
@@ -382,94 +486,107 @@ plot.Hierarchical_clusters_K5_labelled <- plot.Hierarchical_clusters_K5 + geom_l
 
 print(plot.Hierarchical_clusters_K5_labelled) 
 
-#
-
+# Add the cluster annotations to the RF metadata
 RF.metadata.hierarchical_clustering_K5 <- RF.metadata
 RF.metadata.hierarchical_clustering_K5[Hierarchical_clustering_K5$Patient.ID,'RF_Cluster'] <- Hierarchical_clustering_K5$Cluster_annotated
 
+# Add the Patient.ID column back into the data frame
 RF.metadata.hierarchical_clustering_K5 <- RF.metadata.hierarchical_clustering_K5 %>% add_column(.before = 'Gender', 'Patient.ID' = rownames(RF.metadata.hierarchical_clustering_K5))
 
+# Annotate the clusters
 RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C1A: CD34- HSC/MPP primed')),'RF_Cluster_short'] <- 'C1A'
 RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C1B: CD34+ HSC/MPP primed')),'RF_Cluster_short'] <- 'C1B'
 RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C1C: Myeloid Prog. primed')),'RF_Cluster_short'] <- 'C1C'
 RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C2A: Promonocyte primed')),'RF_Cluster_short'] <- 'C2A'
 RF.metadata.hierarchical_clustering_K5[rownames(RF.metadata.hierarchical_clustering_K5 %>% filter(RF_Cluster == 'C2B: Monocyte primed')),'RF_Cluster_short'] <- 'C2B'
 
+# Convert the column to factor
 RF.metadata.hierarchical_clustering_K5$RF_Cluster_short <- factor(RF.metadata.hierarchical_clustering_K5$RF_Cluster_short)
 
+# Save the RF metadata with the cluster annotations as a CSV file
 write_csv(x = RF.metadata.hierarchical_clustering_K5, 
             file = paste(data_folder, '/RandomForest/Results/Clustering/K5/RF_K5_Clustered_Metadata.csv', sep = ''))
 
+# Remove the Patient.ID column
 RF.metadata.hierarchical_clustering_K5$Patient.ID <- NULL
 ```
 
 #### - Wilcox t-test unpaired - median comparisons : Panel B
 
-Features were retrospectively compared in the identified groupings. Selected features were illustrated via GraphPad (see under ***GraphPad/Fig_07/Panels_B.pzfx***).
+This R script performs a series of Wilcoxon rank-sum tests (also known as Mann-Whitney U tests) between pairs of clusters in the data. The purpose of these tests is to identify significant differences between the clusters. Selected features of interest were retrospectively compared in the identified groupings and illustrated via GraphPad (see under ***GraphPad/Fig_07/Panels_B.pzfx***).
 
 ```{r}
-RF.metadata.hierarchical_clustering_K5$RF_Cluster <- NULL # We remove this column for the following analysis
+# Remove the RF_Cluster column from the dataset
+RF.metadata.hierarchical_clustering_K5$RF_Cluster <- NULL 
 
+# Create a copy of the dataset
 RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
 
+# Loop over each unique cluster
 for (cluster1 in unique(RF.metadata.hierarchical_clustering_K5_numerised$RF_Cluster_short)) {
 
-RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
+  # Create a copy of the dataset for each iteration
+  RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
 
+  # Loop over each unique cluster that is not equal to cluster1
   for (cluster2 in unique(RF.metadata.hierarchical_clustering_K5_numerised$RF_Cluster_short)[unique(RF.metadata.hierarchical_clustering_K5_numerised$RF_Cluster_short)!= cluster1]) {
 
-RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
+    # Create a copy of the dataset for each iteration
+    RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
 
-  RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5_numerised %>% filter(RF_Cluster_short == cluster1 | RF_Cluster_short == cluster2)
-  
-  variable_to_compare <- c(colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))])
-  
-  for (variable in colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))-1]) {
-  
-  RF.metadata.hierarchical_clustering_K5_numerised[,variable] <- as.numeric(RF.metadata.hierarchical_clustering_K5_numerised[,variable])
+    # Filter the dataset to include only rows where RF_Cluster_short is equal to cluster1 or cluster2
+    RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5_numerised %>% filter(RF_Cluster_short == cluster1 | RF_Cluster_short == cluster2)
     
-  }
-  
-  Group_A <- RF.metadata.hierarchical_clustering_K5_numerised %>% dplyr::filter(RF_Cluster_short == cluster1)
-  Group_B <- RF.metadata.hierarchical_clustering_K5_numerised %>% dplyr::filter(RF_Cluster_short == cluster2)
-  
-  wilcox_t_test_results <- data.frame(row.names = colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))-1])
-  
-  for (variable in colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))-1]) {
-    if (((length(unique(RF.metadata.hierarchical_clustering_K5_numerised[,variable]))) == 1) == TRUE) {
-    wilcox_t_test_results[variable,'pval'] <- 1
-    wilcox_t_test_results[variable, paste('Median', cluster1, sep = ' ')] <- median(Group_A[,variable])
-    wilcox_t_test_results[variable, paste('Median', cluster2, sep = ' ')] <- median(Group_B[,variable])
-    wilcox_t_test_results[variable, paste('Min', cluster1, sep = ' ')] <- min(Group_A[,variable])
-    wilcox_t_test_results[variable, paste('Min', cluster2, sep = ' ')] <- min(Group_B[,variable])
-    wilcox_t_test_results[variable, paste('Max', cluster1, sep = ' ')] <- max(Group_A[,variable])
-    wilcox_t_test_results[variable, paste('Max', cluster2, sep = ' ')] <- max(Group_B[,variable])
-    wilcox_t_test_results[variable, paste('Std', cluster1, sep = ' ')] <- sd(Group_A[,variable])
-    wilcox_t_test_results[variable, paste('Std', cluster2, sep = ' ')] <- sd(Group_B[,variable])
-    } else {
-    p <- coin::wilcox_test(formula = get(variable) ~ as.factor(RF_Cluster_short), data=RF.metadata.hierarchical_clustering_K5_numerised, distribution = "exact")
-    wilcox_t_test_results[variable,'pval'] <- coin::pvalue(p)
-    wilcox_t_test_results[variable, paste('Median', cluster1, sep = ' ')] <- median(Group_A[,variable])
-    wilcox_t_test_results[variable, paste('Median', cluster2, sep = ' ')] <- median(Group_B[,variable])
-    wilcox_t_test_results[variable, paste('Min', cluster1, sep = ' ')] <- min(Group_A[,variable])
-    wilcox_t_test_results[variable, paste('Min', cluster2, sep = ' ')] <- min(Group_B[,variable])
-    wilcox_t_test_results[variable, paste('Max', cluster1, sep = ' ')] <- max(Group_A[,variable])
-    wilcox_t_test_results[variable, paste('Max', cluster2, sep = ' ')] <- max(Group_B[,variable])
-    wilcox_t_test_results[variable, paste('Std', cluster1, sep = ' ')] <- sd(Group_A[,variable])
-    wilcox_t_test_results[variable, paste('Std', cluster2, sep = ' ')] <- sd(Group_B[,variable])
+    # Convert all columns to numeric
+    for (variable in colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))-1]) {
+      RF.metadata.hierarchical_clustering_K5_numerised[,variable] <- as.numeric(RF.metadata.hierarchical_clustering_K5_numerised[,variable])
     }
-  }
-  
-  wilcox_t_test_results <- wilcox_t_test_results %>% arrange(pval)
-  
-  write.csv(wilcox_t_test_results, 
-            file = paste(data_folder, '/RandomForest/Results/Clustering/K5/RF_K5_Stats_Wilcox_t_test__',
-                         cluster1, '_vs_', cluster2, '.csv', sep = ''),
-            row.names = T, quote = F)
+    
+    # Split the dataset into two groups based on RF_Cluster_short
+    Group_A <- RF.metadata.hierarchical_clustering_K5_numerised %>% dplyr::filter(RF_Cluster_short == cluster1)
+    Group_B <- RF.metadata.hierarchical_clustering_K5_numerised %>% dplyr::filter(RF_Cluster_short == cluster2)
+    
+    # Initialize a data frame to store the results of the Wilcoxon tests
+    wilcox_t_test_results <- data.frame(row.names = colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))-1])
+        
+    # Loop over each column in the dataset
+    for (variable in colnames(RF.metadata.hierarchical_clustering_K5_numerised)[1:length(colnames(RF.metadata.hierarchical_clustering_K5))-1]) {
+      # If the column has only one unique value, set the p-value to 1 and calculate some descriptive statistics
+      if (((length(unique(RF.metadata.hierarchical_clustering_K5_numerised[,variable]))) == 1) == TRUE) {
+        wilcox_t_test_results[variable,'pval'] <- 1
+        wilcox_t_test_results[variable, paste('Median', cluster1, sep = ' ')] <- median(Group_A[,variable])
+        wilcox_t_test_results[variable, paste('Median', cluster2, sep = ' ')] <- median(Group_B[,variable])
+        wilcox_t_test_results[variable, paste('Min', cluster1, sep = ' ')] <- min(Group_A[,variable])
+        wilcox_t_test_results[variable, paste('Min', cluster2, sep = ' ')] <- min(Group_B[,variable])
+        wilcox_t_test_results[variable, paste('Max', cluster1, sep = ' ')] <- max(Group_A[,variable])
+        wilcox_t_test_results[variable, paste('Max', cluster2, sep = ' ')] <- max(Group_B[,variable])
+        wilcox_t_test_results[variable, paste('Std', cluster1, sep = ' ')] <- sd(Group_A[,variable])
+        wilcox_t_test_results[variable, paste('Std', cluster2, sep = ' ')] <- sd(Group_B[,variable])
+      } else {
+        # Otherwise, perform a Wilcoxon test and calculate some descriptive statistics
+        p <- coin::wilcox_test(formula = get(variable) ~ as.factor(RF_Cluster_short), data=RF.metadata.hierarchical_clustering_K5_numerised, distribution = "exact")
+        wilcox_t_test_results[variable,'pval'] <- coin::pvalue(p)
+        wilcox_t_test_results[variable, paste('Median', cluster1, sep = ' ')] <- median(Group_A[,variable])
+        wilcox_t_test_results[variable, paste('Median', cluster2, sep = ' ')] <- median(Group_B[,variable])
+        wilcox_t_test_results[variable, paste('Min', cluster1, sep = ' ')] <- min(Group_A[,variable])
+        wilcox_t_test_results[variable, paste('Min', cluster2, sep = ' ')] <- min(Group_B[,variable])
+        wilcox_t_test_results[variable, paste('Max', cluster1, sep = ' ')] <- max(Group_A[,variable])
+        wilcox_t_test_results[variable, paste('Max', cluster2, sep = ' ')] <- max(Group_B[,variable])
+        wilcox_t_test_results[variable, paste('Std', cluster1, sep = ' ')] <- sd(Group_A[,variable])
+        wilcox_t_test_results[variable, paste('Std', cluster2, sep = ' ')] <- sd(Group_B[,variable])
+        }
+      }
+      
+    # Sort the results by p-value
+    wilcox_t_test_results <- wilcox_t_test_results %>% arrange(pval)
+    
+    # Save the results to a CSV file
+    write.csv(wilcox_t_test_results, 
+              file = paste(data_folder, '/RandomForest/Results/Clustering/K5/RF_K5_Stats_Wilcox_t_test__',
+                           cluster1, '_vs_', cluster2, '.csv', sep = ''),
+              row.names = T, quote = F)
   }
 }
-
-RF.metadata.hierarchical_clustering_K5_numerised <- RF.metadata.hierarchical_clustering_K5[1:length(colnames(RF.metadata.hierarchical_clustering_K5))]
 ```
 
 # 5) Distribution VanGalen AML signatures enrichment scores : Panel C
@@ -481,7 +598,7 @@ RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Cluste
                                     sep = ''), row.names = 'Patient.ID')
 ```
 
-```{r}
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 7C', fig.pos='H', fig.height=2.75591, fig.width=7.33070}
 VanGalen_celltype_enrichment_scores <- as.matrix(RF_cluster_metadata[,79:86])
 
 colnames(VanGalen_celltype_enrichment_scores) <- c('HSC-like',
@@ -543,9 +660,13 @@ invisible(dev.off())
 
 # 6) Vizome BeatAML drug responses heatmap - K5 : Panel D
 
-```{r}
+This script is used to generate a heatmap of drug response data from the BeatAML dataset. The heatmap is clustered hierarchically based on the drug response data, and the rows are annotated with information about the RF cluster of each sample. The heatmap is then saved as a PNG image.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 7D', fig.pos='H', fig.height=8.66142, fig.width=11.811}
+# Load drug response data
 BeatAML_drug_response <- as.matrix(RF_cluster_metadata[,91:177])
 
+# Set column names
 colnames(BeatAML_drug_response) <- c(
                                 "A-674563",
                                 "ABT-737",
@@ -635,46 +756,51 @@ colnames(BeatAML_drug_response) <- c(
                                 "VX-745",
                                 "Tanespimycin (17-AAG)")
 
+# Create a data frame for identity information
 Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
 
+# Assign RF cluster information to the identity data frame
 Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster_short, 
-                                         levels=c('C1B',
-                                                  'C1C',
-                                                  'C1A',
-                                                  'C2A',
-                                                  'C2B'))
+                              levels=c('C1B', 'C1C', 'C1A', 'C2A', 'C2B'))
 
+# Define colors for annotation
 colors_annotation <-  list(RF_Cluster = c('C1A' = '#87551B',
-                                        'C1C' = '#E0B090', 
-                                        'C1B' = '#C67942', 
-                                        'C2A' = '#7CB7B0', 
-                                        'C2B' = '#539690'))
+                                          'C1C' = '#E0B090', 
+                                          'C1B' = '#C67942', 
+                                          'C2A' = '#7CB7B0', 
+                                          'C2B' = '#539690'))
 
+# Create row annotation
 row_anno <- rowAnnotation(df=Identity, col = colors_annotation, 
-                        gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(5, "mm"),
-                        show_annotation_name = F, show_legend = FALSE,
-                        annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
+                          gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(5, "mm"),
+                          show_annotation_name = F, show_legend = FALSE,
+                          annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
 
+# Define color gradient for heatmap
 breaks_val <- seq(from = 0, to = 1, length.out = 14)
 col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
 
+# Set seed for reproducibility
+set.seed(1337)
+
+# Perform hierarchical clustering
 dendro <- stats::hclust(dist(t(BeatAML_drug_response)), method = 'ward.D') %>% as.dendrogram %>% ladderize
 
-plot(dendro, axes=F)
-par(lwd=3)
-
+# Cut dendrogram into clusters
 Hierchical_clusters_drugs <- sort(cutree(dendro, k = 3))
 
+# Create a data frame for drug clusters
 drug_df <- data.frame(row.names = names(Hierchical_clusters_drugs))
 
+# Assign cluster information to the drug data frame
 for (drug in rownames(drug_df)) {
-
-drug_df[drug,'Hierarchical_cluster'] <- Hierchical_clusters_drugs[[drug]]
-
+  drug_df[drug,'Hierarchical_cluster'] <- Hierchical_clusters_drugs[[drug]]
 }
 
+# Convert cluster information to factor
 drug_df$Hierarchical_cluster <- factor(drug_df$Hierarchical_cluster, levels = c('1','2','3'))
 
+# Create heatmap
 HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response[,rownames(drug_df)],
         name = 'ssGSEA Score',
         row_split = RF_cluster_metadata$RF_Cluster_short,
@@ -698,87 +824,80 @@ HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response[,rownames(drug_df)],
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom",
      annotation_legend_side = "bottom")
 
-
+# Draw heatmap and save as PNG
 png(filename = paste(figures_folder, '/Fig_07/Panel_D.png', sep = ''), units = "cm", width = 30, height = 22, res = 300)
-
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom",
      annotation_legend_side = "bottom")
-
 invisible(dev.off())
 ```
 
 # 7) Vizome BeatAML drug responses grouped by family heatmap - K5 : Panel E
 
-```{r}
-Drug_families <- read.csv(paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Metadata/Drug_families.txt', sep = ''),
-                          sep = '\t')
+This script generates a heatmap of drug family sensitivity scores from the BeatAML dataset. The heatmap is hierarchically clustered based on the sensitivity scores, and the rows are annotated with RF cluster information. The heatmap is then saved as a PNG image.
 
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 7E', fig.pos='H', fig.height=9.44882, fig.width=9.44882}
+# Load drug families data
+Drug_families <- read.csv(paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Metadata/Drug_families.txt', sep = ''), sep = '\t')
+
+# Filter drug families that are in the drug response data
 Drug_families <- Drug_families %>% filter(inhibitor %in% colnames(BeatAML_drug_response))
 
+# Get unique drug families
 Unique_families <- levels(factor(Drug_families$family))[grep(TRUE,table(Drug_families$family) > 1)]
 
+# Create a data frame for unique families
 Unique_families_df <- data.frame(row.names = Unique_families)
 
-Drug_families_short_names <- read.csv(paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Metadata/Drug_families_short_names.txt',
-                                            sep = ''),
-                          sep = '\t')
+# Load short names for drug families
+Drug_families_short_names <- read.csv(paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Metadata/Drug_families_short_names.txt', sep = ''), sep = '\t')
 
+# Assign short names to unique families
 for (unique_family in Unique_families) {
-Unique_families_df[unique_family,'Short_name'] <- (Drug_families_short_names %>% filter(family == unique_family))$synonym
+  Unique_families_df[unique_family,'Short_name'] <- (Drug_families_short_names %>% filter(family == unique_family))$synonym
 }
 
+# Create a data frame for family sensitivity score
 family_sensitivity_score <- data.frame(row.names = rownames(BeatAML_drug_response))
 
+# Calculate median sensitivity score for each family
 for (unique_family in Unique_families) {
-  
-family_sensitivity_score[,Unique_families_df[unique_family,'Short_name']] <- matrixStats::rowMedians(BeatAML_drug_response[,(Drug_families %>% filter(family == unique_family))$inhibitor])
-
+  family_sensitivity_score[,Unique_families_df[unique_family,'Short_name']] <- matrixStats::rowMedians(BeatAML_drug_response[,(Drug_families %>% filter(family == unique_family))$inhibitor])
 }
 
-
+# Create a data frame for identity information
 Identity <- data.frame(row.names = rownames(RF_cluster_metadata))
 
-Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster_short, 
-                                         levels=c('C1A',
-                                                  'C1C',
-                                                  'C1B',
-                                                  'C2A',
-                                                  'C2B'))
+# Assign RF cluster information to the identity data frame
+Identity$RF_Cluster <- factor(RF_cluster_metadata$RF_Cluster_short, levels=c('C1A', 'C1C', 'C1B', 'C2A', 'C2B'))
 
-colors_annotation <-  list(RF_Cluster = c('C1A' = '#87551B',
-                                        'C1C' = '#E0B090', 
-                                        'C1B' = '#C67942', 
-                                        'C2A' = '#7CB7B0', 
-                                        'C2B' = '#539690'))
+# Define colors for annotation
+colors_annotation <-  list(RF_Cluster = c('C1A' = '#87551B', 'C1C' = '#E0B090', 'C1B' = '#C67942', 'C2A' = '#7CB7B0', 'C2B' = '#539690'))
 
-row_anno <- rowAnnotation(df=Identity, col = colors_annotation, 
-                        gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(5, "mm"),
-                        show_annotation_name = F, show_legend = FALSE,
-                        annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
+# Create row annotation
+row_anno <- rowAnnotation(df=Identity, col = colors_annotation, gp = gpar(lwd =0.25, col = 'black'), simple_anno_size = unit(5, "mm"), show_annotation_name = F, show_legend = FALSE, annotation_legend_param = list(RF_Cluster = list(direction = "vertical")))
 
+# Define color gradient for heatmap
 breaks_val <- seq(from = 0, to = 1, length.out = 14)
 col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
 
+# Perform hierarchical clustering
+dendro <- stats::hclust(dist(t(family_sensitivity_score)), method = 'ward.D2') %>% as.dendrogram %>% ladderize
 
-dendro <- stats::hclust(dist(t(family_sensitivity_score)), method = 'ward.D') %>% as.dendrogram %>% ladderize
-
-plot(dendro, axes=F)
-par(lwd=3)
-
+# Cut dendrogram into clusters
 Hierchical_clusters_drugs <- sort(cutree(dendro, k = 3))
 
+# Create a data frame for drug families
 drug_family_df <- data.frame(row.names = names(Hierchical_clusters_drugs))
 
+# Assign cluster information to the drug family data frame
 for (drug_family in rownames(drug_family_df)) {
-  
-drug_family_df[drug_family,'Hierarchical_cluster'] <- Hierchical_clusters_drugs[[drug_family]]
-               
+  drug_family_df[drug_family,'Hierarchical_cluster'] <- Hierchical_clusters_drugs[[drug_family]]
 }
 
+# Convert cluster information to factor
 drug_family_df$Hierarchical_cluster <- factor(drug_family_df$Hierarchical_cluster, levels = c('3','1','2'))
 
-
-
+# Create heatmap
 HMap_BeatAMLdrugs <- Heatmap(family_sensitivity_score[,rownames(drug_family_df)], 
         name = 'ssGSEA Score',
         row_split = RF_cluster_metadata$RF_Cluster_short, 
@@ -799,15 +918,11 @@ HMap_BeatAMLdrugs <- Heatmap(family_sensitivity_score[,rownames(drug_family_df)]
                                     legend_width = unit(5, "cm")),
         row_names_side = 'right')
 
-draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
-     annotation_legend_side = "bottom")
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 
-
+# Draw heatmap and save as PNG
 png(filename = paste(figures_folder, '/Fig_07/Panel_E.png', sep = ''), units = "cm", width = 24, height = 24, res = 300)
-
-draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
-     annotation_legend_side = "bottom")
-
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 invisible(dev.off())
 ```
 
@@ -822,9 +937,13 @@ RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Cluste
 
 ## - Data partition
 
+This script is preparing a dataset for ML. It first selects a subset of columns from the RF_cluster_metadata dataframe. Then, it converts several columns to factors, which is a data type used in R for categorical variables. After that, it sets a seed for reproducibility and splits the dataset into a training set and a test set using a 70-30 split.
+
 ```{r}
+# Select a subset of columns from the metadata
 Metadata_subset <- RF_cluster_metadata[,c(1:57, 178)]
 
+# Convert several columns to factors
 Metadata_subset$ICC.classification <- factor(as.numeric(factor(Metadata_subset$ICC.classification)))
 Metadata_subset$Gender <- factor(Metadata_subset$Gender)
 Metadata_subset$Subtype.at.CMML <- factor(Metadata_subset$Subtype.at.CMML)
@@ -832,55 +951,88 @@ Metadata_subset$Cutaneous.BPDCN <- factor(Metadata_subset$Cutaneous.BPDCN)
 Metadata_subset$RF_Cluster <- factor(Metadata_subset$RF_Cluster)
 Metadata_subset$Cytogenetics..at.transformation. <- factor(as.numeric(factor(Metadata_subset$Cytogenetics..at.transformation.)))
 
+# Set a seed for reproducibility
 set.seed(123)
 
+# Create a partition for the data
 parts = createDataPartition(Metadata_subset$RF_Cluster, p = .7, list = F)
+
+# Split the data into a training set and a test set
 train_dataset = Metadata_subset[parts, ]
 test_dataset = Metadata_subset[-parts, ]
 ```
 
 ## - Feature selection
 
-```{r}
+This code is using the Boruta algorithm to select the most important features for predicting the RF_Cluster variable. Then, it trains a Random Forest model on these selected features and makes predictions on the test dataset. The predictions are then converted to factor levels based on a threshold of 0.60.
+
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=4, fig.width=7}
+# Set a seed for reproducibility
 set.seed(123)
 
+# Perform feature selection using the Boruta algorithm
 boruta_adt <- Boruta(RF_Cluster ~ ., 
                      data = train_dataset, 
-                     doTrace = 2, 
+                     doTrace = 1, 
                      maxRuns = 3000, 
                      pValue = 0.01, 
                      mcAdj=TRUE)
-                     
+
+# Print the Boruta results
 print(boruta_adt)
+
+# Apply a rough fix to the Boruta results
 boruta_adt <- TentativeRoughFix(boruta_adt)
+
+# Print the fixed Boruta results
 print(boruta_adt)
+
+# Plot the Boruta results
 plot(boruta_adt, las = 2, cex.axis = 0.7) # cex.axis is used to reduce the font size
 
+# Get the names of the confirmed markers
 confirmed_markers <- names(boruta_adt$finalDecision)[grep(TRUE,boruta_adt$finalDecision == 'Confirmed')]
 
+# Calculate the column means of the importance history for the confirmed markers
 colMeans(boruta_adt$ImpHistory[,confirmed_markers])
 
+# Filter the training and test datasets based on the confirmed markers
 train_dataset_filtered <- train_dataset[,c(confirmed_markers,'RF_Cluster')]
 test_dataset_filtered <- test_dataset[,c(confirmed_markers,'RF_Cluster')]
 
+# Set a seed for reproducibility
 set.seed(123)
 
-# RF modelling
+# Define the control parameters for the RF model
+fitControl <- trainControl(method = "repeatedcv",
+                           number = 12,
+                           repeats = 10,
+                           classProbs = TRUE,
+                           summaryFunction = twoClassSummary)
 
+# Set a seed for reproducibility
+set.seed(123)
+
+# Train the RF model
 model_filtered = train(RF_Cluster ~ ., data = train_dataset_filtered,
               method = "rf", 
               metric = "ROC",
               trControl = fitControl, 
               tuneLength=10)
+
+# Print the RF model
 model_filtered
 
-# Confirming boruta's features relevance via RF importances
-
+# Get the variable importance from the RF model
 varImp(model_filtered)
 
+# Set a seed for reproducibility
 set.seed(123)
 
+# Predict the test dataset using the RF model
 fitted_filtered <- predict(model_filtered, test_dataset, type = "prob")
+
+# Convert the predicted probabilities to factor levels
 fitted_filtered_factor <- factor(ifelse(fitted_filtered$C2 >= 0.60, "C2", "C1"))
 ```
 
@@ -897,9 +1049,13 @@ Immunophenotype_percentage <- Immunophenotype_percentage[rownames(RF_cluster_met
 
 ## - Decision tree
 
-```{r}
+This code is using the rpart package to train a decision tree model on the training dataset and make predictions on the test dataset. The model's performance is evaluated using a confusion matrix, and the decision tree is plotted and saved to a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 7F', fig.pos='H', fig.height=4.72441, fig.width=7.08661}
+# Select a subset of columns from the metadata
 Metadata_subset <- RF_cluster_metadata[,c(1:46,178)]
 
+# Convert several columns to factors
 Metadata_subset$ICC.classification <- factor(as.numeric(factor(Metadata_subset$ICC.classification)))
 Metadata_subset$Gender <- factor(Metadata_subset$Gender)
 Metadata_subset$Subtype.at.CMML <- factor(Metadata_subset$Subtype.at.CMML)
@@ -907,34 +1063,49 @@ Metadata_subset$Cutaneous.BPDCN <- factor(Metadata_subset$Cutaneous.BPDCN)
 Metadata_subset$RF_Cluster <- factor(Metadata_subset$RF_Cluster)
 Metadata_subset$Cytogenetics..at.transformation. <- factor(as.numeric(factor(Metadata_subset$Cytogenetics..at.transformation.)))
 
+# Add the rounded Immunophenotype_percentage to the metadata
 Metadata_subset <- cbind(Metadata_subset, round(Immunophenotype_percentage))
 
+# Set a seed for reproducibility
 set.seed(123)
 
+# Create a partition for the data
 parts = createDataPartition(Metadata_subset$RF_Cluster, p = .7, list = F)
+
+# Split the data into a training set and a test set
 train_dataset = Metadata_subset[parts, ]
 test_dataset = Metadata_subset[-parts, ]
 
+# Set a seed for reproducibility
 set.seed(123)
 
+# Filter the training and test datasets based on selected features
 train_dataset_filtered <- train_dataset[,c('CD34','CD56','CD117','BM.Flow.percentage','RF_Cluster')]
 test_dataset_filtered <- test_dataset[,c('CD34','CD56','CD117','BM.Flow.percentage','RF_Cluster')]
 
+# Rename the columns of the filtered datasets
 colnames(train_dataset_filtered) <- c('Percent.CD34.pos', 'Percent.CD56.pos', 'Percent.CD117.pos', 'Percent.Blast.BM.Flow','RF_Cluster')
 colnames(test_dataset_filtered) <- c('Percent.CD34.pos', 'Percent.CD56.pos', 'Percent.CD117.pos', 'Percent.Blast.BM.Flow','RF_Cluster')
 
+# Set a seed for reproducibility
 set.seed(123)
 
+# Train the decision tree model
 treeModel <- rpart::rpart(RF_Cluster ~ ., data = train_dataset_filtered, 
                           control = rpart::rpart.control(minsplit = 3, minbucket = 1, maxdepth = 4,xval = 10,
                                                 cp = 0))
+
+# Print the complexity parameter table of the decision tree model
 rpart::printcp(treeModel)
 
+# Prune the decision tree model
 fit9 <- rpart::prune(treeModel, cp = 0.02)
 
+# Predict the test dataset using the decision tree model
 fitted <- as.data.frame(predict(treeModel, test_dataset_filtered, type = "prob"))
 fitted$Identity <- NA
 
+# Convert the predicted probabilities to factor levels
 for (patient in rownames(fitted)) {
   if ((fitted[patient,'C1'] > fitted[patient,'C2']) == TRUE) {
   fitted[patient,'Identity'] <- 'C1'
@@ -943,37 +1114,51 @@ for (patient in rownames(fitted)) {
   }
 }
 
+# Convert the Identity column to a factor
 fitted$Identity <- factor(fitted$Identity, levels = c('C1','C2'))
 
+# Print the confusion matrix
 confusionMatrix(data = fitted$Identity, 
                 reference = test_dataset$RF_Cluster,
                 mode = "everything")
 
-# Plotting decision tree from resulting model
-
+# Plot the decision tree
 rpart.plot::rpart.plot(treeModel, extra = 2)
 
+# Save the plot to a PNG file
 png(filename = paste(figures_folder, '/Fig_07/Panel_F.png', sep = ''), units = "cm", width = 18, height = 12, res = 300)
-
 rpart.plot::rpart.plot(treeModel, extra = 2)
-
 invisible(dev.off())
 ```
 
 ## - Evaluating model performance
 
-```{r}
+This code is using the ROCR and pROC packages to generate ROC curves, which are plots of the true positive rate (TPR) against the false positive rate (FPR) for the different possible thresholds of a binary classifier. The area under the ROC curve (AUC) is a measure of the model's performance, with an AUC of 1.0 indicating perfect performance and an AUC of 0.5 indicating random guessing.
+
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=4, fig.width=4}
+# Get the true labels from the test dataset
 labels <- test_dataset$RF_Cluster
 
+# Get the predicted probabilities for class C1
 predictions <- fitted$C1
+
+# Create a prediction object using the ROCR package
 ROCR_pred <- prediction(predictions, labels, label.ordering = c('C2','C1'))
+
+# Print the prediction object
 ROCR_pred
+
+# Create a performance object using the ROCR package
 ROCR_perf <- performance(ROCR_pred, 'tpr', 'fpr')
+
+# Plot the ROC curve using the ROCR package
 plot(ROCR_perf, avg = "threshold", colorize = TRUE)
 abline(0, 1, lty = 2)
 
+# Create a ROC curve using the pROC package
 pROC_pred <- roc(response = labels, predictor = predictions)
-plot.roc(pROC_pred, main="pROC")
 
+# Plot the ROC curve using the pROC package
+plot.roc(pROC_pred, main="pROC")
 ```
 

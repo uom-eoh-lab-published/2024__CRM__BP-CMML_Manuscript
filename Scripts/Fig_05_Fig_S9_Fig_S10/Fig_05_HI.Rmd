@@ -6,11 +6,13 @@ output:
     fig_caption: true
 ---
 
+```{=html}
 <style type="text/css">
   body{
   font-size: 10pt;
 }
 </style>
+```
 
 # 1) Setup
 
@@ -60,16 +62,17 @@ In this section, we ensure that all necessary packages are installed.
 ```{r}
 # Ensure BiocManager is available for installation of Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-#BiocManager::install(version = "3.18")
+BiocManager::install(version = "3.18", ask = FALSE)
 
 # Define a list of required packages used in this script
-packages_required <- c("ggplot2", "dplyr", "fgsea")
+packages_required <- c("ggplot2", "dplyr", "fgsea",
+                       "unikn", "RColorBrewer", "yarrr", "scales", "ggsci")
 
 # Identify any required packages that are not installed
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
 
 # Install any uninstalled packages
-if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = FALSE)
 ```
 
 ## - Loading packages
@@ -131,106 +134,173 @@ sessionInfo()
 
 ## - Gene ranking
 
-```{r}
-C1_vs_C2_DEGS <- read.csv(paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_C2/DGE_C1_vs_C2_ALL_DEGs_LFC_Ashr.csv', sep = ''), row.names = 'X')
+Here we read in a CSV file containing differentially expressed genes (DEGs) between the blast phase and control. We then calculate a rank for each gene based on its log2 fold change and p-value. The DEGs are arranged by their rank. Finally, we prepare a named numeric vector of ranks, removing any NA values.
 
+```{r}
+# Read DEGs
+C1_vs_C2_DEGS <- read.csv(
+  file = paste(data_folder, '/RNASeq/InHouse/DESeq2/DEGs_Comparisons/C1_vs_C2/DGE_C1_vs_C2_ALL_DEGs_LFC_Ashr.csv', sep = ''), 
+  row.names = 'X'
+)
+
+# Calculate rank
 C1_vs_C2_DEGS$Rank <- sign(C1_vs_C2_DEGS$log2FoldChange)*(-1*log10(C1_vs_C2_DEGS$pvalue))
 
+# Arrange by rank
 C1_vs_C2_DEGS <- C1_vs_C2_DEGS %>% arrange(-Rank)
 
+# Prepare ranks
 Ranks <- C1_vs_C2_DEGS$Rank
 names(Ranks) <- C1_vs_C2_DEGS$GeneSymbol
-Ranks <- Ranks[grep(FALSE,is.na(Ranks))]
+Ranks <- Ranks[!is.na(Ranks)]
 ```
 
 ## - Hallmark analysis
 
+Here we read in a GMT file containing Hallmark pathways. We then perform a fast gene set enrichment analysis (fgsea) using the Hallmark pathways and the ranks of the DEGs. The results are arranged by the adjusted p-value.
+
+We then write the full results to a CSV file. We also write two additional CSV files: one containing the pathways that are upregulated in the Immature cluster (C1) and one containing the pathways that are upregulated in the Mature cluster (C2).
+
 ```{r}
+# Read Hallmark pathways
 Hallmark_pathways_gmt_file <- paste(data_folder, '/Resources/RNASeq/Gene_Pathways/2022__GSEA_MSIGDB__h.all.v2022.1.Hs.symbols.gmt.txt', sep = '')
 Hallmark_pathways <- gmtPathways(Hallmark_pathways_gmt_file)
 str(head(Hallmark_pathways))
 
-fgseaRes_Hallmark <- fgsea(pathways = Hallmark_pathways, 
-                           stats = Ranks, 
-                           minSize=10, 
-                           maxSize = 500, 
-                           nPermSimple = 10000)
+# Perform fgsea
+fgseaRes_Hallmark <- fgsea(
+  pathways = Hallmark_pathways, 
+  stats = Ranks, 
+  minSize=10, 
+  maxSize = 500, 
+  nPermSimple = 10000
+)
 
+# Arrange by padj
 fgseaRes_Hallmark <- fgseaRes_Hallmark %>% arrange(padj)
 fgseaRes_Hallmark$leadingEdge <- NULL
 
-write.csv(x = fgseaRes_Hallmark, file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_H_C1_vs_C2_all.csv', 
-                                    sep = ''))
 
-write.csv(x = fgseaRes_Hallmark %>% filter(NES > 0), file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_H_C1_vs_C2__Up_in_BP-CMML.csv', 
-                                    sep = ''))
+# Write results to csv
+write.csv(
+  x = fgseaRes_Hallmark,
+  file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_H_C1_vs_C2_all.csv', sep = '')
+)
 
-write.csv(x = fgseaRes_Hallmark %>% filter(NES < 0), file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_H_C1_vs_C2__Up_in_Control.csv', 
-                                    sep = ''))
+# Write upregulated in BP-CMML to csv
+write.csv(
+  x = fgseaRes_Hallmark %>% filter(NES > 0),
+  file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_H_C1_vs_C2__Up_in_BP-CMML.csv', sep = '')
+)
+
+# Write upregulated in Control to csv
+write.csv(
+  x = fgseaRes_Hallmark %>% filter(NES < 0),
+  file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_H_C1_vs_C2__Up_in_Control.csv', sep = '')
+)
 ```
 
 ## - Canonical pathway analysis
 
+Here we read in a GMT file containing Canonical pathways. We then perform a fast gene set enrichment analysis (fgsea) using the Canonical pathways and the ranks of the DEGs. The results are arranged by the adjusted p-value.
+
+We then write the full results to a CSV file. We also write two additional CSV files: one containing the pathways that are upregulated in the Immature cluster (C1) and one containing the pathways that are upregulated in the Mature cluster (C2).
+
 ```{r}
+# Read Canonical pathways
 CanonicalPathways_gmt_file <- paste(data_folder, '/Resources/RNASeq/Gene_Pathways/2022__GSEA_MSIGDB__c2.cp.v2022.1.Hs.symbols.gmt.txt', sep = '')
 CanonicalPathways <- gmtPathways(CanonicalPathways_gmt_file)
 str(head(CanonicalPathways))
 
-fgseaRes_CP <- fgsea(pathways = CanonicalPathways, 
-                     stats = Ranks, 
-                     minSize=10, 
-                     maxSize = 500, 
-                     nPermSimple = 10000)
 
+# Perform fgsea
+fgseaRes_CP <- fgsea(
+  pathways = CanonicalPathways, 
+  stats = Ranks, 
+  minSize=10, 
+  maxSize = 500, 
+  nPermSimple = 10000
+)
+
+# Arrange by padj
 fgseaRes_CP <- fgseaRes_CP %>% arrange(padj)
 fgseaRes_CP$leadingEdge <- NULL
 
-write.csv(x = fgseaRes_CP, file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_CP_C1_vs_C2_all.csv', 
-                                    sep = ''))
+# Write results to csv
+write.csv(
+  x = fgseaRes_CP,
+  file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_CP_C1_vs_C2_all.csv', sep = '')
+)
 
-write.csv(x = fgseaRes_CP %>% filter(NES > 0), file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_CP_C1_vs_C2__Up_in_BP-CMML.csv', 
-                                    sep = ''))
+# Write upregulated in BP-CMML to csv
+write.csv(
+  x = fgseaRes_CP %>% filter(NES > 0), 
+  file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_CP_C1_vs_C2__Up_in_BP-CMML.csv', sep = '')
+)
 
-write.csv(x = fgseaRes_CP %>% filter(NES < 0), file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_CP_C1_vs_C2__Up_in_Control.csv', 
-                                    sep = ''))
+# Write upregulated in Control to csv
+write.csv(
+  x = fgseaRes_CP %>% filter(NES < 0), 
+  file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_CP_C1_vs_C2__Up_in_Control.csv', sep = '')
+)
 ```
 
 ## - GO BP pathway analysis
 
+Here we read in a GMT file containing Gene Ontology Biological Process (GO_BP) pathways. We then perform a fast gene set enrichment analysis (fgsea) using the GO_BP pathways and the ranks of the DEGs. The results are arranged by the adjusted p-value.
+
+We then write the full results to a CSV file. We also write two additional CSV files: one containing the pathways that are upregulated in the Immature cluster (C1) and one containing the pathways that are upregulated in the Mature cluster (C2).
+
 ```{r}
-GO_BP_gmt_file <- paste(data_folder, 
-                        '/Resources/RNASeq/Gene_Pathways/2022__GSEA_MSIGDB__c5.go.bp.v2022.1.Hs.symbols.gmt.txt', sep = '')
+# Read GO_BP pathways
+GO_BP_gmt_file <- paste(data_folder, '/Resources/RNASeq/Gene_Pathways/2022__GSEA_MSIGDB__c5.go.bp.v2022.1.Hs.symbols.gmt.txt', sep = '')
 GOBP_pathways <- gmtPathways(GO_BP_gmt_file)
 str(head(GOBP_pathways))
 
-fgseaRes_GO_BP <- fgsea(pathways = GOBP_pathways, 
-                        stats = Ranks, 
-                        minSize=10, 
-                        maxSize = 500, 
-                        nPermSimple = 10000)
+# Perform fgsea
+fgseaRes_GO_BP <- fgsea(
+  pathways = GOBP_pathways, 
+  stats = Ranks, 
+  minSize=10, 
+  maxSize = 500, 
+  nPermSimple = 10000
+)
 
+# Arrange by padj
 fgseaRes_GO_BP <- fgseaRes_GO_BP %>% arrange(padj)
 fgseaRes_GO_BP$leadingEdge <- NULL
 
-write.csv(x = fgseaRes_GO_BP, file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_GO_BP_C1_vs_C2_all.csv', 
-                                    sep = ''))
+# Write results to csv
+write.csv(
+  x = fgseaRes_GO_BP, 
+  file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_GO_BP_C1_vs_C2_all.csv', sep = '')
+)
 
-write.csv(x = fgseaRes_GO_BP %>% filter(NES > 0), file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_GO_BP_C1_vs_C2__Up_in_BP-CMML.csv', 
-                                    sep = ''))
+# Write upregulated in BP-CMML to csv
+write.csv(
+  x = fgseaRes_GO_BP %>% filter(NES > 0), 
+  file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_GO_BP_C1_vs_C2__Up_in_BP-CMML.csv', sep = '')
+)
 
-write.csv(x = fgseaRes_GO_BP %>% filter(NES < 0), file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_GO_BP_C1_vs_C2__Up_in_Control.csv', 
-                                    sep = ''))
+# Write upregulated in Control to csv
+write.csv(
+  x = fgseaRes_GO_BP %>% filter(NES < 0), 
+  file = paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/C1_vs_C2/fGSEA_GO_BP_C1_vs_C2__Up_in_Control.csv', sep = '')
+)
 ```
 
 ## - Pathway plotting
 
-```{r echo=FALSE, fig.align='center', fig.cap='Figure 5H. BP-CMML blasts are transcriptionally heterogenous and characterized by increased quiescence and senescence signatures.', fig.height=4.0708661, fig.pos='H', fig.width=4.527559}
+Here we combine gene set enrichment analysis results from different pathway sets, filter for specific pathways of interest, and create a bar plot of the Normalized Enrichment Score (NES) for each pathway, colored by cluster. The plot is then saved as a PNG file.
 
-Cumulative_fGSEAres <- rbind(fgseaRes_CP, fgseaRes_Hallmark, fgseaRes_GO_BP)
-Cumulative_fGSEAres <- Cumulative_fGSEAres %>% arrange(padj)
-Cumulative_fGSEAres_posNES <- Cumulative_fGSEAres %>% filter(NES > 0)
-Cumulative_fGSEAres_posNES <- Cumulative_fGSEAres_posNES %>% 
-  filter(pathway %in% c('KEGG_RIBOSOME',
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5H', fig.pos='H', fig.height=4.0708661, fig.width=4.527559}
+# Combine fgsea results into one data frame and sort by padj
+Cumulative_fGSEAres <- rbind(fgseaRes_CP, fgseaRes_Hallmark, fgseaRes_GO_BP) %>% arrange(padj)
+
+# Filter for positive NES and specific pathways
+Cumulative_fGSEAres_posNES <- Cumulative_fGSEAres %>% 
+  filter(NES > 0,
+         pathway %in% c('KEGG_RIBOSOME',
                         'WP_CYTOPLASMIC_RIBOSOMAL_PROTEINS',
                         'GOBP_RIBOSOME_BIOGENESIS',
                         'GOBP_NEGATIVE_REGULATION_OF_HEMATOPOIETIC_PROGENITOR_CELL_DIFFERENTIATION',
@@ -239,9 +309,10 @@ Cumulative_fGSEAres_posNES <- Cumulative_fGSEAres_posNES %>%
                         'REACTOME_REGULATION_OF_RUNX1_EXPRESSION_AND_ACTIVITY',
                         'REACTOME_RUNX1_REGULATES_GENES_INVOLVED_IN_MEGAKARYOCYTE_DIFFERENTIATION_AND_PLATELET_FUNCTION'))
 
-Cumulative_fGSEAres_negNES <- Cumulative_fGSEAres %>% filter(NES < 0)
-Cumulative_fGSEAres_negNES <- Cumulative_fGSEAres_negNES %>% 
-  filter(pathway %in% c('HALLMARK_IL6_JAK_STAT3_SIGNALING',
+# Filter for negative NES and specific pathways
+Cumulative_fGSEAres_negNES <- Cumulative_fGSEAres %>% 
+  filter(NES < 0,
+         pathway %in% c('HALLMARK_IL6_JAK_STAT3_SIGNALING',
                         'GOBP_MONONUCLEAR_CELL_DIFFERENTIATION',
                         'HALLMARK_UNFOLDED_PROTEIN_RESPONSE',
                         'HALLMARK_MTORC1_SIGNALING',
@@ -250,10 +321,14 @@ Cumulative_fGSEAres_negNES <- Cumulative_fGSEAres_negNES %>%
                         'GOBP_REACTIVE_OXYGEN_SPECIES_METABOLIC_PROCESS',
                         'HALLMARK_FATTY_ACID_METABOLISM'))
 
+# Combine positive and negative NES results
 Cumulative_fGSEAres_top10 <- rbind(Cumulative_fGSEAres_posNES, Cumulative_fGSEAres_negNES)
+
+# Assign cluster labels
 Cumulative_fGSEAres_top10[1:8,'Cluster'] <- 'C1: Immature'
 Cumulative_fGSEAres_top10[9:16,'Cluster'] <- 'C2: Mature'
 
+# Rename pathways for readability
 Cumulative_fGSEAres_top10$pathway <-  c('Ribosome',
                                        'Cytoplamic ribosomal proteins',
                                        'Ribosome biogenesis',
@@ -271,6 +346,7 @@ Cumulative_fGSEAres_top10$pathway <-  c('Ribosome',
                                        'ROS metabolism',
                                        'Fatty acids metabolism')
 
+# Create plot
 plot <- ggplot(Cumulative_fGSEAres_top10, aes(reorder(pathway, NES), NES)) +
   geom_col(aes(fill=Cluster)) +
   coord_flip() +
@@ -284,112 +360,139 @@ plot <- ggplot(Cumulative_fGSEAres_top10, aes(reorder(pathway, NES), NES)) +
         axis.title.y = element_text(size =12, family = 'sans'),
         axis.title.x = element_text(size =12, family = 'sans'))
 
+# Print plot
 print(plot)
 
+# Save plot as PNG
 png(filename = paste(figures_folder, '/Fig_05/Panel_H.png', sep = ''),
     res = 300, units = 'cm', height = 10.34, width  = 11.5)
-
 print(plot)
-
 invisible(dev.off())
 ```
 
 ## - Enrichment plots selected signatures
 
-```{r echo=FALSE, fig.align='center', fig.cap='Figure 5I. BP-CMML blasts are transcriptionally heterogenous and characterized by increased quiescence and senescence signatures.', fig.height=2.2333, fig.pos='H', fig.width=3.62}
+Here we read in a GMT file containing pathways related to quiescent vs dividing hematopoietic stem cells (HSCs). We then perform a fast gene set enrichment analysis (fgsea) using these pathways and the ranks of the DEGs.
 
+We then plot the enrichment of the pathway with the smallest p-value and save the plot as a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5I', fig.pos='H', fig.height=2.625984, fig.width=3.46457}
+# Define file path for Quiescence_HSC gmt file
 Quiescence_HSC_gmt_file <- paste(data_folder, 
                         '/Resources/RNASeq/Gene_Pathways/2007__Graham_et_al__NormalQuiescent_vs_NormalDividing.gmt', 
                         sep = '')
 
+# Read the gmt file into a list of pathways
 Quiescence_HSC_pathways <- gmtPathways(Quiescence_HSC_gmt_file)
+
+# Display the structure of the first few pathways
 str(head(Quiescence_HSC_pathways))
 
+# Perform fgsea on the pathways
 fgseaRes_Quiescence_HSC_pathways <- fgsea(pathways = Quiescence_HSC_pathways, 
                            stats = Ranks, 
                            minSize=10, 
                            maxSize = 500, 
                            nPermSimple = 10000)
 
+# Display the fgsea results
 fgseaRes_Quiescence_HSC_pathways
 
+# Plot the enrichment of the pathway with the smallest p-value
 plot <- plotEnrichment(Quiescence_HSC_pathways[[head(fgseaRes_Quiescence_HSC_pathways[order(pval), ], 1)$pathway]],
                Ranks) + labs(title=head(fgseaRes_Quiescence_HSC_pathways[order(pval), ], 1)$pathway) + 
   ggtitle('UP in quiescence vs dividing HSC\nGraham et al. 2007') + 
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 13, family='sans')) +
   ylab('Enrichment score') + xlab('Rank')
 
+# Print the plot
 print(plot)
 
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_05/Panel_I-1.png', sep = ''),
-    res = 300, units = 'px', height = 670, width  = 1086)
-
+    res = 300, units = 'cm', height = 6.67, width  = 8.8)
 print(plot)
-
 invisible(dev.off())
+```
 
-###
+Here we read in a CSV file containing cell cycle-related gene signatures, perform a fast gene set enrichment analysis (fgsea) on these signatures. We also plot the enrichment of the G2M Phase signature in the results, saving the plot as PNG file.
 
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5I', fig.pos='H', fig.height=2.625984, fig.width=3.46457}
+# Define file path for Roy2021 signatures csv file
 Roy2021_signatures <- read.csv(paste(data_folder, 
                         '/Resources/RNASeq/Gene_Pathways/2021__Roy_et_al__cellcycle.csv', 
                         sep = ''))
 
+# Convert the dataframe to a list and remove duplicate entries
 Roy2021_signatures <- as.list(Roy2021_signatures)
 Roy2021_signatures$G2M <- unique(Roy2021_signatures$G2M)[1:length(unique(Roy2021_signatures$G2M))-1]
 Roy2021_signatures$S_Phase <- unique(Roy2021_signatures$S_Phase)[1:length(unique(Roy2021_signatures$S_Phase))-1]
 
+# Perform fgsea on the signatures
 Roy2021_signatures_results <- fgsea(pathways = Roy2021_signatures, 
                            stats = Ranks, 
                            minSize=10, 
                            maxSize = 500, 
                            nPermSimple = 10000)
 
+# Display the fgsea results
 Roy2021_signatures_results
 
+# Plot the enrichment of the signature with the smallest p-value
 plot <- plotEnrichment(Roy2021_signatures[[head(Roy2021_signatures_results[order(pval), ], 1)$pathway]],
                Ranks) + labs(title=head(Roy2021_signatures_results[order(pval), ], 1)$pathway) + 
   ggtitle('G2M phase\nTirosh et al. 2016') + 
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 13, family='sans')) +
   ylab('Enrichment score') + xlab('Rank')
 
+# Print the plot
 print(plot)
 
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_05/Panel_I-2.png', sep = ''),
-    res = 300, units = 'px', height = 670, width  = 1086)
-
+    res = 300, units = 'cm', height = 6.67, width  = 8.8)
 print(plot)
-
 invisible(dev.off())
+```
 
-#
+Here we create a plot of the enrichment of the S Phase signature in the cell cycle-related gene signatures results. We then save this plot as a PNG file.
 
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5I', fig.pos='H', fig.height=2.625984, fig.width=3.46457}
+# Plot the enrichment of the third pathway in the Roy2021_signatures_results
 plot <- plotEnrichment(Roy2021_signatures[[Roy2021_signatures_results[3,'pathway'][[1]]]],
                Ranks) + labs(title='') + 
   ggtitle('S phase\nTirosh et al. 2016') + 
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 13, family='sans')) +
   ylab('Enrichment score') + xlab('Rank')
 
+# Print the plot
 print(plot)
 
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_05/Panel_I-3.png', sep = ''),
-    res = 300, units = 'px', height = 670, width  = 1086)
+    res = 300, units = 'cm', height = 6.67, width  = 8.8)
 
 print(plot)
 
 invisible(dev.off())
+```
 
-#
+Here we create a plot of the enrichment of the quiescence signature in the cell cycle-related gene signatures results. We then save this plot as a PNG file.
 
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 5I', fig.pos='H', fig.height=2.625984, fig.width=3.46457}
+# Plot the enrichment of the second pathway in the Roy2021_signatures_results
 plot <- plotEnrichment(Roy2021_signatures[[Roy2021_signatures_results[2,'pathway'][[1]]]],
                Ranks) + labs(title='') + 
   ggtitle('Quiescence\nGiustacchini et al. 2017') + 
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 13, family='sans')) +
   ylab('Enrichment score') + xlab('Rank')
 
+# Print the plot
 print(plot)
 
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_05/Panel_I-4.png', sep = ''),
-    res = 300, units = 'px', height = 670, width  = 1086)
+    res = 300, units = 'cm', height = 6.67, width  = 8.8)
 
 print(plot)
 

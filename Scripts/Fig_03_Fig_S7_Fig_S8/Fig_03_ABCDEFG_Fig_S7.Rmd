@@ -1,16 +1,18 @@
 ---
-title: "Figure 03 - Panels ABCDEFG + FigS3"
+title: "Figure 03 - Panels ABCDEFG + Fig S7"
 output: 
   rmdformats::robobook:
     lightbox: true
     fig_caption: true
 ---
 
+```{=html}
 <style type="text/css">
   body{
   font-size: 10pt;
 }
 </style>
+```
 
 # 1) Setup
 
@@ -57,7 +59,7 @@ In this section, we ensure that all necessary packages are installed.
 ```{r}
 # Ensure BiocManager is available for installation of Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-#BiocManager::install(version = "3.18")
+BiocManager::install(version = "3.18", ask = FALSE)
 
 # Define a list of required packages used in this script
 packages_required <- c("GENIE3", "doRNG", "stringr", "WGCNA", 
@@ -68,7 +70,7 @@ packages_required <- c("GENIE3", "doRNG", "stringr", "WGCNA",
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
 
 # Install any uninstalled packages
-if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = FALSE)
 ```
 
 ## - Loading packages
@@ -131,7 +133,7 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_03_ABCDEFG_S3_SessionInfo.txt'))
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_03_ABCDEFG_Fig_S7_SessionInfo.txt'))
 
 # Print the session information
 sessionInfo()
@@ -140,31 +142,41 @@ sessionInfo()
 # 2) Loading input files
 
 ```{r}
+# Load normalized count matrix, remove 'X' from column names
 Expression_matrix <- read.csv(paste(data_folder, '/RNASeq/InHouse/Counts/Processed_counts/Grouped/DESeq2_vst_normalised_countmat.csv', sep = ''), row.names = 'X')
-
 colnames(Expression_matrix) <- str_replace_all(colnames(Expression_matrix), pattern = 'X', replacement = '')
 
+# Load gene annotation metadata, set row names to gene IDs
 Genes_annotation_metadata <- read.csv(paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv", sep = ''))
 rownames(Genes_annotation_metadata) <- Genes_annotation_metadata$gene_id
 
+# Load samples metadata
 Samples_metadata <- read.csv(paste(data_folder, '/RNASeq/InHouse/Metadata/Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
 ```
 
 # 3) Filtering expression matrix
 
 ```{r}
+# Replace row names of the expression matrix with gene names from the gene annotation metadata
 rownames(Expression_matrix) <- Genes_annotation_metadata[rownames(Expression_matrix),'gene_name']
 
+# Subset the expression matrix to only include samples present in the samples metadata
 Expression_matrix <- Expression_matrix[,rownames(Samples_metadata)]
 
+# Convert the expression matrix to a matrix data type
 Expression_matrix <- as.matrix(Expression_matrix)
 ```
 
 ## - Loading human TF list
 
 ```{r}
+# Load the list of human transcription factors
 Human_TFs <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Metadata/Lambert2018_TFs.txt', sep = ''), sep = '\t', header = F)
+
+# Extract the first column from the data frame
 Human_TFs <- Human_TFs$V1
+
+# Filter the list to only include transcription factors present in the expression matrix
 Human_TFs <- Human_TFs[grep(TRUE, Human_TFs %in% rownames(Expression_matrix))]
 ```
 
@@ -174,68 +186,90 @@ Human_TFs <- Human_TFs[grep(TRUE, Human_TFs %in% rownames(Expression_matrix))]
 dir.create(paste(data_folder, '/RNASeq/InHouse/Genie3', sep = ''), showWarnings = F)
 ```
 
-The code below should be ran on a HPC or highly performing computer.
+Here we are loading or calculating the Genie3 weights. If the Genie3 weights file exists, we load the weights from the file. If it does not exist, we calculate the weights using the GENIE3 function and save the calculated weights to a file. This may take some time if not ran on a HPC or highly performing computer.
 
 ```{r}
+# Define the path to the Genie3 weights file
 genie3_weights <- paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Weights.rds', sep = '')
 
+# Check if the Genie3 weights file exists
 if (file.exists(genie3_weights)) {
   
+  # If it exists, load the weights from the file
   weightMat <- readRDS(paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Weights.rds', sep = ''))
   
 } else {
 
-weightMat <- GENIE3(Expression_matrix, 
-                    regulators = Human_TFs, 
-                    nCores = 12, verbose = TRUE)
+  # If it doesn't exist, calculate the weights using the GENIE3 function
+  weightMat <- GENIE3(Expression_matrix, regulators = Human_TFs, nCores = 12, verbose = TRUE)
 
-saveRDS(object = weightMat, 
-        file = paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Weights.rds', sep = ''))
+  # Save the calculated weights to a file
+  saveRDS(object = weightMat, file = paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Weights.rds', sep = ''))
 
 }
 ```
 
+Here we are loading or generating the Genie3 link list. If the Genie3 link list file exists, we load the link list from the file. If it does not exist, we generate the link list using the getLinkList function and save the generated link list to a file.
+
 ```{r}
+# Define the path to the Genie3 link list file
 linkList <- paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Linklist.rds', sep = '')
 
+# Check if the Genie3 link list file exists
 if (file.exists(linkList)) {
 
-linkList <- readRDS(paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Linklist.rds', sep = ''))
+  # If it exists, load the link list from the file
+  linkList <- readRDS(paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Linklist.rds', sep = ''))
 
 } else {
 
-set.seed(123)
-linkList <- getLinkList(weightMat)
+  # If it doesn't exist, generate the link list using the getLinkList function
+  set.seed(123)
+  linkList <- getLinkList(weightMat)
   
-saveRDS(linkList, 
-        paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Linklist.rds', sep = ''))
+  # Save the generated link list to a file
+  saveRDS(linkList, paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Linklist.rds', sep = ''))
   
 }
 ```
 
 # 5) WGCNA
 
-## - SetUP
+## - Setup
 
 ### - Pre-filtering
+
+Here we are preparing the data for WGCNA (Weighted Gene Co-expression Network Analysis). We first create a directory to store the WGCNA results. We then calculate the variance for each gene in the expression matrix and select the 7000 most variable genes. We filter the expression matrix to only include these most variable genes and transpose the filtered expression matrix for WGCNA input.
 
 ```{r}
 dir.create(paste(data_folder, '/RNASeq/InHouse/WGCNA', sep = ''), showWarnings = F)
 
+# Calculate the variance for each gene in the expression matrix
 gene_var <- rowVars(Expression_matrix)
+
+# Print a summary of the gene variances
 summary(gene_var)
+
+# Get the indices of the 7000 most variable genes
 most_var_idx <- order(gene_var, decreasing=TRUE)[1:7000]
 
+# Filter the expression matrix to only include the most variable genes
 Expression_matrix_Filtered <- Expression_matrix[most_var_idx,]
 
+# Transpose the filtered expression matrix for WGCNA input
 WGCNA_Input_ExpMat = t(Expression_matrix_Filtered)
 ```
 
 ### - Computing power for downstream analysis
 
-```{r}
+Here we are picking the soft threshold that results in a scale-free topology for WGCNA. We define a sequence of powers to test and use the pickSoftThreshold function to find the soft threshold. We then plot the scale-free fit index and the mean connectivity as functions of the soft threshold. We also calculate the soft connectivity with a power of 12 and plot the scale-free plot diagnostic.
+
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=4, fig.width=8}
+
+# Define a sequence of powers to test
 powers <- seq(from=1,to=35, by=1)
 
+# Pick the soft threshold that results in a scale-free topology
 pst <- pickSoftThreshold(
         data = WGCNA_Input_ExpMat,
         RsquaredCut = 0.85,
@@ -245,10 +279,13 @@ pst <- pickSoftThreshold(
         verbose = 3
 )
 
+# Extract the fit indices from the result
 pst <- pst$fitIndices
 
+# Set up the plot layout
 par(mar = c(4.1, 4.1,1, 1.5), mfrow = c(1,3))
 
+# Plot the scale-free fit index as a function of the soft threshold
 plot(
         powers,
         -sign(pst[, 3]) * pst[, 2],
@@ -264,10 +301,11 @@ plot(
         cex.axis = 1
 )
 
+# Add a vertical line at the chosen soft threshold
 abline(v=13, lty=2)
 abline(h = pst$SFT.R.sq[pst$Power == 13], lty=2)
 
-par(mar = c(4.1, 4.1,1, 1.5))
+# Plot the mean connectivity as a function of the soft threshold
 plot(
         pst[, 1],
         pst[, 5],
@@ -285,14 +323,10 @@ plot(
 abline(v=13, lty=2)
 abline(h= pst$mean.k.[pst$Power == 13], lty=2)
 
-# Calculate connectivity with power 12
-Connectivity.soft <-
-        softConnectivity(WGCNA_Input_ExpMat,
-                         type = "signed",
-                         power = 12,
-                         verbose = 0)
+# Calculate the soft connectivity with a power of 12
+Connectivity.soft <- softConnectivity(WGCNA_Input_ExpMat, type = "signed", power = 12, verbose = 0)
 
-# Plot scale free plot diagnostic
+# Plot the scale-free plot diagnostic
 scaleFreePlot(
         Connectivity.soft,
         truncated = TRUE,
@@ -313,7 +347,10 @@ scaleFreePlot(
 
 ### - Generating adjency and distance matrixes
 
+Here we are calculating the adjacency matrix using the bicor correlation function and the Topological Overlap Measure (TOM) distance matrix for WGCNA (Weighted Gene Co-expression Network Analysis).
+
 ```{r}
+# Calculate the adjacency matrix using the bicor correlation function
 Adj <- WGCNA_Input_ExpMat %>%
         adjacency(. , 
                   type="signed", 
@@ -323,6 +360,7 @@ Adj <- WGCNA_Input_ExpMat %>%
                                     maxPOutliers= 0.001, 
                                     robustY=FALSE))
 
+# Calculate the Topological Overlap Measure (TOM) distance matrix
 distM_signed <- Adj %>%
         TOMdist(. , 
                 TOMType = "signed")
@@ -330,10 +368,13 @@ distM_signed <- Adj %>%
 
 ### - Performing hierarchical clustering
 
+Here we are creating a hierarchical clustering dendrogram using the flashClust function and the Topological Overlap Measure (TOM) distance matrix. We then cut the dendrogram into clusters using the cutreeDynamic function.
+
 ```{r}
-# Create a dendrograme cluster based on the average distance 
+# Create a hierarchical clustering dendrogram
 dendr <- flashClust(as.dist(distM_signed), method="average")
 
+# Cut the dendrogram into clusters
 cut <- cutreeDynamic(dendr,
                      distM = distM_signed,
                      minClusterSize = 250,
@@ -345,33 +386,32 @@ cut <- cutreeDynamic(dendr,
 
 ### - Computing gene-traits correlation
 
-```{r}
-### Traits binary matrix
-model_matrix_short <- as.data.frame(model.matrix( ~ Condition - 1 , data = Samples_metadata))
+Here we are creating a binary matrix for conditions and calculating the correlation between conditions and gene expression. We then convert module labels and correlation values into colors. Finally, we combine module colors and correlation colors.
 
+```{r}
+# Create binary matrix for conditions
+model_matrix_short <- as.data.frame(model.matrix(~ Condition - 1, data = Samples_metadata))
 colnames(model_matrix_short) <- c('Control','BP-CMML')
 
-### Gene Expression Correlation with Sample Traits
-
-# Calculate gene expression correlation with the samples traits
+# Calculate correlation between conditions and gene expression
 gene_trait_significance_short <- cor(model_matrix_short, WGCNA_Input_ExpMat, use = "p") %>% t() %>% as.data.frame()
 
-# Turn module labels into colors
+# Convert module labels and correlation values into colors
 moduleColors = labels2colors(cut)
-
-# Turn correlation valus to colors
 gene_significance_colors_condition_model <- lapply(gene_trait_significance_short, numbers2colors, signed=TRUE) %>% as.data.frame()
-
 colnames(gene_significance_colors_condition_model) <- colnames(gene_trait_significance_short)
 
-# Unmerged Module Colors
+# Combine module colors and correlation colors
 gene_significance_colors_short_unmerged <- cbind(moduleColors, gene_significance_colors_condition_model)
 ```
 
 ### - Plotting Modules and Traits
 
-```{r}
-### Network Modules and Gene Correlation to Sample Traits
+Here we are plotting the dendrogram with color-coded module labels and gene correlation values using the plotDendroAndColors function.
+
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=4, fig.width=8}
+
+# Plot the dendrogram with color-coded module labels and gene correlation values
 plotDendroAndColors(
         dendr,
         gene_significance_colors_short_unmerged,
@@ -386,41 +426,37 @@ plotDendroAndColors(
         cex.colorLabels = 0.7,
         main = ""
 )
-
-#dev.off()
 ```
 
 ## - Second Iteration
 
 ### - Discarding unassigned genes and generating new ADJ and Dist Mats
 
-```{r}
-#discard the unassigned genes, and focus on the rest
-restGenes = (moduleColors != "grey")
+Here we are filtering out genes in the grey module (unassigned) and calculating the adjacency matrix and the Topological Overlap Measure (TOM) distance matrix for the filtered genes.
 
+```{r}
+# Filter out genes in the grey module (unassigned)
+restGenes = (moduleColors != "grey")
 WGCNA_Input_ExpMat_filtered <- WGCNA_Input_ExpMat[,restGenes]
 
+# Calculate adjacency matrix for filtered genes
 Adj_filtered <- WGCNA_Input_ExpMat_filtered %>%
-        adjacency(. , 
-                  type="signed", 
-                  power = 12,
-                  corFnc="bicor", 
-                  corOptions = list(use ='p', 
-                                    maxPOutliers= 0.001, 
-                                    robustY=FALSE))
+        adjacency(., type="signed", power = 12, corFnc="bicor", corOptions = list(use ='p', maxPOutliers= 0.001, robustY=FALSE))
 
+# Calculate TOM distance matrix for filtered genes
 distM_signed_filtered <- Adj_filtered %>%
-        TOMdist(. , 
-                TOMType = "signed")
+        TOMdist(., TOMType = "signed")
 ```
 
 ### - Performing hierarchical clustering
 
+As before, here we are creating a hierarchical clustering dendrogram using the flashClust function and the Topological Overlap Measure (TOM) distance matrix for the filtered genes. We then cut the dendrogram into clusters using the cutreeDynamic function.
+
 ```{r}
-# Create a dendrograme cluster based on the average distance 
+# Create a hierarchical clustering dendrogram
 dendr <- flashClust(as.dist(distM_signed_filtered), method="average")
 
-# Classify network modules with dynamic tree cutting
+# Cut the dendrogram into clusters
 cut <- cutreeDynamic(dendr,
                      distM = distM_signed_filtered,
                      minClusterSize = 250,
@@ -432,18 +468,20 @@ cut <- cutreeDynamic(dendr,
 
 ### - Computing gene-traits (full) correlation
 
+Here we are creating a binary matrix for all traits and calculating the correlation between these traits and gene expression for the filtered genes. We then convert module labels and correlation values into colors. Finally, we combine module colors and correlation colors.
+
 ```{r}
-### Traits binary matrix complete
+# Create a binary matrix for all traits
 model_matrix_complete <- as.data.frame(model.matrix( ~ Condition + ICC.classification + WHO.classification + Cutaneous.BPDCN + DNMT3A + TET2 + SRSF2 + SF3B1 + SETBP1 + U2AF1 + IDH1 + IDH2 + ASXL1 + EZH2 + STAG2 + BCOR + TP53 + PHF6 + NF1 + RUNX1 + FLT3 + NPM1 + CEBPA + WT1 + KIT + BRAF + KRAS + NRAS + CBL + PTPN11 + GATA2 + SH2B3 + ZRSR2 + CSF3R + DTA.mutations..DNMT3A..TET2..ASXL1. +Splicing.mutations..U2...SRSF2..SF3B1..U2AF1..ZRSF2. +RAS.mutations..NRAS..KRAS..CBL..NF1..PTPN11..BRAF. + IDH.mutations..IDH1..IDH2. - 1 , data = Samples_metadata))
 
+# Add additional columns and remove unnecessary ones
 model_matrix_complete <- model_matrix_complete %>% tibble::add_column('ICC.classificationAML not otherwise specified' = as.numeric(Samples_metadata$ICC.classification == 'AML not otherwise specified'), .before = 'ICC.classificationBPDCN')
-
 model_matrix_complete <- model_matrix_complete %>% tibble::add_column('WHO.classificationAML myelodysplasia-related' = as.numeric(Samples_metadata$WHO.classification == 'AML myelodysplasia-related'), .before = 'WHO.classificationAML with CEBPA')
-
 model_matrix_complete$ICC.classificationControl <- NULL
 model_matrix_complete$ICC.classificationBPDCN <- NULL
 model_matrix_complete$WHO.classificationControl <- NULL
 
+# Rename columns
 colnames(model_matrix_complete) <- c("Condition_BP-CMML", "Condition_Control", 
                                      "ICC.Classification__AML_with_CEBPA",
                                      "ICC.Classification__AML_with_MDS-related_cytogenetic_abnormalities",
@@ -491,27 +529,24 @@ colnames(model_matrix_complete) <- c("Condition_BP-CMML", "Condition_Control",
                                      "RAS.mutations__NRAS_KRAS_CBL_NF1_PTPN11_BRAF",
                                      "IDH.mutations__IDH1_IDH2")
 
-### Gene Expression Correlation with Sample Traits
-
 # Calculate gene expression correlation with the samples traits
 gene_trait_significance_complete <- cor(model_matrix_complete, WGCNA_Input_ExpMat_filtered, use = "p") %>% t() %>% as.data.frame()
 
-# Turn module labels into colors
+# Convert module labels and correlation values into colors
 moduleColors = labels2colors(cut)
-
-# Turn correlation valus to colors
 gene_significance_colors_complete <- lapply(gene_trait_significance_complete, numbers2colors, signed=TRUE) %>% as.data.frame()
-
 colnames(gene_significance_colors_complete) <- colnames(gene_trait_significance_complete)
 
-# Unmerged Module Colors
+# Combine module colors and correlation colors
 gene_significance_colors_complete_unmerged <- cbind(moduleColors, gene_significance_colors_complete)
 ```
 
 ### - Plotting Modules and Traits
 
-```{r}
-### Network Modules and Gene Correlation to Sample Traits
+Here we are plotting the dendrogram with color-coded module labels and gene correlation values using the plotDendroAndColors function.
+
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=8, fig.width=8}
+# Plot the dendrogram and colors
 plotDendroAndColors(
         dendr,
         gene_significance_colors_complete_unmerged,
@@ -532,18 +567,18 @@ plotDendroAndColors(
 
 ### - Computing Inter-Modules Correlation
 
-```{r}
+Here we are calculating the module eigengenes using the moduleEigengenes function and ordering them using the orderMEs function. We then plot the relationships among the eigengenes and its adjacency heatmap using the plotEigengeneNetworks function.
+
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=6, fig.width=6}
+# Calculate module eigengenes
 MEList <- moduleEigengenes(WGCNA_Input_ExpMat_filtered, colors=moduleColors)
 MEs <- MEList$eigengenes
 
 # Order module eigengenes
 MEs = orderMEs(MEs)
 
-### Module Eigengene Intercorrelations 
-# Evaluate modules inter correlations for possibility of merging too similar modules
-# Plot the relationships among the eigengenes as well as its adjacency heatmap
+# Plot the relationships among the eigengenes and its adjacency heatmap
 par(cex = 0.9)
-
 plotEigengeneNetworks(MEs,
                       "",
                       marDendro = c(1, 4, 1, 6),
@@ -555,11 +590,15 @@ plotEigengeneNetworks(MEs,
 
 ### - Merging highly correlated modules
 
-```{r}
+Here we are merging close modules using the mergeCloseModules function. We then plot the relationships among the new eigengenes and its adjacency heatmap using the plotEigengeneNetworks function.
+
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=6, fig.width=6}
+# Merge close modules
 NewMEs <- mergeCloseModules(exprData = WGCNA_Input_ExpMat_filtered,
                             colors = moduleColors, 
                             MEs = MEs)
 
+# Plot the relationships among the new eigengenes and its adjacency heatmap
 plotEigengeneNetworks(NewMEs$newMEs,
                       "",
                       marDendro = c(1, 4, 1, 6),
@@ -571,19 +610,20 @@ plotEigengeneNetworks(NewMEs$newMEs,
 
 ### - Computing gene-traits (short) correlation - merged
 
-```{r}
-### Traits binary matrix
-model_matrix_short <- model_matrix_complete[,c('Condition_Control', 'Condition_BP-CMML')]
+Here we are creating a binary matrix for the traits 'Control' and 'BP-CMML' and calculating the correlation between these traits and gene expression for the filtered genes. We then get the colors of the merged modules and change them to look better. Finally, we convert correlation values into colors and combine the colors of the merged modules and the correlation colors.
 
+```{r}
+# Create a binary matrix for the traits 'Control' and 'BP-CMML'
+model_matrix_short <- model_matrix_complete[,c('Condition_Control', 'Condition_BP-CMML')]
 colnames(model_matrix_short) <- c('Control','BP-CMML')
 
 # Calculate gene expression correlation with the samples traits
 gene_trait_significance_short <- cor(model_matrix_short, WGCNA_Input_ExpMat_filtered, use = "p") %>% t() %>% as.data.frame()
 
-# Merged Module Colors
+# Get the colors of the merged modules
 NewModuleColors = NewMEs$colors
 
-# Changing the colors to look better
+# Change the colors to look better
 NewModuleColors[grep(TRUE,NewModuleColors == 'yellow')] <- 'mediumpurple2'
 NewModuleColors[grep(TRUE,NewModuleColors == 'green')] <- 'darkgoldenrod1'
 NewModuleColors[grep(TRUE,NewModuleColors == 'red')] <- 'firebrick2'
@@ -591,29 +631,32 @@ NewModuleColors[grep(TRUE,NewModuleColors == 'brown')] <- 'palegreen2'
 NewModuleColors[grep(TRUE,NewModuleColors == 'black')] <- 'mediumturquoise'
 NewModuleColors[grep(TRUE,NewModuleColors == 'blue')] <- 'royalblue2'
 
-# Turn correlation valus to colors
+# Convert correlation values into colors
 gene_significance_colors_short <- lapply(gene_trait_significance_short, numbers2colors, signed=TRUE) %>% as.data.frame()
-
 colnames(gene_significance_colors_short) <- colnames(gene_trait_significance_short)
 
-# Unmerged Module Colors
+# Combine the colors of the merged modules and the correlation colors
 gene_significance_colors_short_merged <- cbind(NewModuleColors, gene_significance_colors_short)
 ```
 
 ### - Computing gene-traits (full) correlation - merged
 
+Here we are creating a complete binary matrix for the traits and adding new columns to the matrix. We then remove unnecessary columns and rename the columns. We calculate the correlation between these traits and gene expression for the filtered genes. We then get the colors of the merged modules and change them to look better. Finally, we convert correlation values into colors and combine the colors of the merged modules and the correlation colors.
+
 ```{r}
-### Traits binary matrix complete
+# Create a complete binary matrix for the traits
 model_matrix_complete <- as.data.frame(model.matrix( ~ Condition + ICC.classification + WHO.classification + Cutaneous.BPDCN + DNMT3A + TET2 + SRSF2 + SF3B1 + SETBP1 + U2AF1 + IDH1 + IDH2 + ASXL1 + EZH2 + STAG2 + BCOR + TP53 + PHF6 + NF1 + RUNX1 + FLT3 + NPM1 + CEBPA + WT1 + KIT + BRAF + KRAS + NRAS + CBL + PTPN11 + GATA2 + SH2B3 + ZRSR2 + CSF3R + DTA.mutations..DNMT3A..TET2..ASXL1. +Splicing.mutations..U2...SRSF2..SF3B1..U2AF1..ZRSF2. +RAS.mutations..NRAS..KRAS..CBL..NF1..PTPN11..BRAF. + IDH.mutations..IDH1..IDH2. - 1 , data = Samples_metadata))
 
+# Add new columns to the matrix
 model_matrix_complete <- model_matrix_complete %>% tibble::add_column('ICC.classificationAML not otherwise specified' = as.numeric(Samples_metadata$ICC.classification == 'AML not otherwise specified'), .before = 'ICC.classificationBPDCN')
-
 model_matrix_complete <- model_matrix_complete %>% tibble::add_column('WHO.classificationAML myelodysplasia-related' = as.numeric(Samples_metadata$WHO.classification == 'AML myelodysplasia-related'), .before = 'WHO.classificationAML with CEBPA')
 
+# Remove unnecessary columns
 model_matrix_complete$ICC.classificationControl <- NULL
 model_matrix_complete$ICC.classificationBPDCN <- NULL
 model_matrix_complete$WHO.classificationControl <- NULL
 
+# Rename the columns
 colnames(model_matrix_complete) <- c("Condition_BP-CMML", "Condition_Control", 
                                      "ICC.Classification__AML_with_CEBPA",
                                      "ICC.Classification__AML_with_MDS-related_cytogenetic_abnormalities",
@@ -661,15 +704,13 @@ colnames(model_matrix_complete) <- c("Condition_BP-CMML", "Condition_Control",
                                      "RAS.mutations__NRAS_KRAS_CBL_NF1_PTPN11_BRAF",
                                      "IDH.mutations__IDH1_IDH2")
 
-### Gene Expression Correlation with Sample Traits
-
 # Calculate gene expression correlation with the samples traits
 gene_trait_significance_complete <- cor(model_matrix_complete, WGCNA_Input_ExpMat_filtered, use = "p") %>% t() %>% as.data.frame()
 
-# Merged Module Colors
+# Get the colors of the merged modules
 NewModuleColors = NewMEs$colors
 
-# Changing the colors to look better
+# Change the colors to look better
 NewModuleColors[grep(TRUE,NewModuleColors == 'yellow')] <- 'mediumpurple2'
 NewModuleColors[grep(TRUE,NewModuleColors == 'green')] <- 'darkgoldenrod1'
 NewModuleColors[grep(TRUE,NewModuleColors == 'red')] <- 'firebrick2'
@@ -677,22 +718,25 @@ NewModuleColors[grep(TRUE,NewModuleColors == 'brown')] <- 'palegreen2'
 NewModuleColors[grep(TRUE,NewModuleColors == 'black')] <- 'mediumturquoise'
 NewModuleColors[grep(TRUE,NewModuleColors == 'blue')] <- 'royalblue2'
 
-# Turn correlation valus to colors
+# Convert correlation values into colors
 gene_significance_colors_complete <- lapply(gene_trait_significance_complete, numbers2colors, signed=TRUE) %>% as.data.frame()
-
 colnames(gene_significance_colors_complete) <- colnames(gene_trait_significance_complete)
 
-# Unmerged Module Colors
+# Combine the colors of the merged modules and the correlation colors
 gene_significance_colors_complete_merged <- cbind(NewModuleColors, gene_significance_colors_complete)
 ```
 
 ### - Plotting OTU networks : Panel A
 
-```{r echo=FALSE, fig.align='center', fig.cap='Figure 3A', fig.height=3.84252, fig.pos='H', fig.width=3.929134}
+Here we are calculating the dissimilarity matrix and plotting the Topological Overlap Matrix (TOM) using the TOMplot function.
 
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 3A', fig.height=3.84252, fig.pos='H', fig.width=3.929134}
+
+# Calculate dissimilarity matrix
 disssim_signed <- 1 - distM_signed_filtered
 diag(disssim_signed) = NA
 
+# Plot the Topological Overlap Matrix (TOM)
 TOMplot(dissim = log2(disssim_signed), 
         dendro = dendr, 
         Colors = as.character(NewModuleColors),
@@ -702,21 +746,23 @@ TOMplot(dissim = log2(disssim_signed),
 # Open a new PNG device for plotting
 png(filename = paste(figures_folder, '/Fig_03/Panel_A.png', sep = ''), units = 'cm', width = 35, height = 17, res = 300)
 
+# Plot the TOM again, this time saving it to a PNG file
 TOMplot(dissim = log2(disssim_signed), 
         dendro = dendr, 
         Colors = as.character(NewModuleColors),
         main = "Topological Overlap Matrix", 
         col=RColorBrewer::brewer.pal(n = 9, 'YlOrRd'))
 
+# Close the PNG device
 invisible(dev.off())
 ```
 
 ### - Plotting Modules and Traits : Panel B
 
-```{r echo=FALSE, fig.align='center', fig.cap='Figure 3B', fig.height=3.84252, fig.pos='H', fig.width=5.7637795}
+Here we are plotting the dendrogram and colors for all traits and only conditions as traits using the plotDendroAndColors function.
 
-# Complete with all traits
-
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=8, fig.width=8}
+# Plot the dendrogram and colors for all traits
 plotDendroAndColors(
         dendr,
         gene_significance_colors_complete_merged,
@@ -731,9 +777,10 @@ plotDendroAndColors(
         cex.colorLabels = 0.4,
         main = ""
 )
+```
 
-# Restricted with only conditions as traits
-
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 3B', fig.height=6, fig.pos='H', fig.width=8}
+# Plot the dendrogram and colors for only conditions as traits
 plotDendroAndColors(
         dendr,
         gene_significance_colors_short_merged,
@@ -751,6 +798,7 @@ plotDendroAndColors(
 # Open a new PNG device for plotting
 png(filename = paste(figures_folder, '/Fig_03/Panel_B.png', sep = ''), width = 4.99*7, height = 4.88*3, units = 'cm', res = 300)
 
+# Plot the dendrogram and colors for only conditions as traits again, this time saving it to a PNG file
 plotDendroAndColors(
         dendr,
         gene_significance_colors_short_merged,
@@ -765,14 +813,22 @@ plotDendroAndColors(
         cex.colorLabels = 1,
         main = "", colorHeightMax = 0.01)
 
+# Close the PNG device
 invisible(dev.off())
 ```
 
 ### - Substituting old MEs for New MEs
 
+Here we are extracting the new module eigengenes and renaming the columns of the module eigengenes. Finally, we reorder the columns of the module eigengenes.
+
 ```{r}
+# Extract the new module eigengenes
 MEs <- NewMEs$newMEs
+
+# Rename the columns of the module eigengenes
 colnames(MEs) <- c('ME1','ME2','ME3','ME6','ME4','ME5')
+
+# Reorder the columns of the module eigengenes
 MEs <- MEs[,c('ME1','ME2','ME3','ME6','ME4','ME5')]
 ```
 
@@ -780,29 +836,40 @@ MEs <- MEs[,c('ME1','ME2','ME3','ME6','ME4','ME5')]
 
 ### - Quantitate Module-Trait correlations : Panel C
 
-```{r echo=FALSE, fig.align='center', fig.cap='Figure 3C', fig.height=3.14961, fig.pos='H', fig.width=8.66142}
+Here we calculate the correlation and p-values between module eigengenes and traits, reorder and rename the data, and then generate a heatmap visualization of the correlations. The results are saved to a CSV file and a PNG image.
 
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 3C', fig.height=3.14961, fig.pos='H', fig.width=8.66142}
+# Calculate the correlation and p-values between the module eigengenes and the traits
 traitMECor <- WGCNA::cor(MEs, model_matrix_complete, use = "p")
 traitMEPval <- WGCNA::corPvalueStudent(traitMECor, nrow(WGCNA_Input_ExpMat_filtered))
 
+# Reorder the columns of the correlation and p-values
 traitMECor <- traitMECor[,c(2,1,3:47)]
 traitMEPval <- traitMEPval[,c(2,1,3:47)]
 
+# Rename the columns of the correlation and p-values
 colnames(traitMECor) <- paste('MECor',colnames(traitMECor), sep = '_')
 colnames(traitMEPval) <- paste('MEstats',colnames(traitMEPval), sep = '_')
 
+# Combine the correlation and p-values into a single data frame
 traitMEstats <- as.data.frame(cbind(traitMECor, traitMEPval))
+
+# Calculate the rank for the control and blast phase conditions
 traitMEstats$Rank_Control <- sign(traitMEstats$MECor_Condition_Control)*(-1*log10(traitMEstats$MEstats_Condition_Control))
 traitMEstats$Rank_Blast_phase <- sign(traitMEstats$`MECor_Condition_BP-CMML`)*(-1*log10(traitMEstats$`MEstats_Condition_BP-CMML`))
 
+# Write the correlation and p-values to a CSV file
 write.csv(traitMEstats, paste(data_folder, '/RNASeq/InHouse/WGCNA/ME_Traits_Cor.csv', sep = ''), 
           quote = F, row.names = T)
 
+# Create a data frame for the module eigengene colors
 ME_color_number_df <- data.frame(row.names = 1:6)
 ME_color_number_df$number <- c('ME6','ME5','ME4','ME3','ME2','ME1')
 
+# Remove the colour column
 ME_color_number_df$colour <- NULL
 
+# Create a list for the module eigengene color annotation
 ME_color_annotation <-  list(number = c('ME6' = 'mediumpurple2',
                                         'ME5' = 'firebrick2',
                                         'ME4' = 'darkgoldenrod1',
@@ -810,15 +877,19 @@ ME_color_annotation <-  list(number = c('ME6' = 'mediumpurple2',
                                         'ME2' = 'mediumturquoise',
                                         'ME1' = 'royalblue2'))
 
+# Create a color ramp for the heatmap
 breaks_val <- seq(from = -0.4, to = 0.4, length.out = 13)
 col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(brew_mix))
 
+# Rename and reorder the columns of the correlation and p-values
 traitMECor_Renamed <- traitMECor[,c(1:7, 12, 14:47)]
 traitMEPval_Renamed <- traitMEPval[,c(1:7, 12, 14:47)]
 
+# Remove the prefix from the column names
 colnames(traitMECor_Renamed) <- str_remove_all(colnames(traitMECor_Renamed), 'MECor_')
 colnames(traitMEPval_Renamed) <- str_remove_all(colnames(traitMEPval_Renamed), 'MEstats_')
 
+# Rename the columns of the correlation and p-values
 colnames(traitMECor_Renamed)[1:8] <- c('Control',
                                        'BP-CMML',
   'AML: CEBPA',
@@ -847,204 +918,194 @@ colnames(traitMEPval_Renamed)[39:42] <- c('DTA group',
                               'RAS group',
                               'IDH group')
 
+# Create a metadata data frame
 metadata_df <- data.frame(row.names = colnames(traitMECor_Renamed))
 metadata_df$Metadata <- colnames(traitMECor_Renamed)
 metadata_df$Class <- 'Mutation'
 metadata_df[1:2,'Class'] <- 'Condition'
 metadata_df[3:8,'Class'] <- 'ICC'
 metadata_df[39:42,'Class'] <- 'Grouped Mutations'
+metadata_df$Class <- factor(metadata_df$Class, levels = c('Condition', 'ICC', 'Grouped Mutations', 'Mutation'))
 
-metadata_df$Class <- factor(metadata_df$Class, levels = c('Condition',
-                                                          'ICC',
-                                                          'Grouped Mutations',
-                                                          'Mutation'))
-
+# Create a row annotation for the heatmap
 ra <- rowAnnotation(df=ME_color_number_df, col = ME_color_annotation, 
-                        gp = gpar(lwd =0.5, col = 'black'),
-                        simple_anno_size = unit(2, 'mm'),
-                        show_annotation_name = F, show_legend = FALSE,
-                        annotation_legend_param = list(number = list(direction = "horizontal")))
+                    gp = gpar(lwd =0.5, col = 'black'),
+                    simple_anno_size = unit(2, 'mm'),
+                    show_annotation_name = F, show_legend = FALSE,
+                    annotation_legend_param = list(number = list(direction = "horizontal")))
 
-traitMECor_Renamed <- traitMECor_Renamed[c('ME6','ME5','ME4',
-                                           'ME3','ME2','ME1'),]
+# Reorder the correlation and p-value data frames
+traitMECor_Renamed <- traitMECor_Renamed[c('ME6','ME5','ME4', 'ME3','ME2','ME1'),]
+traitMEPval_Renamed <- traitMEPval_Renamed[c('ME6','ME5','ME4', 'ME3','ME2','ME1'),]
 
-traitMEPval_Renamed <- traitMEPval_Renamed[c('ME6','ME5','ME4',
-                                           'ME3','ME2','ME1'),]
-
+# Set some options for the heatmap
 ht_opt$COLUMN_ANNO_PADDING = unit(4, "mm")
 ht_opt$ROW_ANNO_PADDING = unit(2.5, "mm")
 
-###
-
+# Create the heatmap
 Heatmap_trait_cor <- Heatmap(traitMECor_Renamed, name = 'Pearson\nCor.',
-                            col = col_heatmap_guide, 
-                            cell_fun = function(j, i, x, y, w, h, fill) {
-    if(traitMEPval_Renamed[i, j] < 0.001) {
-        grid.text("*", x, y, vjust = 0.65, gp = gpar(fontsize = 18))
-    } else if(traitMEPval_Renamed[i, j] < 0.05) {
-        grid.text("•", x, y, vjust = 0.2, gp = gpar(fontsize = 13))
-    }},
-                         left_annotation = ra,
-                            show_row_names = TRUE, 
-                            show_column_names = TRUE,
-                            cluster_columns = F,
-                            cluster_rows = F,
-                            border = TRUE,
-                       column_split = metadata_df$Class,
-                       column_gap = unit(c(2.5,2.5,2.5), "mm"),
-                            cluster_row_slices = F, 
-                            cluster_column_slices = F, 
-                            row_gap = unit(0.05, 'cm'),
-                            show_row_dend = FALSE, 
-                            row_names_side = 'left',
-                            column_names_side = 'bottom',
-                            use_raster = TRUE, 
-                            rect_gp = gpar(col = "black", lwd = 0.05),
-                            raster_by_magick = TRUE,
-                            column_title_gp = gpar(fontsize = 0, angle=45),
-                            column_names_gp = gpar(fontsize = 9, hjust=0),
-                            row_title_gp = gpar(fontsize = 0),
-                            row_names_gp = gpar(fontsize = 9, hjust=0),
-                            show_heatmap_legend = T,
-                            heatmap_legend_param = list(
-                                      legend_direction = "horizontal", 
-                                      legend_width = unit(3, "cm")))
+                             col = col_heatmap_guide, 
+                             cell_fun = function(j, i, x, y, w, h, fill) {
+                                 if(traitMEPval_Renamed[i, j] < 0.001) {
+                                     grid.text("*", x, y, vjust = 0.65, gp = gpar(fontsize = 18))
+                                 } else if(traitMEPval_Renamed[i, j] < 0.05) {
+                                     grid.text("•", x, y, vjust = 0.2, gp = gpar(fontsize = 13))
+                                 }},
+                             left_annotation = ra,
+                             show_row_names = TRUE, 
+                             show_column_names = TRUE,
+                             cluster_columns = F,
+                             cluster_rows = F,
+                             border = TRUE,
+                             column_split = metadata_df$Class,
+                             column_gap = unit(c(2.5,2.5,2.5), "mm"),
+                             cluster_row_slices = F, 
+                             cluster_column_slices = F, 
+                             row_gap = unit(0.05, 'cm'),
+                             show_row_dend = FALSE, 
+                             row_names_side = 'left',
+                             column_names_side = 'bottom',
+                             use_raster = TRUE, 
+                             rect_gp = gpar(col = "black", lwd = 0.05),
+                             raster_by_magick = TRUE,
+                             column_title_gp = gpar(fontsize = 0, angle=45),
+                             column_names_gp = gpar(fontsize = 9, hjust=0),
+                             row_title_gp = gpar(fontsize = 0),
+                             row_names_gp = gpar(fontsize = 9, hjust=0),
+                             show_heatmap_legend = T,
+                             heatmap_legend_param = list(
+                                 legend_direction = "horizontal", 
+                                 legend_width = unit(3, "cm")))
 
-#Heatmap_trait_cor
-
-# Open a new PNG device for plotting
-png(filename = paste(figures_folder, '/Fig_03/Panel_C.png', sep = ''), width = 22, height = 10, units = 'cm', res = 300)
-
+# Draw the heatmap
 draw(Heatmap_trait_cor, heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
 
+# Open a new PNG device
+png(filename = paste(figures_folder, '/Fig_03/Panel_C.png', sep = ''), width = 22, height = 10, units = 'cm', res = 300)
+
+# Draw the heatmap
+draw(Heatmap_trait_cor, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+# Close the PNG device
 invisible(dev.off())
 ```
 
 ### - Levels of ME among samples
 
-```{r}
-### Gene Expression Heatmaps and Module Eigengene Barplots
+Here we define colors for each module eigengene and then iterate over each module eigengene to create a two-part plot. The first part is a heatmap of the scaled gene expression values for the genes in the module, and the second part is a barplot of the module eigengene values. The heatmap and barplot are labeled appropriately, and the number of genes in each module is included in the title of the heatmap.
 
+```{r echo=TRUE, fig.align='center', fig.pos='H', fig.height=3, fig.width=6}
+# Define the colors for each module eigengene
 ME_color_annotation <-  list('ME6' = 'mediumpurple2',
-                                        'ME5' = 'firebrick2',
-                                        'ME4' = 'darkgoldenrod1',
-                                        'ME3' = 'palegreen2',
-                                        'ME2' = 'mediumturquoise',
-                                        'ME1' = 'royalblue2')
+                             'ME5' = 'firebrick2',
+                             'ME4' = 'darkgoldenrod1',
+                             'ME3' = 'palegreen2',
+                             'ME2' = 'mediumturquoise',
+                             'ME1' = 'royalblue2')
 
+# Loop over each module eigengene
 for (i in 1:ncol(MEs)){
-        par(mfrow=c(2,1), mar=c(1.5, 6, 3.5, 1.7))
-        which.module=colnames(MEs)[i]
-        
-        WGCNA::plotMat(
-                t(scale(t(Expression_matrix_Filtered[NewModuleColors == ME_color_annotation[[which.module]], ]))),
-                nrgcols = 30,
-                rlabels = T,
-                clabels = F,
-                rcols = ME_color_annotation[[which.module]],
-                title = ""
+    # Create a 2-row plot layout and set the margins
+    par(mfrow=c(2,1), mar=c(1.5, 6, 3.5, 1.7))
+    which.module=colnames(MEs)[i]
+    
+    # Plot a heatmap of the scaled gene expression values
+    WGCNA::plotMat(
+        t(scale(t(Expression_matrix_Filtered[NewModuleColors == ME_color_annotation[[which.module]], ]))),
+        nrgcols = 30,
+        rlabels = T,
+        clabels = F,
+        rcols = ME_color_annotation[[which.module]],
+        title = ""
+    )
+    # Add a title to the heatmap
+    title(main = list(paste0(which.module, " (", sum(NewModuleColors == ME_color_annotation[[which.module]]), " genes)"), cex = 2), line = 2)
+    
+    # Add labels to the top axis of the heatmap
+    for (n in 1:ncol(Expression_matrix_Filtered)) {
+        axis(
+            side = 3,
+            at = n,
+            labels = colnames(Expression_matrix_Filtered)[n],
+            cex.axis = 0.6,
+            las = 3
         )
-        title(main = list(paste0(which.module, " (", sum(NewModuleColors == ME_color_annotation[[which.module]]), " genes)"), cex = 2), line = 2)
-        
-        for (n in 1:ncol(Expression_matrix_Filtered)) {
-                axis(
-                        side = 3,
-                        at = n,
-                        labels = colnames(Expression_matrix_Filtered)[n],
-                        cex.axis = 0.6,
-                        las = 3
-                )
-        } 
-        
-        par(mar=c(4, 4, 0, 0))
-        barplot(
-                MEs[, which.module],
-                col = ME_color_annotation[[which.module]],
-                main = "",
-                cex.main = 2,
-                ylab = "eigengene expression",
-                xlab = "Sample",
-                cex.axis = 0.7,
-                cex.lab = 1,
-                mgp=c(2,1,0),
-                las = 2
-        )
+    } 
+    
+    # Reset the margins and plot a barplot of the module eigengene values
+    par(mar=c(4, 4, 0, 0))
+    barplot(
+        MEs[, which.module],
+        col = ME_color_annotation[[which.module]],
+        main = "",
+        cex.main = 2,
+        ylab = "eigengene expression",
+        xlab = "Sample",
+        cex.axis = 0.7,
+        cex.lab = 1,
+        mgp=c(2,1,0),
+        las = 2
+    )
 }
 ```
 
 ### - ME distribution among samples
 
-```{r echo=FALSE, fig.align='center', fig.cap='Figure 3G', fig.height=2.50492126, fig.pos='H', fig.width=7.523622}
+Here we define a function to rescale a numeric vector to the range [0, 1]. We then create a data frame to store the sample names, conditions, module names, and scaled module eigengene expressions. The Condition and Module columns are converted to factors with specific levels.
 
+We then create a ggplot object with the module eigengene expressions on the x-axis, the module names on the y-axis, and the conditions as the color and fill. The plot is printed to the console and saved as a PNG file.
+
+```{r echo=TRUE, fig.align='center', fig.cap='Figure 3G', fig.pos='H', fig.height=7.523622, fig.width=2.50492126}
+# Define a function to rescale a numeric vector to the range [0, 1]
 rescale01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
+# Create a data frame to store the sample names, conditions, module names, and scaled module eigengene expressions
 ME_distributions <- data.frame(row.names = 1:length(rep(rownames(MEs),6)))
-
 ME_distributions$Sample <- rep(rownames(MEs),6)
 ME_distributions$Condition <- rep(Samples_metadata$Condition,6)
-ME_distributions$Module <- c(rep('ME1',49),
-                             rep('ME2',49),
-                             rep('ME3',49),
-                             rep('ME6',49),
-                             rep('ME5',49),
-                             rep('ME4',49))
-ME_distributions$ScaledExpression <- c(rescale01(MEs$ME1),
-                                       rescale01(MEs$ME2),
-                                       rescale01(MEs$ME3),
-                                       rescale01(MEs$ME6),
-                                       rescale01(MEs$ME5),
-                                       rescale01(MEs$ME4))
+ME_distributions$Module <- c(rep('ME1',49), rep('ME2',49), rep('ME3',49), rep('ME6',49), rep('ME5',49), rep('ME4',49))
+ME_distributions$ScaledExpression <- c(rescale01(MEs$ME1), rescale01(MEs$ME2), rescale01(MEs$ME3), rescale01(MEs$ME6), rescale01(MEs$ME5), rescale01(MEs$ME4))
 
+# Convert the Condition and Module columns to factors with specific levels
 ME_distributions$Condition <- factor(ME_distributions$Condition, levels=c('Control', 'BP-CMML'))
-ME_distributions$Module <- factor(ME_distributions$Module, levels=c('ME1', 'ME2', 'ME3',
-                                                                       'ME4', 'ME5', 'ME6'))
+ME_distributions$Module <- factor(ME_distributions$Module, levels=c('ME1', 'ME2', 'ME3', 'ME4', 'ME5', 'ME6'))
 
-plot <-  ggplot(ME_distributions, 
-        aes(x = ScaledExpression, y = Module, 
-            color = Condition, 
-            point_color = Condition, fill = Condition)) +
-  geom_density_ridges(
-    jittered_points = TRUE, scale = .95, rel_min_height = .01,
-    point_shape = "|", point_size = 3,
-    position = position_points_jitter(height = 0)
-    ) +
-  scale_fill_manual(values = c(ggplot2::alpha("#A4BECE", 0.75),
-                               ggplot2::alpha("#DD3429",0.75)), 
-                    labels = c("Control", "BP-CMML")) +
+# Create a ggplot object with the module eigengene expressions on the x-axis, the module names on the y-axis, and the conditions as the color and fill
+plot <-  ggplot(ME_distributions, aes(x = ScaledExpression, y = Module, color = Condition, point_color = Condition, fill = Condition)) +
+  geom_density_ridges(jittered_points = TRUE, scale = .95, rel_min_height = .01, point_shape = "|", point_size = 3, position = position_points_jitter(height = 0)) +
+  scale_fill_manual(values = c(ggplot2::alpha("#A4BECE", 0.75), ggplot2::alpha("#DD3429",0.75)), labels = c("Control", "BP-CMML")) +
   scale_color_manual(values = c("#A4BECE", "#DD3429"), guide = "none") +
   scale_discrete_manual("point_color", values = c("#A4BECE", "#DD3429"), guide = "none") +
   coord_cartesian(clip = "off") +
-  guides(fill = guide_legend(
-    override.aes = list(
-      fill = c("#A4BECE", "#DD3429"),
-      color = NA, point_color = NA)
-    )
-  ) +
+  guides(fill = guide_legend(override.aes = list(fill = c("#A4BECE", "#DD3429"), color = NA, point_color = NA))) +
   ggtitle("") + ylab("") +
   theme_ridges(center = TRUE) + theme_minimal() + 
-   theme(axis.title.x = element_text(face='bold', size=10),
-        legend.position = 'bottom',
-        legend.title = element_text(face='bold', size=12)) + guides(fill = 
-                                          guide_legend(title = 'Condition',
-                                  title.position = "top",title.hjust = 0.5))
+  theme(axis.title.x = element_text(face='bold', size=10), legend.position = 'bottom', legend.title = element_text(face='bold', size=12)) + 
+  guides(fill = guide_legend(title = 'Condition', title.position = "top",title.hjust = 0.5))
 
+# Print the plot to the console
 print(plot)
 
+# Save the plot as a PNG file
 png(filename = paste(figures_folder, '/Fig_03/Panel_G.png', sep = ''), width = 5.09*1.25, height = 12.74*1.5, units = 'cm', res = 300)
 
+# Print the plot again and turn off the device
 print(plot)
-
 invisible(dev.off())
 ```
 
 ### - List of Genes Assigned to Modules
 
-```{r}
-genes_to_module_df <- data.frame(row.names = colnames(WGCNA_Input_ExpMat_filtered))
+Here we create a data frame with row names as the column names of the filtered WGCNA input expression matrix and a column 'Module' initialized with 'NA'. We then assign the module names 'ME1' to 'ME6' to the genes in the data frame based on the NewModuleColors and ME_color_annotation. The rows of the data frame are arranged by the 'Module' column. Finally, the data frame is written to a CSV file.
 
+```{r}
+# Create a data frame with row names as the column names of WGCNA_Input_ExpMat_filtered and a column Module initialized with 'NA'
+genes_to_module_df <- data.frame(row.names = colnames(WGCNA_Input_ExpMat_filtered))
 genes_to_module_df$Module <- 'NA'
 
+# Assign the module names 'ME1' to 'ME6' to the genes in genes_to_module_df based on the NewModuleColors and ME_color_annotation
 genes_to_module_df[colnames(WGCNA_Input_ExpMat_filtered[,NewModuleColors == ME_color_annotation[['ME1']]]),'Module'] <- 'ME1'
 genes_to_module_df[colnames(WGCNA_Input_ExpMat_filtered[,NewModuleColors == ME_color_annotation[['ME2']]]),'Module'] <- 'ME2'
 genes_to_module_df[colnames(WGCNA_Input_ExpMat_filtered[,NewModuleColors == ME_color_annotation[['ME3']]]),'Module'] <- 'ME3'
@@ -1052,44 +1113,56 @@ genes_to_module_df[colnames(WGCNA_Input_ExpMat_filtered[,NewModuleColors == ME_c
 genes_to_module_df[colnames(WGCNA_Input_ExpMat_filtered[,NewModuleColors == ME_color_annotation[['ME5']]]),'Module'] <- 'ME5'
 genes_to_module_df[colnames(WGCNA_Input_ExpMat_filtered[,NewModuleColors == ME_color_annotation[['ME6']]]),'Module'] <- 'ME6'
 
+# Arrange the rows of genes_to_module_df by the Module column
 genes_to_module_df <- genes_to_module_df %>% arrange(Module)
 
-write.csv(x = genes_to_module_df, file = paste(data_folder, '/RNASeq/InHouse/WGCNA/ME_Gene_Assignment.csv', sep = ''),
-          row.names = T)
-
+# Write genes_to_module_df to a CSV file
+write.csv(x = genes_to_module_df, file = paste(data_folder, '/RNASeq/InHouse/WGCNA/ME_Gene_Assignment.csv', sep = ''), row.names = T)
 ```
 
 ### - Identifying Gene Module Membership
 
+Here we calculate the gene module membership, which is the correlation of the gene expression profiles with the module eigengenes. We also calculate the p-value of the gene module membership. These values are combined into a single data frame and then written to a CSV file.
+
 ```{r}
-### Intramodular Analysis
+# Get the number of samples and the module names
 nSamples <- ncol(Expression_matrix_Filtered)
 modNames = names(MEs)
 
-# GeneModule membership
+# Calculate the gene module membership
 geneModuleMembership <- as.data.frame(cor(x = WGCNA_Input_ExpMat_filtered, y = MEs, use = "p"))
+
+# Calculate the p-value of the gene module membership
 MMPvalue = as.data.frame(WGCNA::corPvalueStudent(as.matrix(geneModuleMembership), nSamples))
 
+# Rename the columns of geneModuleMembership and MMPvalue
 names(geneModuleMembership) = paste("", modNames, sep="")
-names(MMPvalue) = paste("p.", modNames, sep="");
+names(MMPvalue) = paste("p.", modNames, sep="")
 
+# Combine geneModuleMembership and MMPvalue into a data frame
 Module_Membership_df <- cbind(geneModuleMembership, MMPvalue)
 
-write.csv(Module_Membership_df, paste(data_folder, '/RNASeq/InHouse/WGCNA/ME_Gene_Membership.csv', sep = ''), 
-          quote = F, row.names = T)
+# Write Module_Membership_df to a CSV file
+write.csv(Module_Membership_df, paste(data_folder, '/RNASeq/InHouse/WGCNA/ME_Gene_Membership.csv', sep = ''), quote = F, row.names = T)
 ```
 
 # 6) Panels DEF - Association of WGCNA with pathways and TFs
 
 ## - Loading WGCNA MEs
 
+Here we load two CSV files containing module eigengenes and assigned genes, and then create a list of genes for each module. The genes in each data frame are sorted in descending order of their module membership.
+
 ```{r}
+# Read in the module eigengenes
 MEs <- read.csv(paste(data_folder, '/RNASeq/InHouse/WGCNA/ME_Gene_Membership.csv', sep = ''), row.names = 'X')
 
+# Read in the assigned genes
 MEs_assigned_genes <- read.csv(paste(data_folder, '/RNASeq/InHouse/WGCNA/ME_Gene_Assignment.csv', sep = ''))
 
+# Initialize an empty list
 Module_genes_list <- list()
 
+# Assign the genes of each module to Module_genes_list
 Module_genes_list[['ME1']] <- MEs_assigned_genes[grep(TRUE,MEs_assigned_genes$Module == 'ME1'),'X']
 Module_genes_list[['ME2']] <- MEs_assigned_genes[grep(TRUE,MEs_assigned_genes$Module == 'ME2'),'X']
 Module_genes_list[['ME3']] <- MEs_assigned_genes[grep(TRUE,MEs_assigned_genes$Module == 'ME3'),'X']
@@ -1100,29 +1173,32 @@ Module_genes_list[['ME6']] <- MEs_assigned_genes[grep(TRUE,MEs_assigned_genes$Mo
 
 ## - Sorting modules for highly correlated representative genes
 
+Here we create six data frames ME1_genes to ME6_genes, each containing the genes of a specific module that have a p-value less than 0.05. We then create a list Top_10percent_Module_genes_list of these genes and write this list to a CSV file.
+
 ```{r}
+# Copy the module eigengenes to ME1_genes to ME6_genes
 ME1_genes <- MEs
-ME1_genes <- ME1_genes %>% arrange(-ME1) %>% filter(p.ME1 < 0.05)
-
 ME2_genes <- MEs
-ME2_genes <- ME2_genes %>% arrange(-ME2) %>% filter(p.ME2 < 0.05)
-
 ME3_genes <- MEs
-ME3_genes <- ME3_genes %>% arrange(-ME3) %>% filter(p.ME3 < 0.05)
-
 ME4_genes <- MEs
-ME4_genes <- ME4_genes %>% arrange(-ME4) %>% filter(p.ME4 < 0.05)
-
 ME5_genes <- MEs
-ME5_genes <- ME5_genes %>% arrange(-ME5) %>% filter(p.ME5 < 0.05)
-
 ME6_genes <- MEs
+
+# Sort the genes in each data frame in descending order of their module membership and filter out the genes with a p-value >= 0.05
+ME1_genes <- ME1_genes %>% arrange(-ME1) %>% filter(p.ME1 < 0.05)
+ME2_genes <- ME2_genes %>% arrange(-ME2) %>% filter(p.ME2 < 0.05)
+ME3_genes <- ME3_genes %>% arrange(-ME3) %>% filter(p.ME3 < 0.05)
+ME4_genes <- ME4_genes %>% arrange(-ME4) %>% filter(p.ME4 < 0.05)
+ME5_genes <- ME5_genes %>% arrange(-ME5) %>% filter(p.ME5 < 0.05)
 ME6_genes <- ME6_genes %>% arrange(-ME6) %>% filter(p.ME6 < 0.05)
 ```
 
-### - Defining top 10% (70th percentile) specific genes
+### - Defining top 10% (90th percentile) specific genes
+
+Here we are creating six data frames, each containing the top 10% of genes from a specific module based on their module membership. We then compile these genes into a list and write this list to a CSV file.
 
 ```{r}
+# Select the top 10% of genes in each module based on their module membership
 Top_10percent_ME1_genes <- ME1_genes[grep(TRUE,percent_rank(ME1_genes$ME1) > 0.90),]
 Top_10percent_ME2_genes <- ME2_genes[grep(TRUE,percent_rank(ME2_genes$ME2) > 0.90),]
 Top_10percent_ME3_genes <- ME3_genes[grep(TRUE,percent_rank(ME3_genes$ME3) > 0.90),]
@@ -1130,9 +1206,10 @@ Top_10percent_ME4_genes <- ME4_genes[grep(TRUE,percent_rank(ME4_genes$ME4) > 0.9
 Top_10percent_ME5_genes <- ME5_genes[grep(TRUE,percent_rank(ME5_genes$ME5) > 0.90),]
 Top_10percent_ME6_genes <- ME6_genes[grep(TRUE,percent_rank(ME6_genes$ME6) > 0.90),]
 
-
+# Initialize an empty list
 Top_10percent_Module_genes_list <- list()
 
+# Assign the row names (gene names) of each data frame to Top_10percent_Module_genes_list
 Top_10percent_Module_genes_list[['ME1']] <- rownames(Top_10percent_ME1_genes)
 Top_10percent_Module_genes_list[['ME2']] <- rownames(Top_10percent_ME2_genes)
 Top_10percent_Module_genes_list[['ME3']] <- rownames(Top_10percent_ME3_genes)
@@ -1140,13 +1217,17 @@ Top_10percent_Module_genes_list[['ME4']] <- rownames(Top_10percent_ME4_genes)
 Top_10percent_Module_genes_list[['ME5']] <- rownames(Top_10percent_ME5_genes)
 Top_10percent_Module_genes_list[['ME6']] <- rownames(Top_10percent_ME6_genes)
 
+# Write Top_10percent_Module_genes_list to a CSV file
 suppressWarnings(write.list(Top_10percent_Module_genes_list, 
                  file = paste(data_folder, '/RNASeq/InHouse/WGCNA/WGCNA_Modules_Top10_percent_genes.csv', sep = '')))
 ```
 
 ### - Defining top 30% (70th percentile) specific genes
 
+Here we are creating six data frames, each containing the top 30% of genes from a specific module based on their module membership. We then compile these genes into a list and write this list to a CSV file.
+
 ```{r}
+# Select the top 30% of genes in each module based on their module membership
 Top_30percent_ME1_genes <- ME1_genes[grep(TRUE,percent_rank(ME1_genes$ME1) > 0.70),]
 Top_30percent_ME2_genes <- ME2_genes[grep(TRUE,percent_rank(ME2_genes$ME2) > 0.70),]
 Top_30percent_ME3_genes <- ME3_genes[grep(TRUE,percent_rank(ME3_genes$ME3) > 0.70),]
@@ -1154,9 +1235,10 @@ Top_30percent_ME4_genes <- ME4_genes[grep(TRUE,percent_rank(ME4_genes$ME4) > 0.7
 Top_30percent_ME5_genes <- ME5_genes[grep(TRUE,percent_rank(ME5_genes$ME5) > 0.70),]
 Top_30percent_ME6_genes <- ME6_genes[grep(TRUE,percent_rank(ME6_genes$ME6) > 0.70),]
 
-
+# Initialize an empty list
 Top_30percent_Module_genes_list <- list()
 
+# Assign the row names (gene names) of each data frame to Top_30percent_Module_genes_list
 Top_30percent_Module_genes_list[['ME1']] <- rownames(Top_30percent_ME1_genes)
 Top_30percent_Module_genes_list[['ME2']] <- rownames(Top_30percent_ME2_genes)
 Top_30percent_Module_genes_list[['ME3']] <- rownames(Top_30percent_ME3_genes)
@@ -1164,25 +1246,26 @@ Top_30percent_Module_genes_list[['ME4']] <- rownames(Top_30percent_ME4_genes)
 Top_30percent_Module_genes_list[['ME5']] <- rownames(Top_30percent_ME5_genes)
 Top_30percent_Module_genes_list[['ME6']] <- rownames(Top_30percent_ME6_genes)
 
+# Write Top_30percent_Module_genes_list to a CSV file
 suppressWarnings(write.list(Top_30percent_Module_genes_list, 
                  file = paste(data_folder, '/RNASeq/InHouse/WGCNA/WGCNA_Modules_Top30_percent_genes.csv', sep = '')))
 ```
 
 ### - Adding the top 10% cor. genes to the uniquely associated genes found by TOM
 
+Here we are updating the original Module_genes_list with the top 30% of genes from each module. We merge the original list with the Top_30percent_Module_genes_list for each module, ensuring that each gene only appears once in the updated list.
+
 ```{r}
+# Create a copy of the original Module_genes_list
 Module_genes_list_added <- Module_genes_list
 
+# Merge the original list with the Top_30percent_Module_genes_list for each module
+# Ensure that each gene only appears once in the updated list
 Module_genes_list_added[['ME1']] <- unique(c(Module_genes_list[['ME1']], Top_30percent_Module_genes_list[['ME1']]))
-
 Module_genes_list_added[['ME2']] <- unique(c(Module_genes_list[['ME2']], Top_30percent_Module_genes_list[['ME2']]))
-
 Module_genes_list_added[['ME3']] <- unique(c(Module_genes_list[['ME3']], Top_30percent_Module_genes_list[['ME3']]))
-
 Module_genes_list_added[['ME4']] <- unique(c(Module_genes_list[['ME4']], Top_30percent_Module_genes_list[['ME4']]))
-
 Module_genes_list_added[['ME5']] <- unique(c(Module_genes_list[['ME5']], Top_30percent_Module_genes_list[['ME5']]))
-
 Module_genes_list_added[['ME6']] <- unique(c(Module_genes_list[['ME6']], Top_30percent_Module_genes_list[['ME6']]))
 ```
 
@@ -1191,74 +1274,65 @@ Module_genes_list_added[['ME6']] <- unique(c(Module_genes_list[['ME6']], Top_30p
 ### - Loading Genie3 weight matrix
 
 ```{r}
+# Read in the Genie3 weights from a previously saved RDS file
 Genie3_weights <- readRDS(paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Weights.rds', sep = ''))
 ```
 
 ### - Loading Genie 3 TF links 
 
 ```{r}
+# Read in the Genie3 link list from a previously saved RDS file
 linkList <- readRDS(paste(data_folder, '/RNASeq/InHouse/Genie3/Genie3_Linklist.rds', sep = ''))
 ```
 
 ### - Evaluating TF weights for each module identified via WGCNA
 
+Here we are reading in or calculating the weights of transcription factors (TFs) for each module. If the weights have been previously calculated and saved as a CSV file, we read them in. If not, we calculate the median weight of each TF in each module, rank them, and save the results as a CSV file. For each WGCNA module identified, driver TF were illustrated via GraphPad (see under ***GraphPad/Fig_03_Fig_S7/Panels_DEF_Fig_S7.pzfx***).
+
 ```{r}
+# Define the path to the TF weights file
 tf_weights <- paste(data_folder, '/RNASeq/InHouse/WGCNA/WGCNA_Modules_Genie3_TF_regulator_per_module.csv', sep = '')
 
+# Check if the TF weights file exists
 if (file.exists(tf_weights)) {
   
+  # If the file exists, read it in
   tf_weights <- read.csv(tf_weights, header = T, row.names = 'X')
   
 } else {
   
+  # If the file does not exist, calculate the TF weights
   tf_weights <- data.frame(row.names = sort(levels(factor(linkList$regulatoryGene))))
   
   # Create a progress bar
   pb <- txtProgressBar(min = 0, max = length(rownames(tf_weights)), style = 3)
     
+  # Loop over each TF
   for (index in 1:length(rownames(tf_weights))) {
     
+    # Get the current TF
     TF <- rownames(tf_weights)[index]
     
     # Update the progress bar
     setTxtProgressBar(pb, index)
     
-    tf_weights[TF,'ME1_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME1']]))$weight)
-    
-    tf_weights[TF,'ME2_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME2']]))$weight)
-      
-    tf_weights[TF,'ME3_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME3']]))$weight)
-    
-    tf_weights[TF,'ME4_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME4']]))$weight)
-    
-    tf_weights[TF,'ME5_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME5']]))$weight)
-    
-    tf_weights[TF,'ME6_weight'] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[['ME6']]))$weight)
+    # Calculate the median weight of the current TF in each module
+    for (module in c('ME1', 'ME2', 'ME3', 'ME4', 'ME5', 'ME6')) {
+      tf_weights[TF, paste(module, 'weight', sep = '_')] <- median(((linkList %>% filter(regulatoryGene == TF)) %>% filter(targetGene %in% Module_genes_list[[module]]))$weight)
+    }
   
   }
   
   # Close the progress bar
   close(pb)
   
-  tf_weights <- tf_weights %>% arrange(-ME1_weight)
-  tf_weights$ME1_rank <- 1:length(rownames(tf_weights))
+  # Rank the TFs in each module based on their weights
+  for (module in c('ME1', 'ME2', 'ME3', 'ME4', 'ME5', 'ME6')) {
+    tf_weights <- tf_weights %>% arrange(-!!sym(paste(module, 'weight', sep = '_')))
+    tf_weights[paste(module, 'rank', sep = '_')] <- 1:length(rownames(tf_weights))
+  }
   
-  tf_weights <- tf_weights %>% arrange(-ME2_weight)
-  tf_weights$ME2_rank <- 1:length(rownames(tf_weights))
-  
-  tf_weights <- tf_weights %>% arrange(-ME3_weight)
-  tf_weights$ME3_rank <- 1:length(rownames(tf_weights))
-  
-  tf_weights <- tf_weights %>% arrange(-ME4_weight)
-  tf_weights$ME4_rank <- 1:length(rownames(tf_weights))
-  
-  tf_weights <- tf_weights %>% arrange(-ME5_weight)
-  tf_weights$ME5_rank <- 1:length(rownames(tf_weights))
-  
-  tf_weights <- tf_weights %>% arrange(-ME6_weight)
-  tf_weights$ME6_rank <- 1:length(rownames(tf_weights))
-  
-  
+  # Write the TF weights to a CSV file
   write.csv(x = tf_weights, file = paste(data_folder, '/RNASeq/InHouse/WGCNA/WGCNA_Modules_Genie3_TF_regulator_per_module.csv', sep = ''), quote = F, row.names = T)
   
 }
@@ -1266,13 +1340,19 @@ if (file.exists(tf_weights)) {
 
 ## - Pathway annotation
 
+Here we are performing enrichment analysis on the genes in each module using the Enrichr tool. We first set the Enrichr site to "Enrichr" and check if the website is live. We then select a list of databases to use for the enrichment analysis. If the website is live, we perform the enrichment analysis on the genes in each module. Finally, we write the results of the enrichment analysis to a CSV file for each module. For each WGCNA module identified, key representative pathways were illustrated via GraphPad (see under ***GraphPad/Fig_03_Fig_S7/Panels_DEF_Fig_S7.pzfx***).
+
 ```{r}
+# Set the Enrichr site to "Enrichr"
 setEnrichrSite("Enrichr") # Human genes
 
+# Check if the website is live
 websiteLive <- TRUE
 
+# List all available Enrichr databases
 dbs <- listEnrichrDbs()
 
+# Select the databases to use for the enrichment analysis
 dbs_selected <- c('MSigDB_Hallmark_2020',
                   'KEGG_2021_Human',
                   'Reactome_2022',
@@ -1288,25 +1368,24 @@ dbs_selected <- c('MSigDB_Hallmark_2020',
                   'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X',
                   'Enrichr_Submissions_TF-Gene_Coocurrence')
 
+# Initialize a list to store the enrichment results
 Enriched <- list()
 
+# If the website is live, perform the enrichment analysis
 if (websiteLive) {
-    Enriched[['ME1']] <- enrichr(Module_genes_list$ME1, dbs_selected)
-    Enriched[['ME2']] <- enrichr(Module_genes_list$ME2, dbs_selected)
-    Enriched[['ME3']] <- enrichr(Module_genes_list$ME3, dbs_selected)
-    Enriched[['ME4']] <- enrichr(Module_genes_list$ME4, dbs_selected)
-    Enriched[['ME5']] <- enrichr(Module_genes_list$ME5, dbs_selected)
-    Enriched[['ME6']] <- enrichr(Module_genes_list$ME6, dbs_selected)
+    for (module in c('ME1', 'ME2', 'ME3', 'ME4', 'ME5', 'ME6')) {
+        Enriched[[module]] <- enrichr(Module_genes_list[[module]], dbs_selected)
+    }
 }
 
+# Get the unique modules
 modules <- unique(MEs_assigned_genes$Module)
 
+# Write the enrichment results to a CSV file for each module
 for (module in modules) {
-
-suppressWarnings(write.list(Enriched[[module]], file = paste(data_folder, 
-                                            sprintf('/RNASeq/InHouse/WGCNA/%s_enrichR_pathways.csv', module), 
-                                            sep = '')))
-
+    suppressWarnings(write.list(Enriched[[module]], file = paste(data_folder, 
+                                                sprintf('/RNASeq/InHouse/WGCNA/%s_enrichR_pathways.csv', module), 
+                                                sep = '')))
 }
 ```
 

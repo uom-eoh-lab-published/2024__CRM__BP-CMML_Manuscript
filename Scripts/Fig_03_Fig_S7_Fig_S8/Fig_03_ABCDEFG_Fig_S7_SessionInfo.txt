@@ -1,0 +1,76 @@
+R version 4.3.3 (2024-02-29)
+Platform: aarch64-apple-darwin20 (64-bit)
+Running under: macOS Sonoma 14.3.1
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.3-arm64/Resources/lib/libRblas.0.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.3-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.11.0
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+time zone: Europe/London
+tzcode source: internal
+
+attached base packages:
+[1] grid      stats4    stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] ggsci_3.2.0                 scales_1.3.0               
+ [3] yarrr_0.1.5                 circlize_0.4.16            
+ [5] BayesFactor_0.9.12-4.7      Matrix_1.6-5               
+ [7] coda_0.19-4.1               jpeg_0.1-10                
+ [9] RColorBrewer_1.1-3          unikn_1.0.0                
+[11] enrichR_3.2                 erer_3.1                   
+[13] lmtest_0.9-40               zoo_1.8-12                 
+[15] dplyr_1.1.4                 ggridges_0.5.6             
+[17] ggplot2_3.5.1               magick_2.8.3               
+[19] flashClust_1.01-2           ComplexHeatmap_2.18.0      
+[21] WGCNA_1.72-5                fastcluster_1.2.6          
+[23] dynamicTreeCut_1.63-1       DESeq2_1.42.1              
+[25] SummarizedExperiment_1.32.0 Biobase_2.62.0             
+[27] MatrixGenerics_1.14.0       matrixStats_1.3.0          
+[29] GenomicRanges_1.54.1        GenomeInfoDb_1.38.8        
+[31] IRanges_2.36.0              S4Vectors_0.40.2           
+[33] BiocGenerics_0.48.1         stringr_1.5.1              
+[35] doRNG_1.8.6                 rngtools_1.5.2             
+[37] foreach_1.5.2               GENIE3_1.24.0              
+
+loaded via a namespace (and not attached):
+  [1] rstudioapi_0.16.0       jsonlite_1.8.8          shape_1.4.6.1          
+  [4] magrittr_2.0.3          rmarkdown_2.27          GlobalOptions_0.1.2    
+  [7] zlibbioc_1.48.2         vctrs_0.6.5             memoise_2.0.1          
+ [10] RCurl_1.98-1.16         base64enc_0.1-3         htmltools_0.5.8.1      
+ [13] S4Arrays_1.2.1          curl_5.2.1              SparseArray_1.2.4      
+ [16] Formula_1.2-5           TTR_0.24.4              sass_0.4.9             
+ [19] bslib_0.7.0             htmlwidgets_1.6.4       sandwich_3.1-0         
+ [22] impute_1.76.0           cachem_1.1.0            lifecycle_1.0.4        
+ [25] iterators_1.0.14        pkgconfig_2.0.3         R6_2.5.1               
+ [28] fastmap_1.2.0           GenomeInfoDbData_1.2.11 clue_0.3-65            
+ [31] digest_0.6.36           colorspace_2.1-0        AnnotationDbi_1.64.1   
+ [34] Hmisc_5.1-3             RSQLite_2.3.7           WriteXLS_6.6.0         
+ [37] fansi_1.0.6             httr_1.4.7              abind_1.4-5            
+ [40] compiler_4.3.3          bit64_4.0.5             withr_3.0.0            
+ [43] doParallel_1.0.17       tseries_0.10-56         htmlTable_2.4.2        
+ [46] backports_1.5.0         BiocParallel_1.36.0     carData_3.0-5          
+ [49] DBI_1.2.3               highr_0.11              MASS_7.3-60.0.1        
+ [52] DelayedArray_0.28.0     rjson_0.2.21            tools_4.3.3            
+ [55] foreign_0.8-87          quantmod_0.4.26         nnet_7.3-19            
+ [58] systemfit_1.1-30        quadprog_1.5-8          glue_1.7.0             
+ [61] nlme_3.1-165            checkmate_2.3.1         cluster_2.1.6          
+ [64] generics_0.1.3          gtable_0.3.5            preprocessCore_1.64.0  
+ [67] rmdformats_1.0.4        data.table_1.15.4       car_3.1-2              
+ [70] utf8_1.2.4              XVector_0.42.0          pillar_1.9.0           
+ [73] splines_4.3.3           lattice_0.22-6          survival_3.7-0         
+ [76] bit_4.0.5               tidyselect_1.2.1        GO.db_3.18.0           
+ [79] locfit_1.5-9.10         pbapply_1.7-2           Biostrings_2.70.3      
+ [82] knitr_1.48              gridExtra_2.3           bookdown_0.40          
+ [85] urca_1.3-4              xfun_0.45               stringi_1.8.4          
+ [88] yaml_2.3.9              evaluate_0.24.0         codetools_0.2-20       
+ [91] tibble_3.2.1            BiocManager_1.30.23     cli_3.6.3              
+ [94] rpart_4.1.23            munsell_0.5.1           jquerylib_0.1.4        
+ [97] Rcpp_1.0.12             png_0.1-8               parallel_4.3.3         
+[100] MatrixModels_0.5-3      blob_1.2.4              bitops_1.0-7           
+[103] mvtnorm_1.2-5           xts_0.14.0              crayon_1.5.3           
+[106] GetoptLong_1.0.5        rlang_1.1.4             KEGGREST_1.42.0        

@@ -63,18 +63,19 @@ In this section, we ensure that all necessary packages are installed.
 ```{r}
 # Ensure BiocManager is available for installation of Bioconductor packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-BiocManager::install(version = "3.18")
+BiocManager::install(version = "3.18", ask = FALSE)
 
 # Define a list of required packages used in this script
 packages_required <- c("unikn", "RColorBrewer", "yarrr", "scales", "ggsci", 
                        "DESeq2", "dplyr", "ashr", "IHW", "ggplot2", "ggpubr",
-                       "BiocParallel", "tidyverse")
+                       "BiocParallel", "tidyverse",
+                       "unikn", "RColorBrewer", "yarrr", "scales", "ggsci")
 
 # Identify any required packages that are not installed
 packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
 
 # Install any uninstalled packages
-if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled, ask = FALSE)
 ```
 
 ## - Loading packages
