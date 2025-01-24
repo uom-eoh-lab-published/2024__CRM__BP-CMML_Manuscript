@@ -11,19 +11,19 @@
 
 ## General Description: 
 **First Author:** Kristian Gurashi  
-**Correspondance:** Kiran Batta, Daniel Wiseman
+**Correspondance:** Kiran Batta, Daniel Wiseman  
 **Disease:** Blast Phase Chronic Myelomonocytic Leukemia (CMML)
  
 ## Content: 
 This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
 
-## Instruction on how to reproduce manuscript figures:
+## Instructions on how to reproduce manuscript figures:
 
 1) Please download data from Mendeley Data repository at:
 
 2) To ensure reproducibility, please verify that your R and packages version match those used to generate figures in the manuscript - [Check our session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01/Fig_01_ABE_SessionInfo.txt)
 
-3) Installation of python is only required to produce Fig2C and FigS5.
+3) Installation of python is only required to produce [Fig2C](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Fig_02/Panel_C.png) and [FigS5](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Figures/Supplemental/Fig_S5.png).
 
 ---
 
