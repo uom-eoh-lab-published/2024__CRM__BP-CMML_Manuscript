@@ -36,7 +36,7 @@ Here, we define the directories for input data and output files.
 script_folder <- dirname(rstudioapi::getSourceEditorContext()$path)
 
 # Define the data folder and output folder
-data_folder <- './Data/Figure_01'
+data_folder <- './Data'
 output_folder <- './Figures/Figure_01'
 ```
 
@@ -131,8 +131,8 @@ sessionInfo()
 Here we load two CSV files containing clinical and mutation metadata.
 
 ```{r}
-Clinical_metadata <- read.csv(paste(data_folder, '/CHR_BP-CMML_clinical_metadata.csv', sep = ''), row.names = 'Patient.ID')
-Mutation_metadata <- read.csv(paste(data_folder, '/CHR_BP-CMML_mutation_metadata.csv', sep = ''), row.names = 'Patient.ID')
+Clinical_metadata <- read.csv(paste(data_folder, '/Oncoprint/Christie_BP-CMML_cohort_clinical_metadata.csv', sep = ''), row.names = 'Patient.ID')
+Mutation_metadata <- read.csv(paste(data_folder, '/Oncoprint/Christie_BP-CMML_cohort_mutation_metadata.csv', sep = ''), row.names = 'Patient.ID')
 ```
 
 # 3) Panel A: Heatmap
