@@ -122,10 +122,10 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-# writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_S8_SessionInfo.txt'))
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_S8_SessionInfo.txt'))
 
 # Print the session information
-# sessionInfo()
+sessionInfo()
 ```
 
 # 2) Loading input files
