@@ -22,11 +22,11 @@ Daniel Wiseman (daniel.wiseman@manchester.ac.uk)
 </p>
 
 ## Content: 
-This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
+This is the code repository for the CRM 2025 manuscript on BP-CMML stratification.
 
 ## Instructions on reproducibility:
 
-1) Please download the processed input data deposited in the following Mendeley Data repository: [Link to data](https://data.mendeley.com/preview/vcsyd7ns8f?a=416960ed-b18d-4828-ae53-d958751fd08c)
+1) Please download the processed input data deposited in the following Mendeley Data repository: [Link to data](https://doi.org/10.17632/vcsyd7ns8f.1)
 
 2) To ensure reproducibility, please verify that your R and packages version match those used to generate figures in the manuscript - [Check exemplar session info](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01_Fig_S1/Fig_01_ABE_Fig_S1_SessionInfo.txt)
 
@@ -38,7 +38,7 @@ This is the code repository for the CRM 2024 manuscript on BP-CMML stratificatio
 
 If using any code here published and/or data from this publication please remember to cite us:
 
-> Example et al. 2024 # TBD
+> Example et al. 2025 # TBD
 
 ---
 
