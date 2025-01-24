@@ -1,0 +1,66 @@
+R version 4.3.3 (2024-02-29)
+Platform: aarch64-apple-darwin20 (64-bit)
+Running under: macOS Sonoma 14.3.1
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.3-arm64/Resources/lib/libRblas.0.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.3-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.11.0
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+time zone: Europe/London
+tzcode source: internal
+
+attached base packages:
+[1] grid      stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+ [1] ggsci_3.2.0            scales_1.3.0           yarrr_0.1.5           
+ [4] circlize_0.4.16        BayesFactor_0.9.12-4.7 Matrix_1.6-5          
+ [7] coda_0.19-4.1          jpeg_0.1-10            RColorBrewer_1.1-3    
+[10] unikn_1.0.0            dendextend_1.17.1      pROC_1.18.5           
+[13] ROCR_1.0-11            caret_6.0-94           lattice_0.22-6        
+[16] rattle_5.5.1           bitops_1.0-7           tibble_3.2.1          
+[19] Boruta_8.0.0           rstatix_0.7.2          coin_1.4-3            
+[22] survival_3.7-0         dplyr_1.1.4            ComplexHeatmap_2.18.0 
+[25] randomForest_4.7-1.1   ggrepel_0.9.5          readr_2.1.5           
+[28] ggplot2_3.5.1         
+
+loaded via a namespace (and not attached):
+  [1] pbapply_1.7-2        gridExtra_2.3        sandwich_3.1-0      
+  [4] rlang_1.1.4          magrittr_2.0.3       clue_0.3-65         
+  [7] GetoptLong_1.0.5     multcomp_1.4-25      matrixStats_1.3.0   
+ [10] compiler_4.3.3       reshape2_1.4.4       png_0.1-8           
+ [13] vctrs_0.6.5          stringr_1.5.1        pkgconfig_2.0.3     
+ [16] shape_1.4.6.1        crayon_1.5.3         fastmap_1.2.0       
+ [19] backports_1.5.0      rmdformats_1.0.4     utf8_1.2.4          
+ [22] rmarkdown_2.27       prodlim_2024.06.25   tzdb_0.4.0          
+ [25] MatrixModels_0.5-3   purrr_1.0.2          xfun_0.45           
+ [28] modeltools_0.2-23    cachem_1.1.0         jsonlite_1.8.8      
+ [31] recipes_1.0.10       highr_0.11           broom_1.0.6         
+ [34] parallel_4.3.3       cluster_2.1.6        R6_2.5.1            
+ [37] bslib_0.7.0          stringi_1.8.4        parallelly_1.37.1   
+ [40] car_3.1-2            rpart_4.1.23         lubridate_1.9.3     
+ [43] jquerylib_0.1.4      Rcpp_1.0.12          bookdown_0.40       
+ [46] iterators_1.0.14     knitr_1.48           future.apply_1.11.2 
+ [49] zoo_1.8-12           IRanges_2.36.0       timechange_0.3.0    
+ [52] splines_4.3.3        nnet_7.3-19          tidyselect_1.2.1    
+ [55] viridis_0.6.5        rstudioapi_0.16.0    abind_1.4-5         
+ [58] yaml_2.3.9           timeDate_4032.109    doParallel_1.0.17   
+ [61] codetools_0.2-20     listenv_0.9.1        plyr_1.8.9          
+ [64] withr_3.0.0          evaluate_0.24.0      future_1.33.2       
+ [67] pillar_1.9.0         BiocManager_1.30.23  carData_3.0-5       
+ [70] foreach_1.5.2        stats4_4.3.3         generics_0.1.3      
+ [73] S4Vectors_0.40.2     hms_1.1.3            munsell_0.5.1       
+ [76] globals_0.16.3       class_7.3-22         glue_1.7.0          
+ [79] tools_4.3.3          data.table_1.15.4    ModelMetrics_1.2.2.2
+ [82] gower_1.0.1          mvtnorm_1.2-5        tidyr_1.3.1         
+ [85] libcoin_1.0-10       ipred_0.9-14         colorspace_2.1-0    
+ [88] nlme_3.1-165         cli_3.6.3            fansi_1.0.6         
+ [91] viridisLite_0.4.2    lava_1.8.0           gtable_0.3.5        
+ [94] sass_0.4.9           digest_0.6.36        BiocGenerics_0.48.1 
+ [97] TH.data_1.1-2        rjson_0.2.21         htmltools_0.5.8.1   
+[100] lifecycle_1.0.4      hardhat_1.3.1        GlobalOptions_0.1.2 
+[103] MASS_7.3-60.0.1     
