@@ -1,0 +1,21 @@
+---
+title: "Figure 01"
+output: 
+  rmdformats::robobook:
+    thumbnails: true
+    lightbox: true
+    gallery: true
+    fig_caption: true
+---
+
+# Chapter 1
+
+```{r, echo=FALSE}
+htmltools::includeHTML("/Users/kgurashi/GitHub/2024__CRM__BP-CMML_Manuscript/Scripts/Figure_01/Panel_A.html")
+```
+
+# Chapter 2
+
+```{r, echo=FALSE}
+htmltools::includeHTML("/Users/kgurashi/GitHub/2024__CRM__BP-CMML_Manuscript/Scripts/Figure_01/Panel_A_copy.html")
+```
