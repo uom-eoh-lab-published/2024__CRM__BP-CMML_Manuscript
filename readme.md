@@ -9,12 +9,13 @@
 
 ---
 
-**Lead:** KGURASHI  
+## General Description: 
+**First Author:** Kristian Gurashi  
+**Correspondance:** Kiran Batta, Daniel Wiseman
 **Disease:** Blast Phase Chronic Myelomonocytic Leukemia (CMML)
  
-## General Description: 
+## Content: 
 This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
-
 
 ## Instruction on how to reproduce manuscript figures:
 
