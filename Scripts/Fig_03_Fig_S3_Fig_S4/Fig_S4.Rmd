@@ -1,0 +1,863 @@
+---
+title: "Figure S4"
+output: 
+  rmdformats::robobook:
+    lightbox: true
+    fig_caption: true
+---
+
+<style type="text/css">
+  body{
+  font-size: 10pt;
+}
+</style>
+
+# 1) Setup
+
+## - Defining work directory
+
+In this section, we define the working directory for the R Markdown document.
+
+```{r setup, include=TRUE}
+# Get the path of the current script
+# Then get the parent directory of the parent directory of the parent directory
+local_wd_folder <- dirname(dirname(dirname(rstudioapi::getSourceEditorContext()$path)))
+
+# Set the root directory for knitr to the local working directory
+knitr::opts_knit$set(root.dir = local_wd_folder)
+```
+
+## - Defining input data and output directories
+
+Here, we define the directories for input data and output files.
+
+```{r}
+# Get the directory of the current script
+script_folder <- dirname(rstudioapi::getSourceEditorContext()$path)
+
+# Define the data folder and output folder
+data_folder <- './Data'
+#results_folder <- './Results'
+figures_folder <- './Figures'
+```
+
+## - Setting seed
+
+Setting a seed ensures that any random processes are reproducible.
+
+```{r}
+# Set a seed for reproducibility
+set.seed(123)
+```
+
+## - Packages installation (optional)
+
+In this section, we ensure that all necessary packages are installed.
+
+```{r}
+# Ensure BiocManager is available for installation of Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+BiocManager::install(version = "3.18")
+
+# Define a list of required packages used in this script
+packages_required <- c("escape")
+
+# Identify any required packages that are not installed
+packages_uninstalled <- packages_required[!(packages_required %in% installed.packages()[,"Package"])]
+
+# Install any uninstalled packages
+if(length(packages_uninstalled)) BiocManager::install(packages_uninstalled)
+```
+
+## - Loading packages
+
+Here, we load the necessary packages for our analysis.
+
+```{r message=FALSE, warning=FALSE}
+# Load stringr for string manipulation
+library(escape, quietly = TRUE)
+```
+
+## - Loading palettes
+
+In this section, we load additional color palettes and define some custom ones.
+
+```{r message=FALSE, warning=FALSE}
+# Load additional colour palette packages
+library(unikn, quietly = TRUE)
+library(RColorBrewer, quietly = TRUE)
+library(yarrr, quietly = TRUE)
+library(scales, quietly = TRUE)
+library(ggsci, quietly = TRUE)
+
+# Define a set of custom color palettes from the unikn package
+mix_1 <- usecol(pal = c(Karpfenblau, "white", Peach), n = 15)
+mix_2 <- usecol(pal = c(rev(pal_seeblau), "white", pal_pinky))
+mix_3 <- usecol(pal = c(rev(pal_bordeaux), "white", pal_petrol), n = 15)
+
+# Display the custom palettes
+seecol(list(mix_1, mix_2, mix_3), col_brd = "white", lwd_brd = 4, title = "Comparing palettes mixed from unikn colors", pal_names = c("mix_1", "mix_2", "mix_3"))
+
+# Define a second set of custom palettes from the RColorBrewer and yarrr packages
+brew_mix <- usecol(c(rev(brewer.pal(n = 4, name = "Reds")), "white", brewer.pal(n = 4, name = "Blues")), n = 13)
+brew_ext <- usecol(brewer.pal(n = 11, name = "Spectral"), n = 12)
+yarrr_mix <- usecol(c(piratepal("nemo"), piratepal("bugs")))
+yarrr_mod <- usecol(c(piratepal("ipod")), n = 9)
+
+# Display the second set of custom palettes
+seecol(pal = list(brew_mix, brew_ext, yarrr_mix, yarrr_mod), col_brd = "white", lwd_brd = 2, title = "Using usecol() and seecol() to mix and modify palettes", pal_names = c("brew_mix", "brew_ext", "yarrr_mix", "yarrr_mod"))
+
+# Define additional custom palettes from the scales package
+natjournals_palette <- pal_npg("nrc")(10)
+```
+
+## - Log Session Info
+
+Finally, we log the session information for reproducibility.
+
+```{r message=TRUE, warning=TRUE}
+# Write the session information to a text file
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_S4_SessionInfo.txt'))
+
+# Print the session information
+sessionInfo()
+```
+
+# 2) Loading input files
+
+```{r}
+Expression_matrix <- read.csv(paste(data_folder, '/RNASeq/InHouse/Counts/Processed_counts/Grouped/Tximport_TPM_mat.csv', 
+                                    sep = ''), 
+                              row.names = 'X')
+
+colnames(Expression_matrix) <- str_replace_all(colnames(Expression_matrix), pattern = 'X', replacement = '')
+
+Genes_annotation_metadata <- read.csv(paste(data_folder, "/Resources/RNASeq/Annotation_files/GENCODE_v42.gene_metadata.csv", sep = ''))
+rownames(Genes_annotation_metadata) <- Genes_annotation_metadata$gene_id
+
+Samples_metadata <- read.csv(paste(data_folder, '/RNASeq/InHouse/Metadata/Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
+```
+
+# 3) Ordering expression matrix (TPM)
+
+```{r}
+Unique_genes <- read.table(file = paste(data_folder, '/RNASeq/InHouse/Counts/Processed_counts/List_unique_genes.csv', 
+                                    sep = ''), header = T, sep = ',')$unique_genes
+
+Expression_matrix <- Expression_matrix[Unique_genes, ]
+
+rownames(Expression_matrix) <- Genes_annotation_metadata[rownames(Expression_matrix),'gene_name']
+
+Expression_matrix <- as.matrix(Expression_matrix)
+
+Expression_matrix <- Expression_matrix[,rownames(Samples_metadata)]
+```
+
+# 4) Creating folders for Pathway Analyses
+
+```{r}
+dir.create(file.path(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis', 
+                                    sep = '')), showWarnings = FALSE)
+
+dir.create(file.path(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments', 
+                                    sep = '')), showWarnings = FALSE)
+
+dir.create(file.path(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/CellType', 
+                                    sep = '')), showWarnings = FALSE)
+
+dir.create(file.path(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Resistance', 
+                                    sep = '')), showWarnings = FALSE)
+
+dir.create(file.path(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Response', 
+                                    sep = '')), showWarnings = FALSE)
+
+dir.create(file.path(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/WGCNA', 
+                                    sep = '')), showWarnings = FALSE)
+
+dir.create(file.path(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/Control_vs_BP-CMML', 
+                                    sep = '')), showWarnings = FALSE)
+```
+
+# 5) Gene signature
+
+## - CellTypes
+
+### - 2019 VanGalen P. V. et al AML signatures
+
+```{r}
+VanGalen_CellType_Modules  <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Pathways/2019__VanGalen_et_al__AML_signatures.csv', 
+                                    sep = ''))
+
+HSC.like <- GSEABase::GeneSet(VanGalen_CellType_Modules$HSC.like)
+HSC.like <- GSEABase::`setName<-`(object = HSC.like, value='HSC.like')
+
+Progenitor.like <- GSEABase::GeneSet(VanGalen_CellType_Modules$Progenitor.like)
+Progenitor.like <- GSEABase::`setName<-`(object = Progenitor.like, value='Progenitor.like')
+
+HSC.Prog.like <- GSEABase::GeneSet(VanGalen_CellType_Modules$HSC.Prog.like)
+HSC.Prog.like <- GSEABase::`setName<-`(object = HSC.Prog.like, value='HSC.Prog.like')
+
+GMP.like <- GSEABase::GeneSet(VanGalen_CellType_Modules$GMP.like)
+GMP.like <- GSEABase::`setName<-`(object = GMP.like, value='GMP.like')
+
+Promono.like <- GSEABase::GeneSet(VanGalen_CellType_Modules$Promono.like)
+Promono.like <- GSEABase::`setName<-`(object = Promono.like, value='Promono.like')
+
+Monocyte.like <- GSEABase::GeneSet(VanGalen_CellType_Modules$Monocyte.like)
+Monocyte.like <- GSEABase::`setName<-`(object = Monocyte.like, value='Monocyte.like')
+
+cDC.like <- GSEABase::GeneSet(VanGalen_CellType_Modules$cDC.like)
+cDC.like <- GSEABase::`setName<-`(object = cDC.like, value='cDC.like')
+
+Myeloid.like <- GSEABase::GeneSet(VanGalen_CellType_Modules$Myeloid.like)
+Myeloid.like <- GSEABase::`setName<-`(object = Myeloid.like, value='Myeloid.like')
+
+VanGalen_CellType_Modules_collection <- GSEABase::GeneSetCollection(HSC.like, HSC.Prog.like, Progenitor.like, 
+                                                            GMP.like, Promono.like, Monocyte.like, 
+                                                            cDC.like, Myeloid.like)
+
+# - - - - Scoring samples excluding healthies
+
+VanGalen_CellType_Modules_scaled_results_no_healthies <- enrichIt(obj = as.matrix(Expression_matrix[,rownames(Samples_metadata[Samples_metadata$Condition == 'BP-CMML',])]), 
+               gene.sets = VanGalen_CellType_Modules_collection, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(VanGalen_CellType_Modules_scaled_results_no_healthies, paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/CellType/2019__VanGalen_et_al__AML_signatures__Enrichments.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+```
+
+### - 2017 Velten L. et al Healthy signatures
+
+```{r}
+Velten_CellType_Modules <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Pathways/2017__Velten_et_al__Healthy_signatures.csv', 
+                                    sep = ''))
+
+library(stringi)
+
+Hematopoietic_module_genes <- list()
+
+for (Hematopoietic_module in colnames(Velten_CellType_Modules)) {
+
+Hematopoietic_module_genes[[Hematopoietic_module]] <-  Velten_CellType_Modules[[Hematopoietic_module]][Velten_CellType_Modules[[Hematopoietic_module]] != ""]
+  
+Hematopoietic_module_genes[[Hematopoietic_module]] <- str_split_fixed(Hematopoietic_module_genes[[Hematopoietic_module]], pattern = ' ', n = 2)[,1]
+
+Hematopoietic_module_genes[[Hematopoietic_module]] <- as.vector(na.omit(Hematopoietic_module_genes[[Hematopoietic_module]]))
+
+Hematopoietic_module_genes[[Hematopoietic_module]] <- GSEABase::GeneSet(Hematopoietic_module_genes[[Hematopoietic_module]])
+
+Hematopoietic_module_genes[[Hematopoietic_module]] <- GSEABase::`setName<-`(object = Hematopoietic_module_genes[[Hematopoietic_module]], value = sprintf('%s',Hematopoietic_module))
+
+}
+
+Velten_Celltype_Modules <- GSEABase::GeneSetCollection(Hematopoietic_module_genes)
+
+# - - - - Scoring samples excluding healthies
+
+Velten_Celltype_Modules_scaled_results_no_healthies <- enrichIt(obj = as.matrix(Expression_matrix[,rownames(Samples_metadata[Samples_metadata$Condition == 'BP-CMML',])]), 
+               gene.sets = Velten_Celltype_Modules, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(Velten_Celltype_Modules_scaled_results_no_healthies, paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/CellType/2017__Velten_et_al__Healthy_signatures__Enrichments.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+```
+
+## - Drug Resistance
+
+### - 2017 Unnikrishnan A. et al Azacytidine resistance/response signatures
+
+```{r}
+AZA_modules <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Pathways/2017__Unnikrishnan_et_al_MDS_expression_preAZA_treatment.csv', 
+                                    sep = ''))
+
+AZA_modules_UP <- AZA_modules %>% dplyr::filter(Comment == 'UP in AZA responders')
+AZA_modules_UP <- GSEABase::GeneSet(AZA_modules_UP$Gene.Symbol..)
+AZA_modules_UP <- GSEABase::`setName<-`(object = AZA_modules_UP, value='AZA response')
+
+AZA_modules_DOWN <- AZA_modules %>% dplyr::filter(Comment == 'UP in AZA non-responders')
+AZA_modules_DOWN <- GSEABase::GeneSet(AZA_modules_DOWN$Gene.Symbol..)
+AZA_modules_DOWN <- GSEABase::`setName<-`(object = AZA_modules_DOWN, value='AZA resistance')
+
+AZA_modules_collection <- GSEABase::GeneSetCollection(AZA_modules_UP, AZA_modules_DOWN)
+
+# - - - - Scoring samples excluding healthies
+
+AZA_modules_scaled_result_no_healthies <- enrichIt(obj = as.matrix(Expression_matrix[,rownames(Samples_metadata[Samples_metadata$Condition == 'BP-CMML',])]), 
+               gene.sets = AZA_modules_collection, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(AZA_modules_scaled_result_no_healthies %>% select(AZA.resistance), 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Resistance/2017__Unnikrishnan_et_al__AZA_resistance_signature__Enrichments.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+
+write.csv(AZA_modules_scaled_result_no_healthies %>% select(AZA.response), 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Response/2017__Unnikrishnan_et_al__AZA_response_signature__Enrichments.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+
+# - - - - Scoring samples including healthies
+
+AZA_modules_scaled_result_with_healthies <- enrichIt(obj = as.matrix(Expression_matrix), 
+               gene.sets = AZA_modules_collection, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(AZA_modules_scaled_result_with_healthies %>% select(AZA.resistance), 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Resistance/2017__Unnikrishnan_et_al__AZA_resistance_signature__Enrichments_w_healthies.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+
+write.csv(AZA_modules_scaled_result_with_healthies %>% select(AZA.response), 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Response/2017__Unnikrishnan_et_al__AZA_response_signature__Enrichments_w_healthies.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+```
+
+### - 2020 Zhang H et al. Venetoclax resistance signature
+
+```{r}
+Veneto_resistance_module <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Pathways/2020__Zhang_et_al__venetoclax_resistance_signature.csv', 
+                                    sep = ''))
+
+Veneto_resistance_module <- Veneto_resistance_module %>% filter(fold_change > 0)
+
+Veneto_resistance_module$Rank <- 1-percent_rank(Veneto_resistance_module$fdr)
+
+Veneto_resistance_module <- Veneto_resistance_module %>% arrange(fdr)
+
+Veneto_resistance_module_top_10percent_genes <- Veneto_resistance_module[grep(TRUE,percent_rank(Veneto_resistance_module$Rank) >= 0.90),'symbol']
+Veneto_resistance_module_genes <- GSEABase::GeneSet(Veneto_resistance_module_top_10percent_genes)
+Veneto_resistance_module_genes <- GSEABase::`setName<-`(object = Veneto_resistance_module_genes, value='Venetoclax resistance')
+Veneto_resistance_module_genes <- GSEABase::GeneSetCollection(Veneto_resistance_module_genes)
+
+# - - - - Scoring samples excluding healthies
+
+Veneto_resistance_module_scaled_result_no_healthies <- enrichIt(obj = as.matrix(Expression_matrix[,rownames(Samples_metadata[Samples_metadata$Condition == 'BP-CMML',])]), 
+               gene.sets = Veneto_resistance_module_genes, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(Veneto_resistance_module_scaled_result_no_healthies, 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Resistance/2020__Zhang_et_al__Ven_resistance_signature__Enrichments.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+
+# - - - - Scoring samples including healthies
+
+Veneto_resistance_module_scaled_result_with_healthies <- enrichIt(obj = as.matrix(Expression_matrix), 
+               gene.sets = Veneto_resistance_module_genes, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(Veneto_resistance_module_scaled_result_with_healthies, 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Resistance/2020__Zhang_et_al__Ven_resistance_signature__Enrichments_w_healthies.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+```
+
+### - 2020 Williams M. et al. Daunorubicin resistance signature
+
+```{r}
+Daunorubicin_resistance_module <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Pathways/2020__Williams_et_al__daunorubicin_resistance_signature.csv', 
+                                    sep = ''))
+
+Daunorubicin_resistance_module$Log2FC <- log2(Daunorubicin_resistance_module$FC)
+
+Daunorubicin_resistance_module <- Daunorubicin_resistance_module %>% filter(Log2FC > 0)
+
+Daunorubicin_resistance_module_genes <- GSEABase::GeneSet(Daunorubicin_resistance_module$symbol[which((Daunorubicin_resistance_module$symbol == '') == F)])
+
+Daunorubicin_resistance_module_genes <- GSEABase::`setName<-`(object = Daunorubicin_resistance_module_genes, value='Daunorubicin resistance')
+
+Daunorubicin_resistance_module_genes <- GSEABase::GeneSetCollection(Daunorubicin_resistance_module_genes)
+
+# - - - - Scoring samples excluding healthies
+
+Daunorubicin_resistance_module_scaled_result_no_healthies <- enrichIt(obj = as.matrix(Expression_matrix[,rownames(Samples_metadata[Samples_metadata$Condition == 'BP-CMML',])]), 
+               gene.sets = Daunorubicin_resistance_module_genes, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(Daunorubicin_resistance_module_scaled_result_no_healthies, 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Resistance/2020__Williams_et_al__Daunorubicin_resistance_signature__Enrichments.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+
+# - - - - Scoring samples including healthies
+
+Daunorubicin_resistance_module_scaled_result_with_healthies <- enrichIt(obj = as.matrix(Expression_matrix), 
+               gene.sets = Daunorubicin_resistance_module_genes, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(Daunorubicin_resistance_module_scaled_result_with_healthies, 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Resistance/2020__Williams_et_al__Daunorubicin_resistance_signature__Enrichments_w_healthies.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+```
+
+## - Drug Response
+
+### - 2019 Xu H. et al. Cytarabine response signature
+
+```{r}
+cytarabine_response_module <- read.csv(paste(data_folder, '/Resources/RNASeq/Gene_Pathways/2019__Xu_et_al_cytarabine_response_signature.csv', 
+                                    sep = ''))
+
+cytarabine_response_module <- cytarabine_response_module %>% filter(Log2_FoldChange > 0)
+
+cytarabine_response_module_genes <- GSEABase::GeneSet(cytarabine_response_module$GeneName)
+cytarabine_response_module_genes <- GSEABase::`setName<-`(object = cytarabine_response_module_genes, value='Cytarabine response')
+cytarabine_response_module_genes <- GSEABase::GeneSetCollection(cytarabine_response_module_genes)
+
+# - - - - Scoring samples excluding healthies
+
+cytarabine_response_module_scaled_result_no_healthies <- enrichIt(obj = as.matrix(Expression_matrix[,rownames(Samples_metadata[Samples_metadata$Condition == 'BP-CMML',])]), 
+               gene.sets = cytarabine_response_module_genes, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(cytarabine_response_module_scaled_result_no_healthies, 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Response/2019__Xu_et_al_cytarabine_response_signature__Enrichments.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+
+# - - - - Scoring samples including healthies
+
+cytarabine_response_module_scaled_result_with_healthies <- enrichIt(obj = as.matrix(Expression_matrix), 
+               gene.sets = cytarabine_response_module_genes, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+write.csv(cytarabine_response_module_scaled_result_with_healthies, 
+          paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Response/2019__Xu_et_al_cytarabine_response_signature__Enrichments_w_healthies.csv', 
+                                    sep = ''),
+          quote = F, row.names = T)
+```
+
+### - 2022 Vizome BEAT AML mined drug response signatures
+
+```{r}
+Finaldrugs_selection <- read.csv(paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Sample_Selection/Drugs_passing_threshold.csv', 
+                                    sep = ''))$Drug
+
+DrugResponses <- list()
+DrugResponses_genes <- list()
+
+for (drug in Finaldrugs_selection) {
+  
+  DrugResponses[[drug]] <- read.csv(paste(data_folder, '/RNASeq/PubliclyAvailable/2022__Vizome__BeatAML/Mined_Signatures/', 
+                                          drug, '/',
+                                          sprintf("%s_Responsive_vs_Resistant_downregulated_padj_significant_DEGs_LFC_Ashr.csv", drug),
+                                    sep = ''))
+  
+  DrugResponses[[drug]]$rank <- NULL
+  
+  if ((length(DrugResponses[[drug]]$symbol) < 10) == TRUE) {
+  DrugResponses[[drug]] <- NULL 
+  } else {
+    if ((length(DrugResponses[[drug]]$symbol) > 500) == TRUE) {
+        DrugResponses[[drug]]$Rank <- 1-percent_rank(DrugResponses[[drug]]$padj)
+        DrugResponses_genes[[drug]] <- DrugResponses[[drug]][grep(TRUE,percent_rank(DrugResponses[[drug]]$Rank) >= 0.70),'symbol']
+          if ((length(DrugResponses_genes[[drug]]) > 500) == TRUE) {
+            DrugResponses_genes[[drug]] <- GSEABase::GeneSet(na.omit(unique(DrugResponses[[drug]]$symbol[1:500])))
+            DrugResponses_genes[[drug]] <- GSEABase::`setName<-`(object = DrugResponses_genes[[drug]], value=sprintf('%s',drug)) 
+          }
+          else {
+            DrugResponses_genes[[drug]] <- GSEABase::GeneSet(na.omit(unique(DrugResponses_genes[[drug]])))
+            DrugResponses_genes[[drug]] <- GSEABase::`setName<-`(object = DrugResponses_genes[[drug]], value=sprintf('%s',drug)) 
+          }
+        }
+    else {
+        DrugResponses_genes[[drug]] <- GSEABase::GeneSet(na.omit(unique(DrugResponses[[drug]]$symbol[1:500])))
+        DrugResponses_genes[[drug]] <- GSEABase::`setName<-`(object = DrugResponses_genes[[drug]], value=sprintf('%s',drug)) 
+      }
+    }
+  }
+
+  df <- data.frame(row.names = names(DrugResponses_genes))
+  for (drug in names(DrugResponses_genes)) {
+  df[drug,'length'] <- length(GSEABase::geneIds(DrugResponses_genes[[drug]]))
+  }
+  
+  DrugResponseSignatures <- GSEABase::GeneSetCollection(DrugResponses_genes)
+
+# - - - - Scoring samples excluding healthies
+  
+  DrugResponseSignatures_scaled_results_no_healthies <- enrichIt(obj = as.matrix(Expression_matrix[,rownames(Samples_metadata[Samples_metadata$Condition == 'BP-CMML',])]), 
+               gene.sets = DrugResponseSignatures, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+
+  colnames(DrugResponseSignatures_scaled_results_no_healthies) <- gsub("\\.{2}", " ", colnames(DrugResponseSignatures_scaled_results_no_healthies))
+  colnames(DrugResponseSignatures_scaled_results_no_healthies) <- gsub("\\.*$","", colnames(DrugResponseSignatures_scaled_results_no_healthies))
+  DrugResponseSignatures_scaled_results_no_healthies <- DrugResponseSignatures_scaled_results_no_healthies[,sort(colnames(DrugResponseSignatures_scaled_results_no_healthies))]
+  
+  write.csv(DrugResponseSignatures_scaled_results_no_healthies, 
+            paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Response/2022__BeatAMLDrugResponseSignatures__Enrichments.csv', 
+                                      sep = ''),
+            quote = F, row.names = T)
+```
+
+## - WGCNA
+
+```{r}
+WGCNA_top_genes <- read.csv(paste(data_folder, '/RNASeq/InHouse/WGCNA/WGCNA_Modules_Top10_percent_genes.csv', 
+                                    sep = ''))
+
+colnames(WGCNA_top_genes) <- c('Module', 'Gene')
+
+Top_ME1 <- WGCNA_top_genes %>% dplyr::filter(Module == 'ME1')
+Top_ME1 <- GSEABase::GeneSet(Top_ME1$Gene)
+Top_ME1 <- GSEABase::`setName<-`(object = Top_ME1, value='ME1')
+
+Top_ME2 <- WGCNA_top_genes %>% dplyr::filter(Module == 'ME2')
+Top_ME2 <- GSEABase::GeneSet(Top_ME2$Gene)
+Top_ME2<- GSEABase::`setName<-`(object = Top_ME2, value='ME2')
+
+Top_ME3 <- WGCNA_top_genes %>% dplyr::filter(Module == 'ME3')
+Top_ME3 <- GSEABase::GeneSet(Top_ME3$Gene)
+Top_ME3 <- GSEABase::`setName<-`(object = Top_ME3, value='ME3')
+
+Top_ME4 <- WGCNA_top_genes %>% dplyr::filter(Module == 'ME4')
+Top_ME4 <- GSEABase::GeneSet(Top_ME4$Gene)
+Top_ME4 <- GSEABase::`setName<-`(object = Top_ME4, value='ME4')
+
+Top_ME5 <- WGCNA_top_genes %>% dplyr::filter(Module == 'ME5')
+Top_ME5 <- GSEABase::GeneSet(Top_ME5$Gene)
+Top_ME5 <- GSEABase::`setName<-`(object = Top_ME5, value='ME5')
+
+Top_ME6 <- WGCNA_top_genes %>% dplyr::filter(Module == 'ME6')
+Top_ME6 <- GSEABase::GeneSet(Top_ME6$Gene)
+Top_ME6 <- GSEABase::`setName<-`(object = Top_ME6, value='ME6')
+
+WGCNA_modules_top_genes <- GSEABase::GeneSetCollection(Top_ME1, 
+                                                       Top_ME2,
+                                                       Top_ME3,
+                                                       Top_ME4,
+                                                       Top_ME5,
+                                                       Top_ME6)
+
+# - - - - Scoring samples excluding healthies
+  
+  WGCNA_scaled_score_no_healthies <- enrichIt(obj = as.matrix(Expression_matrix[,rownames(Samples_metadata[Samples_metadata$Condition == 'BP-CMML',])]), 
+               gene.sets = WGCNA_modules_top_genes, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+  
+  write.csv(WGCNA_scaled_score_no_healthies, 
+            paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/WGCNA/WGCNA_modules__Enrichments.csv', 
+                                      sep = ''),
+            quote = F, row.names = T)
+  
+# - - - - Scoring samples including healthies
+  
+  WGCNA_scaled_score_with_healthies <- enrichIt(obj = as.matrix(Expression_matrix), 
+               gene.sets = WGCNA_modules_top_genes, 
+               cores = 12, 
+               ssGSEA.norm = T,
+               min.size = 5)
+  
+  write.csv(WGCNA_scaled_score_with_healthies, 
+            paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/WGCNA/WGCNA_modules__Enrichments_w_healthies.csv', 
+                                      sep = ''),
+            quote = F, row.names = T)
+```
+
+# 6) Plotting
+
+## - 2019 VanGalen P. V. et al. Enrichment Scores HeatMap
+
+```{r}
+VanGalen_celltype_modules_scores <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/CellType/2019__VanGalen_et_al__AML_signatures__Enrichments.csv', 
+                                    sep = ''), row.names = 'X')
+
+colnames(VanGalen_celltype_modules_scores) <- c('HSC-like',
+                                     'HSC.Prog-like',
+                                     'Progenitor-like',
+                                     'GMP-like',
+                                     'Promono-like',
+                                     'Monocyte-like',
+                                     'cDC-like',
+                                     'Myeloid-like')
+
+VanGalen_celltype_modules_scores <- t(VanGalen_celltype_modules_scores)
+
+Identity <- data.frame(row.names = rownames(VanGalen_celltype_modules_scores))
+
+breaks_val <- seq(from = 0, to = 1, length.out = 14)
+col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
+
+HMap_vangalen <- Heatmap(VanGalen_celltype_modules_scores, 
+        name = 'ssGSEA Score',
+        col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05),
+        column_title_gp = gpar(fontsize=11, fontface='bold'),
+        row_names_gp = gpar(fontsize=10), cluster_rows = F,
+        cluster_column_slices = F,
+        column_names_gp = gpar(fontsize=10), show_heatmap_legend = F,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_height = unit(5, "cm")),
+        row_names_side = 'right')
+
+draw(HMap_vangalen, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+# Open a new PNG device for plotting
+png(filename = paste(figures_folder, '/Supplemental/Fig_S4-1.png', sep = ''), units = 'cm', width = 18.62, height = 7, res = 300)
+
+draw(HMap_vangalen, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+invisible(dev.off())
+```
+
+## - 2017 Velten L. et al Enrichment Scores HeatMap
+
+```{r}
+Velten_celltype_modules_scores <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/CellType/2017__Velten_et_al__Healthy_signatures__Enrichments.csv', 
+                                    sep = ''), row.names = 'X')
+
+colnames(Velten_celltype_modules_scores) <- c('HOXA3.HOXB6',
+                               'HLF.ZFP36L2',
+                               'SPINK2.SELL',
+                               'FLT3.SATB1',
+                               'IRF1.CASP1',
+                               'EBF1.ID3',
+                               'EAF2.KLF4',
+                               'IRF7.IRF8',
+                               'SPI1.GFI1',
+                               'CEBPA.CEBPD',
+                               'HDC.LMO4',
+                               'GATA2.NFE2',
+                               'TAL1.HSF1',
+                               'GP1BB.PBX1',
+                               'GATA1.KLF1')
+
+Velten_celltype_modules_scores <- t(Velten_celltype_modules_scores)
+
+Module_Identity <- data.frame(row.names = rownames(Velten_celltype_modules_scores))
+
+Module_Identity[c('HOXA3.HOXB6',
+                  'HLF.ZFP36L2',
+                  'SPINK2.SELL'),'Celltype'] <- 'HSC/MPP'
+Module_Identity[c('FLT3.SATB1'),'Celltype'] <- 'LMPP'
+Module_Identity[c('IRF1.CASP1',
+                  'EBF1.ID3'),'Celltype'] <- 'CLP'
+Module_Identity[c('EAF2.KLF4',
+                  'IRF7.IRF8'),'Celltype'] <- 'MDP'
+Module_Identity[c('SPI1.GFI1',
+                  'CEBPA.CEBPD'),'Celltype'] <- 'NeP'
+Module_Identity[c('HDC.LMO4'),'Celltype'] <- 'EoBaMaP'
+Module_Identity[c('GATA2.NFE2',
+                  'TAL1.HSF1'),'Celltype'] <- 'MEP'
+Module_Identity[c('GP1BB.PBX1'),'Celltype'] <- 'MkP'
+Module_Identity[c('GATA1.KLF1'),'Celltype'] <- 'EP'
+
+Module_Identity$Celltype <- factor(Module_Identity$Celltype, 
+                                   levels = c('HSC/MPP',
+                                              'LMPP',
+                                              'CLP',
+                                              'MDP',
+                                              'NeP',
+                                              'EoBaMaP',
+                                              'MEP',
+                                              'MkP',
+                                              'EP'))
+
+Celltype <- data.frame(row.names = c('HSC/MPP',
+                                              'LMPP',
+                                              'CLP',
+                                              'MDP',
+                                              'NeP',
+                                              'EoBaMaP',
+                                              'MEP',
+                                              'MkP',
+                                              'EP'))
+
+
+Celltype$Colour <- c('#000000',
+                         '#000000',
+                         '#000000',
+                         '#000000',
+                         '#000000',
+                         '#000000',
+                         '#000000',
+                         '#000000',
+                         '#000000')
+
+breaks_val <- seq(from = 0, to = 1, length.out = 14)
+col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
+
+HMap <- Heatmap(Velten_celltype_modules_scores, 
+        name = 'ssGSEA Score',
+        col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05),
+        column_title_gp = gpar(fontsize=11, fontface='bold'),
+        row_split = Module_Identity$Celltype, cluster_rows = F,
+        row_gap = unit(0.05, "cm"), 
+        cluster_column_slices = F,
+        row_names_gp = gpar(fontsize=9), row_title_rot = 0,
+        row_title_gp = gpar(fontsize=9, fontface='bold', col=Celltype$Colour),
+        column_names_gp = gpar(fontsize=9), show_heatmap_legend = F,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_height = unit(5, "cm")),
+        row_names_side = 'right')
+
+draw(HMap, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+# Open a new PNG device for plotting
+png(filename = paste(figures_folder, '/Supplemental/Fig_S4-2.png', sep = ''), units = 'cm', width = 19.2, height = 11, res = 300)
+
+draw(HMap, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+invisible(dev.off())
+```
+
+## - 2022 Vizome BeatAML drug response scores Heatmap
+
+```{r}
+BeatAML_drug_response_modules_scores <- read.csv(paste(data_folder, '/RNASeq/InHouse/Pathway_Analysis/ssEnrichments/Drug_Response/2022__BeatAMLDrugResponseSignatures__Enrichments.csv', 
+                                    sep = ''), row.names = 'X')
+
+# We excluded common drugs for which we have curated signatures
+
+BeatAML_drug_response_modules_scores <- BeatAML_drug_response_modules_scores[,setdiff(colnames(BeatAML_drug_response_modules_scores),
+                                                                                      c('Azacytidine', 'Venetoclax', 'Cytarabine'))]
+
+colnames(BeatAML_drug_response_modules_scores) <- c(
+                                "A-674563",
+                                "ABT-737",
+                                "Afatinib (BIBW-2992)",
+                                "AT7519",
+                                "Axitinib (AG-013736)",
+                                "AZD1152-HQPA (AZD2811)",
+                                "AZD1480",
+                                "Bay 11-7085",
+                                "BEZ235",
+                                "Birinapant",
+                                "Bortezomib (Velcade)",
+                                "Bosutinib (SKI-606)",
+                                "Cabozantinib",
+                                "CI-1040 (PD184352)",
+                                "Crenolanib",
+                                "Crizotinib (PF-2341066)",
+                                "CYT387",
+                                "Dasatinib",
+                                "Doramapimod (BIRB 796)",
+                                "Dovitinib (CHIR-258)",
+                                "Elesclomol",
+                                "Entospletinib (GS-9973)",
+                                "Entrectinib",
+                                "Flavopiridol",
+                                "Foretinib (XL880)",
+                                "GDC-0941",
+                                "Gilteritinib",
+                                "GSK-1838705A",
+                                "GW-2580",
+                                "H-89",
+                                "Ibrutinib (PCI-32765)",
+                                "Idelalisib",
+                                "Indisulam",
+                                "INK-128",
+                                "JAK Inhibitor I",
+                                "JNJ-28312141",
+                                "JNJ-38877605",
+                                "JQ1",
+                                "KI20227",
+                                "KU-55933",
+                                "KW-2449",
+                                "Lenalidomide",
+                                "Lenvatinib",
+                                "Linifanib (ABT-869)",
+                                "Masitinib (AB-1010)",
+                                "MGCD-265",
+                                "Midostaurin",
+                                "MK-2206",
+                                "MLN120B",
+                                "Neratinib (HKI-272)",
+                                "NF-kB Activation Inhibitor",
+                                "Nutlin 3a",
+                                "NVP-ADW742",
+                                "NVP-TAE684",
+                                "OTX-015",
+                                "Panobinostat",
+                                "PD173955",
+                                "Pelitinib (EKB-569)",
+                                "Perhexiline maleate",
+                                "PH-797804",
+                                "PHA-665752",
+                                "PI-103",
+                                "Ponatinib (AP24534)",
+                                "PP242",
+                                "PRT062607",
+                                "Quizartinib (AC220)",
+                                "RAF265 (CHIR-265)",
+                                "Ralimetinib (LY2228820)",
+                                "Ranolazine",
+                                "Rapamycin",
+                                "Regorafenib (BAY 73-4506)",
+                                "S31-201",
+                                "Selinexor",
+                                "Selumetinib (AZD6244)",
+                                "SNS-032 (BMS-387032)",
+                                "Sorafenib",
+                                "Sunitinib",
+                                "Tivozanib (AV-951)",
+                                "Tofacitinib (CP-690550)",
+                                "Tozasertib (VX-680)",
+                                "Trametinib (GSK1120212)",
+                                "Vandetanib (ZD6474)",
+                                "Vargetef",
+                                "Vatalanib (PTK787)",
+                                "Volasertib (BI-6727)",
+                                "VX-745",
+                                "Tanespimycin (17-AAG)")
+
+breaks_val <- seq(from = 0, to = 1, length.out = 14)
+col_heatmap_guide <- colorRamp2(breaks = breaks_val,colors = rev(c("#67000D",brew_mix)))
+
+HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response_modules_scores, 
+        name = 'ssGSEA Score',
+        col = col_heatmap_guide, 
+        rect_gp = gpar(col = "black", lwd = 0.05),
+        cluster_row_slices = F,
+        column_title_gp = gpar(fontsize=14, fontface='bold'),
+        row_names_gp = gpar(fontsize=8), 
+        cluster_rows = T,
+        column_names_gp = gpar(fontsize=8), 
+        show_heatmap_legend = T,
+        heatmap_legend_param = list(legend_direction = "horizontal",
+                                    legend_width = unit(2, "cm")),
+        row_names_side = 'right')
+
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+# Open a new PNG device for plotting
+png(filename = paste(figures_folder, '/Supplemental/Fig_S4-3.png', sep = ''), units = 'cm', width = 30, height = 20, res = 300)
+
+draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+
+dev.off()
+```
+
