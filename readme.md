@@ -15,11 +15,17 @@
  
 This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
 
+Please download data from Mendeley Data repository at:
+
+To ensure reproducibility, please verify that your R and packages version match with what used to generate figures in the manuscript ([See original sessions info])(https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Scripts/Fig_01/Fig_01_ABE_SessionInfo.txt)
+
+Installation of python is only required to produce Fig2C and FigS5.
+
 ---
 
 # Networking:
 
-Connect at :point_down::
+If you wish to reach out you can connect with me at :point_down::
 
 <img src="https://static.licdn.com/aero-v1/sc/h/4221chis9yaztef5phd0v3lal" width="16" height="16"> [LinkedIn](https://www.linkedin.com/in/kristiangurashi/)
 &nbsp;
@@ -27,7 +33,7 @@ Connect at :point_down::
 
 # About me:
 
-Biography :point_down::
+To know more about me explore my biography and list of publications at :point_down::
 
 <img src="https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png" width="24" height="24"> [GitHub](https://github.com/)
 &nbsp;
