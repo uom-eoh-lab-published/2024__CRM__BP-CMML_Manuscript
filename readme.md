@@ -1,13 +1,16 @@
-This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
+
+![R](https://img.shields.io/badge/r-%23276DC3.svg?style=for-the-badge&logo=r&logoColor=white)
+
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+
+![RStudio](https://img.shields.io/badge/RStudio-4285F4?style=for-the-badge&logo=rstudio&logoColor=white)
 
 # Project Information:
  
 **Lead:** KGURASHI  
-**Other users:** NONE  
-**Disease:** Not applicable  
-**Project Start:** 2024  
-**Project End:** Ongoing  
+**Disease:** Blast Phase Chronic Myelomonocytic Leukemia (CMML)
  
 ---
  
-This project is just an example on how to use git/github
+This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
+
