@@ -16,6 +16,9 @@ Kiran Batta(kiran.batta@manchester.ac.uk),
 Daniel Wiseman(daniel.wiseman@manchester.ac.uk)  
 **Disease:** Blast Phase Chronic Myelomonocytic Leukemia (CMML)
 
+## Graphical summary: 
+![Graphical summary of paper findings](https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Graphical_Summary.png)
+
 ## Content: 
 This is the code repository for the CRM 2024 manuscript on BP-CMML stratification.
 
