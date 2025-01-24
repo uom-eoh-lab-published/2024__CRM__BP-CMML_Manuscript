@@ -6,7 +6,7 @@ Connect at :point_down: :
 
 <img src="https://static.licdn.com/aero-v1/sc/h/4221chis9yaztef5phd0v3lal" width="16" height="16"> [LinkedIn](https://www.linkedin.com/in/kristiangurashi/)
 &nbsp;
-<img src="https://icon-icons.com/downloadimage.php?id=256078&root=4029/PNG/256/&file=twitter_x_new_logo_x_rounded_icon_256078.png" width="24" height="18"> [X](https://www.x.com/krgurashi)
+<img src="https://icon-icons.com/downloadimage.php?id=256078&root=4029/PNG/256/&file=twitter_x_new_logo_x_rounded_icon_256078.png" width="26" height="20"> [X](https://www.x.com/krgurashi)
 
 Biography :point_down: :
 
