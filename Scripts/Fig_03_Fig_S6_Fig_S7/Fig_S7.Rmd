@@ -1,5 +1,5 @@
 ---
-title: "Figure S8"
+title: "Figure S7"
 output: 
   rmdformats::robobook:
     lightbox: true
@@ -122,7 +122,7 @@ Finally, we log the session information for reproducibility.
 
 ```{r message=TRUE, warning=TRUE}
 # Write the session information to a text file
-writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_S8_SessionInfo.txt'))
+writeLines(capture.output(sessionInfo()), file.path(script_folder, 'Fig_S7_SessionInfo.txt'))
 
 # Print the session information
 sessionInfo()
@@ -669,7 +669,7 @@ HMap_vangalen <- Heatmap(VanGalen_celltype_modules_scores,
 draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 
 # Save the heatmap as a PNG file
-png(filename = paste(figures_folder, '/Supplemental/Fig_S8-1.png', sep = ''), units = 'cm', width = 18.62, height = 6, res = 300)
+png(filename = paste(figures_folder, '/Supplemental/Fig_S7-1.png', sep = ''), units = 'cm', width = 18.62, height = 6, res = 300)
 draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 invisible(dev.off())
 ```
@@ -727,7 +727,7 @@ HMap <- Heatmap(Velten_celltype_modules_scores,
 draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 
 # Save the heatmap as a PNG file
-png(filename = paste(figures_folder, '/Supplemental/Fig_S8-2.png', sep = ''), units = 'cm', width = 19.2, height = 10, res = 300)
+png(filename = paste(figures_folder, '/Supplemental/Fig_S7-2.png', sep = ''), units = 'cm', width = 19.2, height = 10, res = 300)
 draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 invisible(dev.off())
 ```
@@ -857,7 +857,7 @@ HMap_BeatAMLdrugs <- Heatmap(BeatAML_drug_response_modules_scores,
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 
 # Save the heatmap as a PNG file
-png(filename = paste(figures_folder, '/Supplemental/Fig_S8-3.png', sep = ''), units = 'cm', width = 30, height = 20, res = 300)
+png(filename = paste(figures_folder, '/Supplemental/Fig_S7-3.png', sep = ''), units = 'cm', width = 30, height = 20, res = 300)
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 invisible(dev.off())
 ```

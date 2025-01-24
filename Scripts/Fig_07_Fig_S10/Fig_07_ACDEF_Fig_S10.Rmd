@@ -1,5 +1,5 @@
 ---
-title: "Figure 07 - Panels ACDEF + Fig S11"
+title: "Figure 07 - Panels ACDEF + Fig S10"
 output: 
   rmdformats::robobook:
     lightbox: true
@@ -151,7 +151,7 @@ RF_cluster_metadata <- read.csv(paste(data_folder, '/RandomForest/Results/Cluste
                                     sep = ''), row.names = 'Patient.ID')
 ```
 
-# 3) Vizome BeatAML drug responses heatmap - K2 : Fig S11
+# 3) Vizome BeatAML drug responses heatmap - K2 : Fig S10
 
 This code extracts the drug response data from a data frame, renames the columns, creates a data frame for the identity of the clusters, defines the colors for the annotation, creates a row annotation for the heatmap, defines the color scheme for the heatmap, creates a heatmap of the drug response data, draws the heatmap, and saves it as a PNG file.
 
@@ -289,7 +289,7 @@ draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom",
      annotation_legend_side = "bottom")
 
 # Save the heatmap as a PNG file
-png(filename = paste(figures_folder, '/Supplemental/Fig_S11.png', sep = ''), units = "cm", width = 30, height = 20, res = 300)
+png(filename = paste(figures_folder, '/Supplemental/Fig_S10.png', sep = ''), units = "cm", width = 30, height = 20, res = 300)
 draw(HMap_BeatAMLdrugs, heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
 invisible(dev.off())
