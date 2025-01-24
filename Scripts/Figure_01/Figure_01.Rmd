@@ -35,6 +35,19 @@ Here, we define the directories for input data and output files.
 # Get the directory of the current script
 script_folder <- dirname(rstudioapi::getSourceEditorContext()$path)
 
+dir.create(paste(local_wd_folder, "/Data", sep = ''), showWarnings = F)
+
+dir.create(paste(local_wd_folder, "/Figures", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Figure_01", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Figure_02", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Figure_03", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Figure_04", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Figure_05", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Figure_06", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Figure_07", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Supplemental", sep = ''), showWarnings = F)
+dir.create(paste(local_wd_folder, "/Figures/Not_Included", sep = ''), showWarnings = F)
+
 # Define the data folder and output folder
 data_folder <- './Data'
 output_folder <- './Figures/Figure_01'
