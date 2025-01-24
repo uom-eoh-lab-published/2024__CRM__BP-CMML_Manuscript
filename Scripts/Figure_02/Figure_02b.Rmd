@@ -106,7 +106,7 @@ rownames(Genes_annotation_metadata) <- Genes_annotation_metadata$gene_id
 Samples_metadata <- read.csv(paste(data_folder, '/RNASeq/Metadata/RNASeq_Samples_Metadata.csv', sep = ''), row.names = 'Patient.ID')
 ```
 
-# 3) Ordering expression matrix (TPM)
+# 3) Filtering expression matrix
 
 ```{r}
 Unique_genes <- read.table(file = paste(data_folder, '/RNASeq/Counts/List_unique_genes.csv', 
