@@ -23,6 +23,14 @@ Installation of python is only required to produce Fig2C and FigS5.
 
 ---
 
+# Citation:
+
+If using any code here published and/or data from this publication please remember to cite us:
+
+> Example et al. 2024 # TBD
+
+---
+
 # Networking:
 
 If you wish to reach out you can connect with me at :point_down::
