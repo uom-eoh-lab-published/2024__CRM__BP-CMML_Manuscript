@@ -202,6 +202,29 @@ ComplexHeatmap::draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_l
 
 # Close the PNG device
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_A.pdf', sep = ''), 
+#     width = 7.3307087, height = 2.95276)
+# ComplexHeatmap::draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
+
+###
+
+# We will also save a version of this figure including the scale, previously omitted to maintain more easily the figure proportions
+
+HMap_vangalen <- Heatmap(VanGalen_celltype_modules_scores, name = 'ssGSEA Score', column_split = RF_cluster_metadata$RF_Cluster, top_annotation = col_anno, col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05), column_title_gp = gpar(fontsize=11, fontface='bold'), row_names_gp = gpar(fontsize=10), cluster_rows = F, cluster_column_slices = F, column_names_gp = gpar(fontsize=10), show_heatmap_legend = T, heatmap_legend_param = list(legend_direction = "horizontal", legend_width = unit(2, "cm")), row_names_side = 'right')
+
+# Open a new PNG device
+png(filename = paste(figures_folder, '/Other/Fig_5_Panel_A_with_legend.png', sep = ''), units = 'cm', width = 18.62, height = 7.5, res = 300)
+ComplexHeatmap::draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Other/Fig_5_Panel_A_with_legend.pdf', sep = ''), 
+#     width = 7.3307087, height = 2.95276)
+# ComplexHeatmap::draw(HMap_vangalen, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 ## - WGCNA modules scores Heatmap : Panel B
@@ -243,6 +266,30 @@ draw(HMap_WGCNA, heatmap_legend_side = "bottom", annotation_legend_side = "botto
 
 # Close the PNG device
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_B.pdf', sep = ''), 
+#     width = 6.29921, height = 2.95276)
+# draw(HMap_WGCNA, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
+
+###
+
+# We will also save a version of this figure including the scale, previously omitted to maintain more easily the figure proportions
+
+HMap_WGCNA <- Heatmap(WGCNA_modules_scores, name = 'ssGSEA Score', column_split = RF_cluster_metadata$RF_Cluster, top_annotation = col_anno, col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05), column_title_gp = gpar(fontsize=11, fontface='bold'), row_names_gp = gpar(fontsize=10), cluster_rows = F, cluster_column_slices = F, column_names_gp = gpar(fontsize=10), show_heatmap_legend = T, heatmap_legend_param = list(legend_direction = "horizontal", legend_height = unit(5, "cm")), row_names_side = 'right')
+
+# Open a new PNG device
+png(filename = paste(figures_folder, '/Other/Fig_5_Panel_B_with_legend.png', sep = ''), 
+    width = 6.29921, height = 2.95276, res = 300)
+draw(HMap_WGCNA, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Other/Fig_5_Panel_B_with_legend.pdf', sep = ''), 
+#     width = 6.29921, height = 2.95276)
+# draw(HMap_WGCNA, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 ## - 2017 Velten L. et al Enrichment Scores HeatMap : Fig S9
@@ -304,6 +351,30 @@ draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 
 # Close the PNG device
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Supplemental/Fig_S9.pdf', sep = ''), 
+#     width = 7.559055, height = 4.33071)
+# draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
+
+###
+
+# We will also save a version of this figure including the scale, previously omitted to maintain more easily the figure proportions
+
+HMap <- Heatmap(Velten_celltype_modules_scores, name = 'ssGSEA Score', column_split = Identity$RF_Cluster, top_annotation = col_anno, col = col_heatmap_guide, rect_gp = gpar(col = "black", lwd = 0.05), column_title_gp = gpar(fontsize=11, fontface='bold'), row_split = Module_Identity$Celltype, cluster_rows = F, row_gap = unit(0.05, "cm"), cluster_column_slices = F, row_names_gp = gpar(fontsize=9), row_title_rot = 0, row_title_gp = gpar(fontsize=9, fontface='bold', col=Celltype$Colour), column_names_gp = gpar(fontsize=9), show_heatmap_legend = T, heatmap_legend_param = list(legend_direction = "horizontal", legend_height = unit(5, "cm")), row_names_side = 'right')
+
+# Open a new PNG device
+png(filename = paste(figures_folder, '/Other/Fig_S9_with_legend.png', sep = ''), 
+    width = 7.559055, height = 4.33071, res = 300)
+draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Other/Fig_S9_with_legend.pdf', sep = ''), 
+#     width = 7.559055, height = 4.33071)
+# draw(HMap, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 
 # 4) DGE
@@ -650,7 +721,7 @@ resAsh_df_plot[rownames(resAsh_adj %>% filter(padj <0.05)),'Significance'] <- 'S
 cols <- c('Significant' = '#E58368', 'Non-significant' = '#1d1929')
 
 # Start recording plot to a PNG file
-png(filename = paste(figures_folder, '/Not_Included/DGE_C1_vs_Control_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
+png(filename = paste(figures_folder, '/Other/DGE_C1_vs_Control_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
 
 # Create a scatter plot of the 'ashr' results
 ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, fill = Significance, color = Significance)) + theme_linedraw(base_line_size = 0.2) +
@@ -760,7 +831,7 @@ resAsh_df_plot[rownames(resAsh_adj %>% filter(padj <0.05)),'Significance'] <- 'S
 cols <- c('Significant' = '#E58368', 'Non-significant' = '#1d1929')
 
 # Start recording plot to a PNG file
-png(filename = paste(figures_folder, '/Not_Included/DGE_C2_vs_Control_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
+png(filename = paste(figures_folder, '/Other/DGE_C2_vs_Control_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
 
 # Create a scatter plot of the 'ashr' results
 ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, fill = Significance, color = Significance)) + 
@@ -870,7 +941,7 @@ resAsh_df_plot[rownames(resAsh_adj %>% filter(padj <0.05)),'Significance'] <- 'S
 cols <- c('Significant' = '#E58368', 'Non-significant' = '#1d1929')
 
 # Save the plot to a PNG file
-png(filename = paste(figures_folder, '/Not_Included/DGE_C1_vs_C2_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
+png(filename = paste(figures_folder, '/Other/DGE_C1_vs_C2_resAsh.png', sep = ''), units = 'cm', width = 8.58, height = 12.1, res = 300)
 
 # Create a scatter plot of the 'ashr' results
 ggplot(resAsh_df_plot, aes(x = log10(baseMean), y = log2FoldChange, fill = Significance, color = Significance)) + theme_linedraw(base_line_size = 0.2) +
@@ -1014,6 +1085,12 @@ print(plot)
 png(filename = paste(figures_folder, '/Fig_05/Panel_C-1.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
 print(plot)
 dev.off()
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_C-1.pdf', sep = ''), 
+#     width = 4.3, height = 5.5)
+# print(plot)
+# invisible(dev.off())
 ```
 
 ### - C2 v Control
@@ -1089,6 +1166,12 @@ print(plot)
 png(filename = paste(figures_folder, '/Fig_05/Panel_C-2.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_C-2.pdf', sep = ''), 
+#     width = 4.3, height = 5.5)
+# print(plot)
+# invisible(dev.off())
 ```
 
 ### - C1 v C2 : Fig S10
@@ -1164,6 +1247,12 @@ print(plot)
 png(filename = paste(figures_folder, '/Supplemental/Fig_S10.png', sep = ''), units = 'in', width = 4.3, height = 5.5, res = 300)
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Supplemental/Fig_S10.pdf', sep = ''), 
+#     width = 4.3, height = 5.5)
+# print(plot)
+# invisible(dev.off())
 ```
 
 ## - Intersection DGE analysis : Panel D
@@ -1243,6 +1332,33 @@ venn.diagram(
   fontfamily = "sans",
   scaled = FALSE)
 
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# venn.diagram(
+#   x = list('C2' = Cluster_1_UP$GeneSymbol,
+#            'C1' = Cluster_2_UP$GeneSymbol),
+#   output=TRUE,
+#   filename = paste(figures_folder, '/Fig_05/Panel_D.pdf', sep = ''),
+#   main = '',
+#   main.cex = 1.5,
+#   main.fontface = "bold",
+#   main.fontfamily = "sans",
+#   lwd = 4,
+#   col = c('#0B544B','#793F0B'),
+#   fill = c(ggplot2::alpha('#0B544B',0.6), ggplot2::alpha('#793F0B',0.6)),
+#   alpha = rep(0.5, 2), 
+#   cat.default.pos = "outer",
+#   cat.pos = c(10,-10), 
+#   cat.dist = rep(0.04, 2), 
+#   cat.col = c('#0B544B','#793F0B'),
+#   cat.cex = 3,
+#   sub.cex = 4,
+#   cat.fontface = "bold",
+#   cat.fontfamily = 'sans',
+#   inverted = TRUE,
+#   rotation.degree = 180,
+#   cex = 2.5,
+#   fontfamily = "sans",
+#   scaled = FALSE)
 ```
 
 ## - Heatmap uniquely up genes
@@ -1419,5 +1535,56 @@ draw(Heatmap_genes, heatmap_legend_side = "bottom",
 
 # Close the PNG device
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_05/Panel_G.pdf', sep = ''), 
+#     width = 11.811, height = 5.51181)
+# draw(Heatmap_genes, heatmap_legend_side = "bottom", 
+#      annotation_legend_side = "bottom")
+# invisible(dev.off())
+
+###
+
+# We will also save a version of this figure including the scale, previously omitted to maintain more easily the figure proportions
+
+Heatmap_genes <- Heatmap(scaled_genemat_ord_symbol, name = 'Scaled\nExpression',
+                         col = col_heatmap_guide, 
+                         show_row_names = FALSE,
+                         show_column_names = TRUE,
+                         cluster_columns = TRUE,
+                         cluster_rows = TRUE,
+                         row_split = Samples_metadata_heatmap$RF_Cluster_short,
+                         column_split = gene_identity$Group, 
+                         border = TRUE, row_dend_side = 'right',
+                         cluster_column_slices = FALSE, 
+                         row_gap = unit(0.05, 'cm'),
+                         column_gap = unit(0.05, 'cm'),
+                         show_column_dend = TRUE, column_names_side = 'bottom',
+                         use_raster = FALSE, 
+                         rect_gp = gpar(col = "black", lwd = 0.05),
+                         raster_by_magick = TRUE, 
+                         left_annotation = ha,
+                         column_title_gp = gpar(fontsize = 0, angle=45),
+                         column_names_gp = gpar(fontsize = 7, hjust=0),
+                         row_title_gp = gpar(fontsize = 0),
+                         row_names_gp = gpar(fontsize = 4, hjust=0),
+                         show_heatmap_legend = T,
+                         heatmap_legend_param = list(
+                             legend_direction = "horizontal", 
+                             legend_width = unit(5, "cm")))
+
+# Open a new PNG device
+png(filename = paste(figures_folder, '/Other/Fig_5_Panel_G_with_legend.png', sep = ''), 
+    width = 11.811, height = 5.51181, res=300)
+draw(Heatmap_genes, heatmap_legend_side = "bottom", 
+     annotation_legend_side = "bottom")
+invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Other/Fig_5_Panel_G_with_legend.pdf', sep = ''), 
+#     width = 11.811, height = 5.51181)
+# draw(Heatmap_genes, heatmap_legend_side = "bottom", 
+#      annotation_legend_side = "bottom")
+# invisible(dev.off())
 ```
 

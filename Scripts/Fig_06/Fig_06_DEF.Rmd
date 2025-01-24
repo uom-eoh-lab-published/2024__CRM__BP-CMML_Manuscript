@@ -65,8 +65,9 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocMana
 BiocManager::install(version = "3.18", ask = FALSE)
 
 # Define a list of required packages used in this script
-packages_required <- c("ggplot2", "dplyr", "smplot2", "WGCNA", "tidyr",
-                       "ggrepel", "ComplexHeatmap",
+packages_required <- c("ggplot2", "dplyr", "smplot2", "impute", 
+                       "preprocessCore", "GO.db", "WGCNA", 
+                       "tidyr", "ggrepel", "ComplexHeatmap",
                        "unikn", "RColorBrewer", "yarrr", "scales", "ggsci")
 
 # Identify any required packages that are not installed
@@ -252,6 +253,12 @@ print(plot)
 png(filename = paste(figures_folder, '/Fig_06/Panel_F-1.png', sep = ''), units = "px", width = 1876.2, height = 1000, res = 300)
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_06/Panel_F-1.pdf', sep = ''), 
+#     width = 6.254, height = 3.333)
+# print(plot)
+# invisible(dev.off())
 ```
 
 ### - C2: Mature
@@ -304,6 +311,12 @@ print(plot)
 png(filename = paste(figures_folder, '/Fig_06/Panel_F-2.png', sep = ''), units = "px", width = 1876.2, height = 1000, res = 300)
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_06/Panel_F-2.pdf', sep = ''), 
+#     width = 6.254, height = 3.333)
+# print(plot)
+# invisible(dev.off())
 ```
 
 # 4) Cor. WGCNA to drug response
@@ -357,6 +370,13 @@ png(filename = paste(figures_folder, '/Fig_06/Panel_D.png', sep = ''), units = "
 draw(Heatmap_genes, heatmap_legend_side = "bottom", 
      annotation_legend_side = "bottom")
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_06/Panel_D.pdf', sep = ''), 
+#     width = 4.33071, height = 2.75591)
+# draw(Heatmap_genes, heatmap_legend_side = "bottom", 
+#      annotation_legend_side = "bottom")
+# invisible(dev.off())
 
 # Save the correlation and p-values as CSV files
 write.csv(x = Cor_modules, 
@@ -415,6 +435,12 @@ print(plot)
 png(filename = paste(figures_folder, '/Fig_06/Panel_E-1.png', sep = ''), units = "cm", width = 6.217391, height = 5.791304, res = 300)
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_06/Panel_E-1.pdf', sep = ''), 
+#     width = 2.4477917323, height = 2.2800409449)
+# print(plot)
+# invisible(dev.off())
 ```
 
 ## - Cor. WGCNA M3 to Cytarabine response : Panel E-2
@@ -464,4 +490,10 @@ print(plot)
 png(filename = paste(figures_folder, '/Fig_06/Panel_E-2.png', sep = ''), units = "cm", width = 6.217391, height = 5.791304, res = 300)
 print(plot)
 invisible(dev.off())
+
+# # We also saved a high dpi copy to be used to assemble a high resolution composite figure for the manuscript (render not included in GitHub repo due to size restriction)
+# pdf(file = paste(figures_folder, '/Fig_06/Panel_E-2.pdf', sep = ''), 
+#     width = 2.4477917323, height = 2.2800409449)
+# print(plot)
+# invisible(dev.off())
 ```
