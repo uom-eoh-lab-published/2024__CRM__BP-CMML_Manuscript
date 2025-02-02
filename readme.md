@@ -21,6 +21,10 @@ Daniel Wiseman (daniel.wiseman@manchester.ac.uk)
   <img src="https://github.com/uom-eoh-lab-published/2024__CRM__BP-CMML_Manuscript/blob/main/Graphical_Abstract.png" width="465" height="465">
 </p>
 
+## Publication link:
+
+https://www.sciencedirect.com/science/article/pii/S2666379125000060  
+
 ## Content: 
 This is the code repository for the manuscript on BP-CMML stratification submitted in 2024 at CRM.
 
@@ -58,7 +62,11 @@ unzip Data.zip
 
 If using any code here published and/or data from this publication please remember to cite us:
 
-> Example et al. 2025 # TBD
+  - **APA Style:** 
+> Gurashi, K., Wang, Y.-H., Amaral, F. M. R., Spence, K., Cant, R., Yao, C.-Y., Lin, C.-C., Wirth, C., Wedge, D. C., Montalban-Bravo, G., Colla, S., Tien, H.-F., Somervaille, T. C. P., Batta, K., & Wiseman, D. H. (2025). An integrative multiparametric approach stratifies putative distinct phenotypes of blast-phase chronic myelomonocytic leukemia. Cell Reports Medicine, 6(101933). https://doi.org/10.1016/j.xcrm.2025.101933  
+
+  - **Vancouver Style:**
+> Gurashi K, Wang YH, Amaral FMR, Spence K, Cant R, Yao CY, Lin CC, Wirth C, Wedge DC, Montalban-Bravo G, Colla S, Tien HF, Somervaille TCP, Batta K, Wiseman DH. An integrative multiparametric approach stratifies putative distinct phenotypes of blast-phase chronic myelomonocytic leukemia. Cell Rep Med. 2025;6:101933. doi:10.1016/j.xcrm.2025.101933  
 
 ---
 
